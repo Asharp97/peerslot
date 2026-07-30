@@ -25,6 +25,10 @@ export const metadata: Metadata = {
   },
   description:
     "A calmer way for students to reschedule meetings within teacher-controlled availability and fair, automatic boundaries.",
+  icons: {
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+    shortcut: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({

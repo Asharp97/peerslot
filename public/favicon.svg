@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="512" height="512" fill="currentColor">
+  <!-- Bar 1 (Left): Height 3, Lavender Whisper -->
+  <rect x="3" y="12" width="4" height="9" rx="2" stroke="currentColor" stroke-width="2"
+    fill="#F0EEFD" />
+
+  <!-- Bar 2 (Middle): Height 5.5, Lavender Whisper -->
+  <rect x="10" y="4" width="4" height="17" rx="2" stroke="currentColor" stroke-width="2"
+    fill="#F0EEFD" />
+
+  <!-- Bar 3 (Right): Height 4, Ember Glow -->
+  <rect x="17" y="9" width="4" height="12" rx="2" stroke="currentColor" stroke-width="2"
+    fill="#FF6B4A" />
+</svg>
