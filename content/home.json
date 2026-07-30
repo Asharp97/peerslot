@@ -1,0 +1,79 @@
+{
+  "navigation": [
+    { "label": "Product", "href": "#product" },
+    { "label": "How it works", "href": "#how-it-works" },
+    { "label": "Guardrails", "href": "#guardrails" },
+    { "label": "For teachers", "href": "#for-teachers" }
+  ],
+  "weekDays": [
+    { "day": "Mon", "date": "21", "active": false },
+    { "day": "Tue", "date": "22", "active": false },
+    { "day": "Wed", "date": "23", "active": true },
+    { "day": "Thu", "date": "24", "active": false },
+    { "day": "Fri", "date": "25", "active": false }
+  ],
+  "schedulingRules": [
+    "One change per student",
+    "24-hour cutoff",
+    "Teacher-controlled times"
+  ],
+  "principles": [
+    {
+      "number": "01",
+      "icon": "calendarCheck",
+      "title": "Teacher opens the week",
+      "body": "Publish only the times that genuinely work. Every option students see is already safe to book.",
+      "tone": "cream"
+    },
+    {
+      "number": "02",
+      "icon": "refresh",
+      "title": "Student makes one move",
+      "body": "A student can choose a better open slot once—without sending a message or waiting for approval.",
+      "tone": "lavender"
+    },
+    {
+      "number": "03",
+      "icon": "shield",
+      "title": "PeerSlot holds the line",
+      "body": "The 24-hour cutoff and one-change rule are enforced automatically, clearly, and consistently.",
+      "tone": "forest"
+    }
+  ],
+  "guardrails": [
+    {
+      "icon": "refresh",
+      "title": "One reschedule",
+      "body": "Enough flexibility for a real conflict, without turning the calendar into a moving target."
+    },
+    {
+      "icon": "clock",
+      "title": "24-hour protection",
+      "body": "Once a meeting is close, it stays put. Teachers and peers can plan around it with confidence."
+    },
+    {
+      "icon": "users",
+      "title": "Availability stays in charge",
+      "body": "Students can only move into times the teacher has explicitly made available."
+    }
+  ],
+  "comparisonMessages": [
+    {
+      "text": "Can we do later?",
+      "variant": "lavender"
+    },
+    {
+      "text": "What times work?",
+      "variant": "stone"
+    },
+    {
+      "text": "Thursday maybe?",
+      "variant": "ember"
+    }
+  ],
+  "footerLinks": [
+    { "label": "Product", "href": "#product" },
+    { "label": "How it works", "href": "#how-it-works" },
+    { "label": "Guardrails", "href": "#guardrails" }
+  ]
+}

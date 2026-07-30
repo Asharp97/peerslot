@@ -1,6 +1,11 @@
 @import "tailwindcss";
 
 :root {
+  --background: var(--color-lumen-cream);
+  --foreground: var(--color-vast-ink);
+}
+
+@theme inline {
   --color-lavender-whisper: #f0d7ff;
   --color-forest-ink: #034f46;
   --color-ember-glow: #ffa946;
@@ -10,11 +15,6 @@
   --color-fog: #8a8a80;
   --color-charcoal: #222222;
   --color-pure-white: #ffffff;
-  --background: var(--color-lumen-cream);
-  --foreground: var(--color-vast-ink);
-}
-
-@theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-figtree);
@@ -38,18 +38,12 @@ body {
 }
 
 a {
-  color: inherit;
   text-decoration: none;
 }
 
 button,
 a {
   -webkit-tap-highlight-color: transparent;
-}
-
-button {
-  color: inherit;
-  font: inherit;
 }
 
 :focus-visible {
