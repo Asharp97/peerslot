@@ -1,7 +1,30 @@
 allowBuilds:
-  esbuild: set this to true or false
-  sharp: set this to true or false
-  unrs-resolver: set this to true or false
-ignoredBuiltDependencies:
-  - sharp
-  - unrs-resolver
+  core-js: true
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
+allowedDeprecatedVersions:
+  # Drizzle Kit 0.31 still depends on these deprecated loader packages.
+  # Their vulnerable esbuild range is overridden below.
+  "@esbuild-kit/core-utils": 3.3.2
+  "@esbuild-kit/esm-loader": 2.6.5
+auditConfig:
+  # This is confined to Next's ESLint plugin chain. Forcing brace-expansion@5
+  # breaks minimatch@3 at runtime, so keep the exception until the plugins move.
+  ignoreGhsas:
+    - GHSA-mh99-v99m-4gvg
+peerDependencyRules:
+  # These versions are bundled by optional WASM fallbacks in rolldown and
+  # unrs-resolver. The native Windows bindings are used in this project.
+  allowedVersions:
+    "@emnapi/core": ">=1.10.0"
+    "@emnapi/runtime": ">=1.10.0"
+minimumReleaseAgeExclude:
+  - resend@6.18.1
+  - esbuild@0.25.12
+  - sharp@0.35.0
+  - postcss@8.5.18
+overrides:
+  esbuild@<=0.24.2: ^0.25.0
+  postcss@<=8.5.17: ^8.5.18
+  sharp@<0.35.0: ^0.35.0

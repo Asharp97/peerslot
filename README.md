@@ -17,8 +17,9 @@ rules. The first version focuses on a deliberately narrow workflow:
 
 > [!NOTE]
 > PeerSlot is in the initial development stage. The Next.js application and
-> database dependencies are in place; authentication, scheduling screens, and
-> persistence are still being implemented.
+> Neon schema, authentication routes, and initial slot APIs are in place.
+> Scheduling screens and the complete appointment workflow are still being
+> implemented.
 
 ## The problem
 
@@ -79,17 +80,15 @@ The repository currently uses:
 | Database | [Neon Postgres](https://neon.com/) |
 | Database driver | [`@neondatabase/serverless`](https://neon.com/docs/serverless/serverless-driver) |
 | ORM | [Drizzle ORM](https://orm.drizzle.team/) |
+| Authentication | [Better Auth](https://www.better-auth.com/) persisted in Neon |
 | Package manager | [pnpm](https://pnpm.io/) |
 
-The planned authentication layer is
-[Neon Auth](https://neon.com/docs/auth/overview), with OAuth sign-in for
-providers such as Google or Microsoft. Authentication establishes who the user
-is; PeerSlot's own profile data determines whether that user is a teacher or a
-student.
+Better Auth provides email/password sessions and optional Google and Microsoft
+OAuth. Authentication establishes who the user is; PeerSlot's own profile data
+determines whether that user is a teacher or a student.
 
-Calendar UI and transactional email libraries will be chosen when those
-features enter the MVP rather than being added to the initial bundle
-prematurely.
+FullCalendar and Resend are installed for the later calendar and notification
+work, but are not integrated into the current UI yet.
 
 ## Architecture
 
@@ -102,7 +101,7 @@ flowchart LR
     Student["Student"]
     Teacher["Teacher"]
     App["Next.js application"]
-    Auth["Neon Auth"]
+    Auth["Better Auth"]
     Database["Neon Postgres"]
 
     Student --> App
@@ -117,8 +116,8 @@ deploy while the workflow is being validated.
 
 ## Initial data model
 
-Neon Auth will manage authentication records. PeerSlot initially needs only
-three application tables:
+Better Auth manages its authentication records in Neon. PeerSlot initially
+needs only three application tables:
 
 ```mermaid
 erDiagram
@@ -200,10 +199,20 @@ Open [http://localhost:3000](http://localhost:3000).
 | `pnpm build` | Create a production build |
 | `pnpm start` | Run the production build |
 | `pnpm lint` | Run ESLint |
+| `pnpm typecheck` | Run TypeScript without emitting files |
+| `pnpm test` | Run the Vitest suite |
+| `pnpm auth:schema` | Regenerate the Better Auth Drizzle schema |
+| `pnpm db:generate` | Generate a migration from schema changes |
+| `pnpm db:migrate` | Apply pending migrations |
+| `pnpm db:studio` | Open Drizzle Studio |
+| `pnpm user:set-role <email> <role>` | Set a local user's application role |
 
-Database and authentication environment variables will be documented in
-`.env.example` when their integrations are added. Secrets must remain in local
-environment files and must never be committed.
+Copy `.env.example` to `.env.local` and provide the Neon connection string,
+Better Auth secret, application URL, and any OAuth credentials you enable.
+Secrets must remain in local environment files and must never be committed.
+
+For endpoint examples and the included Bruno collection, see
+[`docs/API_TESTING.md`](docs/API_TESTING.md).
 
 ## Development principles
 
@@ -227,13 +236,15 @@ environment files and must never be committed.
 - [x] Configure Tailwind CSS
 - [x] Add the Neon serverless driver
 - [x] Add Drizzle ORM and Drizzle Kit
-- [ ] Add the Drizzle configuration and initial schema
-- [ ] Add migrations and database scripts
-- [ ] Configure Neon Auth
+- [x] Add the Drizzle configuration and initial schema
+- [x] Add migrations and database scripts
+- [x] Configure Better Auth
+- [x] Add a Bruno API collection
 
 ### MVP
 
-- [ ] Add teacher and student profiles
+- [x] Add teacher and student profiles
+- [x] Add initial teacher availability APIs
 - [ ] Build teacher availability management
 - [ ] Build the student appointment view
 - [ ] Implement atomic one-time rescheduling
