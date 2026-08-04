@@ -1,0 +1,151 @@
+{
+  "Metadata": {
+    "title": "PeerSlot — Meetings that move without the mess",
+    "titleTemplate": "%s | PeerSlot",
+    "description": "A calmer way for students to reschedule meetings within teacher-controlled availability and fair, automatic boundaries."
+  },
+  "Home": {
+    "skipToContent": "Skip to content",
+    "mainNavigationLabel": "Main navigation",
+    "brandHomeLabel": "PeerSlot home",
+    "navigation": [
+      { "label": "Product", "href": "#product" },
+      { "label": "How it works", "href": "#how-it-works" },
+      { "label": "Guardrails", "href": "#guardrails" },
+      { "label": "For teachers", "href": "#for-teachers" }
+    ],
+    "languageSwitcher": {
+      "label": "Choose language",
+      "english": "Switch to English",
+      "turkish": "Switch to Turkish"
+    },
+    "headerCta": "See the schedule",
+    "hero": {
+      "eyebrow": "Scheduling, with boundaries",
+      "titleMuted": "Plans change.",
+      "titleLead": "Your calendar",
+      "titleEmphasis": "stays calm.",
+      "body": "Give students one fair way to move a meeting—into a time you already approved, before the 24-hour window closes.",
+      "primaryCta": "Watch the flow",
+      "secondaryCta": "How it works",
+      "rulesLabel": "PeerSlot scheduling rules",
+      "rules": [
+        "One change per student",
+        "24-hour cutoff",
+        "Teacher-controlled times"
+      ]
+    },
+    "product": {
+      "badge": "Your week, protected",
+      "title": "A humane way to say “yes, within the rules.”",
+      "body": "PeerSlot turns your availability into a clear set of choices. Students get autonomy. Teachers stop negotiating the same calendar twice.",
+      "cta": "Explore the guardrails",
+      "board": {
+        "dateRange": "September 21–25",
+        "title": "Office hours",
+        "teacherInitials": "MA",
+        "teacherName": "Ms. Aylin",
+        "teacherRole": "Teacher",
+        "timeZone": "GMT+3",
+        "weekDays": [
+          { "day": "Mon", "date": "21", "active": false },
+          { "day": "Tue", "date": "22", "active": false },
+          { "day": "Wed", "date": "23", "active": true },
+          { "day": "Thu", "date": "24", "active": false },
+          { "day": "Fri", "date": "25", "active": false }
+        ],
+        "previewLabel": "Weekly availability preview",
+        "open": "Open",
+        "eligible": "Eligible to change",
+        "movePrompt": "Move Wednesday’s session?",
+        "moveHelp": "Choose one of 3 open times before Tuesday at 10:00.",
+        "chooseTime": "Choose a time"
+      }
+    },
+    "howItWorks": {
+      "eyebrow": "A three-step handoff",
+      "title": "Rescheduling, minus the back-and-forth.",
+      "body": "Everyone sees the same availability and the same boundaries, so moving a meeting takes one decision—not a conversation.",
+      "principles": [
+        {
+          "number": "01",
+          "icon": "calendarCheck",
+          "title": "Teacher opens the week",
+          "body": "Publish only the times that genuinely work. Every option students see is already safe to book.",
+          "tone": "cream"
+        },
+        {
+          "number": "02",
+          "icon": "refresh",
+          "title": "Student makes one move",
+          "body": "A student can choose a better open slot once—without sending a message or waiting for approval.",
+          "tone": "lavender"
+        },
+        {
+          "number": "03",
+          "icon": "shield",
+          "title": "PeerSlot holds the line",
+          "body": "The 24-hour cutoff and one-change rule are enforced automatically, clearly, and consistently.",
+          "tone": "forest"
+        }
+      ]
+    },
+    "guardrails": {
+      "eyebrow": "Fair by default",
+      "title": "Good boundaries make flexibility possible.",
+      "body": "The awkward “can I move it again?” conversation becomes a rule the product explains for you.",
+      "lockedTitle": "This meeting is now locked",
+      "lockedBody": "It starts in less than 24 hours.",
+      "items": [
+        {
+          "icon": "refresh",
+          "title": "One reschedule",
+          "body": "Enough flexibility for a real conflict, without turning the calendar into a moving target."
+        },
+        {
+          "icon": "clock",
+          "title": "24-hour protection",
+          "body": "Once a meeting is close, it stays put. Teachers and peers can plan around it with confidence."
+        },
+        {
+          "icon": "users",
+          "title": "Availability stays in charge",
+          "body": "Students can only move into times the teacher has explicitly made available."
+        }
+      ]
+    },
+    "comparison": {
+      "eyebrow": "Less coordination",
+      "title": "One choice beats nine messages.",
+      "beforeLabel": "The group-chat way",
+      "beforeBadge": "Before",
+      "beforeResult": "messages to move one meeting",
+      "messages": [
+        { "text": "Can we do later?", "variant": "lavender" },
+        { "text": "What times work?", "variant": "stone" },
+        { "text": "Thursday maybe?", "variant": "ember" }
+      ],
+      "afterLabel": "The PeerSlot way",
+      "afterBadge": "Rescheduled",
+      "afterResult": "clear choice from approved times",
+      "day": "THU",
+      "confirmation": "Session moved to 11:30",
+      "confirmationHelp": "Both calendars are up to date."
+    },
+    "finalCta": {
+      "eyebrow": "Make room for real life",
+      "title": "Keep the meeting. Change the slot.",
+      "body": "A quieter calendar for teachers, and a fair second chance for students.",
+      "button": "Preview PeerSlot"
+    },
+    "footer": {
+      "tagline": "Meetings that move without the mess.",
+      "links": [
+        { "label": "Product", "href": "#product" },
+        { "label": "How it works", "href": "#how-it-works" },
+        { "label": "Guardrails", "href": "#guardrails" }
+      ],
+      "copyright": "© {year} PeerSlot"
+    }
+  }
+}

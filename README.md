@@ -77,6 +77,7 @@ The repository currently uses:
 | Language | [TypeScript](https://www.typescriptlang.org/) |
 | UI runtime | [React 19](https://react.dev/) |
 | Styling | [Tailwind CSS 4](https://tailwindcss.com/) |
+| Localization | [next-intl](https://next-intl.dev/) |
 | Database | [Neon Postgres](https://neon.com/) |
 | Database driver | [`@neondatabase/serverless`](https://neon.com/docs/serverless/serverless-driver) |
 | ORM | [Drizzle ORM](https://orm.drizzle.team/) |
@@ -190,6 +191,14 @@ pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+### Localization
+
+The website is available in English at `/en` and Turkish at `/tr`. Visiting
+the root URL selects a locale from the saved preference or the browser's
+language and redirects to the matching localized route. Page copy and metadata
+live in `messages/en.json` and `messages/tr.json`. API routes remain unprefixed
+under `/api`.
 
 ### Available commands
 
