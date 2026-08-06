@@ -13,8 +13,6 @@ import {
 
 import { user } from "@/db/auth-schema";
 
-export const userRole = pgEnum("user_role", ["teacher", "student"]);
-
 export const appointmentStatus = pgEnum("appointment_status", [
   "scheduled",
   "cancelled",
@@ -24,7 +22,18 @@ export const profiles = pgTable("profiles", {
   userId: text("user_id")
     .primaryKey()
     .references(() => user.id, { onDelete: "cascade" }),
-  role: userRole("role").default("student").notNull(),
+  createdAt: timestamp("created_at", {
+    withTimezone: true,
+    mode: "date",
+  })
+    .defaultNow()
+    .notNull(),
+});
+
+export const providerProfiles = pgTable("provider_profiles", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at", {
     withTimezone: true,
     mode: "date",

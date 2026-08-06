@@ -11,7 +11,7 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     user: currentUser.user,
-    role: currentUser.role,
+    capabilities: currentUser.capabilities,
     session: {
       expiresAt: currentUser.session.expiresAt,
     },

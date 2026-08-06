@@ -71,22 +71,23 @@ policy in control.
 
 The repository currently uses:
 
-| Area | Technology |
-| --- | --- |
-| Framework | [Next.js 16](https://nextjs.org/) App Router |
-| Language | [TypeScript](https://www.typescriptlang.org/) |
-| UI runtime | [React 19](https://react.dev/) |
-| Styling | [Tailwind CSS 4](https://tailwindcss.com/) |
-| Localization | [next-intl](https://next-intl.dev/) |
-| Database | [Neon Postgres](https://neon.com/) |
+| Area            | Technology                                                                       |
+| --------------- | -------------------------------------------------------------------------------- |
+| Framework       | [Next.js 16](https://nextjs.org/) App Router                                     |
+| Language        | [TypeScript](https://www.typescriptlang.org/)                                    |
+| UI runtime      | [React 19](https://react.dev/)                                                   |
+| Styling         | [Tailwind CSS 4](https://tailwindcss.com/)                                       |
+| Localization    | [next-intl](https://next-intl.dev/)                                              |
+| Database        | [Neon Postgres](https://neon.com/)                                               |
 | Database driver | [`@neondatabase/serverless`](https://neon.com/docs/serverless/serverless-driver) |
-| ORM | [Drizzle ORM](https://orm.drizzle.team/) |
-| Authentication | [Better Auth](https://www.better-auth.com/) persisted in Neon |
-| Package manager | [pnpm](https://pnpm.io/) |
+| ORM             | [Drizzle ORM](https://orm.drizzle.team/)                                         |
+| Authentication  | [Better Auth](https://www.better-auth.com/) persisted in Neon                    |
+| Package manager | [pnpm](https://pnpm.io/)                                                         |
 
 Better Auth provides email/password sessions and optional Google and Microsoft
-OAuth. Authentication establishes who the user is; PeerSlot's own profile data
-determines whether that user is a teacher or a student.
+OAuth. Authentication establishes who the user is. A provider profile grants
+the capability to publish availability, while every authenticated user can
+book appointments.
 
 FullCalendar and Resend are installed for the later calendar and notification
 work, but are not integrated into the current UI yet.
@@ -118,18 +119,22 @@ deploy while the workflow is being validated.
 ## Initial data model
 
 Better Auth manages its authentication records in Neon. PeerSlot initially
-needs only three application tables:
+uses four application tables:
 
 ```mermaid
 erDiagram
-    PROFILES ||--o{ AVAILABILITY_SLOTS : creates
+    PROFILES ||--o| PROVIDER_PROFILES : enables
+    PROVIDER_PROFILES ||--o{ AVAILABILITY_SLOTS : creates
     PROFILES ||--o{ APPOINTMENTS : attends
     AVAILABILITY_SLOTS ||--o| APPOINTMENTS : reserves
 
     PROFILES {
-        text id PK
-        text name
-        enum role
+        text user_id PK
+        timestamptz created_at
+    }
+
+    PROVIDER_PROFILES {
+        text user_id PK
         timestamptz created_at
     }
 
@@ -202,19 +207,19 @@ under `/api`.
 
 ### Available commands
 
-| Command | Purpose |
-| --- | --- |
-| `pnpm dev` | Start the local development server |
-| `pnpm build` | Create a production build |
-| `pnpm start` | Run the production build |
-| `pnpm lint` | Run ESLint |
-| `pnpm typecheck` | Run TypeScript without emitting files |
-| `pnpm test` | Run the Vitest suite |
-| `pnpm auth:schema` | Regenerate the Better Auth Drizzle schema |
-| `pnpm db:generate` | Generate a migration from schema changes |
-| `pnpm db:migrate` | Apply pending migrations |
-| `pnpm db:studio` | Open Drizzle Studio |
-| `pnpm user:set-role <email> <role>` | Set a local user's application role |
+| Command                            | Purpose                                   |
+| ---------------------------------- | ----------------------------------------- |
+| `pnpm dev`                         | Start the local development server        |
+| `pnpm build`                       | Create a production build                 |
+| `pnpm start`                       | Run the production build                  |
+| `pnpm lint`                        | Run ESLint                                |
+| `pnpm typecheck`                   | Run TypeScript without emitting files     |
+| `pnpm test`                        | Run the Vitest suite                      |
+| `pnpm auth:schema`                 | Regenerate the Better Auth Drizzle schema |
+| `pnpm db:generate`                 | Generate a migration from schema changes  |
+| `pnpm db:migrate`                  | Apply pending migrations                  |
+| `pnpm db:studio`                   | Open Drizzle Studio                       |
+| `pnpm user:grant-provider <email>` | Grant provider capability to a local user |
 
 Copy `.env.example` to `.env.local` and provide the Neon connection string,
 Better Auth secret, application URL, and any OAuth credentials you enable.
@@ -252,7 +257,7 @@ For endpoint examples and the included Bruno collection, see
 
 ### MVP
 
-- [x] Add teacher and student profiles
+- [x] Add user profiles and provider capabilities
 - [x] Add initial teacher availability APIs
 - [ ] Build teacher availability management
 - [ ] Build the student appointment view

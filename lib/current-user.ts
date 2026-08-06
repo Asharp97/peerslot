@@ -1,8 +1,8 @@
-import { eq } from "drizzle-orm";
-
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { findProviderProfile } from "@/lib/provider-profiles";
+import { resolveUserCapabilities } from "@/lib/user-capabilities";
 
 export async function getCurrentUser(request: Request) {
   const session = await auth.api.getSession({
@@ -18,14 +18,10 @@ export async function getCurrentUser(request: Request) {
     .values({ userId: session.user.id })
     .onConflictDoNothing();
 
-  const [profile] = await db
-    .select({ role: profiles.role })
-    .from(profiles)
-    .where(eq(profiles.userId, session.user.id))
-    .limit(1);
+  const providerProfile = await findProviderProfile(session.user.id);
 
   return {
     ...session,
-    role: profile?.role ?? "student",
+    capabilities: resolveUserCapabilities(providerProfile !== null),
   };
 }

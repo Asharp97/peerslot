@@ -16,7 +16,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "user:set-role": "tsx scripts/set-role.ts"
+    "user:grant-provider": "tsx scripts/grant-provider.ts"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "1.6.25",

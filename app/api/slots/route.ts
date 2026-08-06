@@ -56,9 +56,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (currentUser.role !== "teacher") {
+  if (!currentUser.capabilities.canProvide) {
     return NextResponse.json(
-      { error: "Only teachers can create availability slots" },
+      { error: "Only providers can create availability slots" },
       { status: 403 },
     );
   }
