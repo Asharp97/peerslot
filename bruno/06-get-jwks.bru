@@ -1,0 +1,19 @@
+meta {
+  name: Get JWT verification keys
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/api/auth/jwks
+  body: none
+  auth: none
+}
+
+tests {
+  test("JWKS publishes a public key", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().keys).to.be.an("array").and.not.be.empty;
+    expect(res.getBody().keys[0]).to.include.all.keys("kid", "kty", "alg");
+  });
+}

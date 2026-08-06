@@ -1,0 +1,22 @@
+meta {
+  name: List my future slots
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/api/slots
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+tests {
+  test("JWT can list slots", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().slots).to.be.an("array");
+  });
+}

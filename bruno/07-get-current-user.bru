@@ -1,0 +1,24 @@
+meta {
+  name: Get current PeerSlot user
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/api/me
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+tests {
+  test("JWT resolves the current user", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().user.email).to.equal(bru.getEnvVar("testEmail"));
+    expect(res.getBody().authentication).to.equal("jwt");
+    expect(res.getBody().capabilities.canBook).to.equal(true);
+  });
+}

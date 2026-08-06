@@ -12,6 +12,7 @@ post {
 
 headers {
   content-type: application/json
+  origin: {{baseUrl}}
 }
 
 body:json {
@@ -20,4 +21,19 @@ body:json {
     "password": "{{testPassword}}",
     "rememberMe": true
   }
+}
+
+script:post-response {
+  const sessionToken = res.getHeader("set-auth-token");
+  if (sessionToken) {
+    bru.setVar("sessionToken", sessionToken);
+  }
+}
+
+tests {
+  test("credentials create a refreshable session", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().user.email).to.equal(bru.getEnvVar("testEmail"));
+    expect(res.getHeader("set-auth-token")).to.be.a("string").and.not.be.empty;
+  });
 }

@@ -1,10 +1,13 @@
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { betterAuth } from "better-auth";
+import { bearer, jwt } from "better-auth/plugins";
 
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 
 const baseURL = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
+
+export const jwtExpiresInSeconds = 15 * 60;
 
 const google =
   process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
@@ -39,6 +42,24 @@ export const auth = betterAuth({
     autoSignIn: false,
     minPasswordLength: 8,
   },
+  plugins: [
+    bearer({ requireSignature: true }),
+    jwt({
+      jwt: {
+        expirationTime: `${jwtExpiresInSeconds}s`,
+        definePayload: ({ user }) => ({
+          email: user.email,
+          emailVerified: user.emailVerified,
+          image: user.image,
+          name: user.name,
+        }),
+      },
+      jwks: {
+        rotationInterval: 60 * 60 * 24 * 30,
+        gracePeriod: 60 * 60 * 24,
+      },
+    }),
+  ],
   socialProviders: {
     ...(google ? { google } : {}),
     ...(microsoft ? { microsoft } : {}),

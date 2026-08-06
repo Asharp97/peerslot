@@ -84,10 +84,12 @@ The repository currently uses:
 | Authentication  | [Better Auth](https://www.better-auth.com/) persisted in Neon                    |
 | Package manager | [pnpm](https://pnpm.io/)                                                         |
 
-Better Auth provides email/password sessions and optional Google and Microsoft
-OAuth. Authentication establishes who the user is. A provider profile grants
-the capability to publish availability, while every authenticated user can
-book appointments.
+Better Auth provides email/password sessions, short-lived JWT access tokens,
+and optional Google and Microsoft OAuth. PeerSlot application APIs accept
+15-minute JWTs; the revocable Better Auth session is used to issue and refresh
+them. Public verification keys are exposed through JWKS. Authentication
+establishes who the user is. A provider profile grants the capability to
+publish availability, while every authenticated user can book appointments.
 
 FullCalendar and Resend are installed for the later calendar and notification
 work, but are not integrated into the current UI yet.

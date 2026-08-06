@@ -1,0 +1,26 @@
+meta {
+  name: Reject refresh after sign out
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{baseUrl}}/api/auth/refresh
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{revokedSessionToken}}
+}
+
+headers {
+  origin: {{baseUrl}}
+}
+
+tests {
+  test("revoked session cannot refresh a JWT", function () {
+    expect(res.getStatus()).to.equal(401);
+    expect(res.getBody()).to.deep.equal({ error: "Unauthorized" });
+  });
+}

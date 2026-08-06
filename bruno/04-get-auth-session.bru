@@ -7,5 +7,24 @@ meta {
 get {
   url: {{baseUrl}}/api/auth/get-session
   body: none
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{sessionToken}}
+}
+
+script:post-response {
+  const accessToken = res.getHeader("set-auth-jwt");
+  if (accessToken) {
+    bru.setVar("accessToken", accessToken);
+  }
+}
+
+tests {
+  test("session is valid and issues a JWT", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().user.email).to.equal(bru.getEnvVar("testEmail"));
+    expect(res.getHeader("set-auth-jwt").split(".")).to.have.length(3);
+  });
 }

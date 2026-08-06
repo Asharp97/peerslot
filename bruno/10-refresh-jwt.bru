@@ -1,0 +1,35 @@
+meta {
+  name: Refresh JWT access token
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/api/auth/refresh
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{sessionToken}}
+}
+
+headers {
+  origin: {{baseUrl}}
+}
+
+script:post-response {
+  if (res.getBody().token) {
+    bru.setVar("accessToken", res.getBody().token);
+  }
+}
+
+tests {
+  test("active session refreshes the JWT", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().token.split(".")).to.have.length(3);
+    expect(res.getBody().tokenType).to.equal("Bearer");
+    expect(res.getBody().expiresIn).to.equal(900);
+    expect(res.getHeader("cache-control")).to.equal("no-store");
+  });
+}

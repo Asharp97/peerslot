@@ -12,6 +12,7 @@ post {
 
 headers {
   content-type: application/json
+  origin: {{baseUrl}}
 }
 
 body:json {
@@ -20,4 +21,13 @@ body:json {
     "email": "{{testEmail}}",
     "password": "{{testPassword}}"
   }
+}
+
+tests {
+  test("account is created or already exists", function () {
+    expect(res.getStatus()).to.be.oneOf([200, 422]);
+    if (res.getStatus() === 200) {
+      expect(res.getBody().user.email).to.equal(bru.getEnvVar("testEmail"));
+    }
+  });
 }

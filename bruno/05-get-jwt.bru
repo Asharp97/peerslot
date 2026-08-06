@@ -1,0 +1,28 @@
+meta {
+  name: Get JWT access token
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/auth/token
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{sessionToken}}
+}
+
+script:post-response {
+  if (res.getBody().token) {
+    bru.setVar("accessToken", res.getBody().token);
+  }
+}
+
+tests {
+  test("session exchanges for a JWT", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().token.split(".")).to.have.length(3);
+  });
+}

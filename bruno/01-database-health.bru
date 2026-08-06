@@ -9,3 +9,10 @@ get {
   body: none
   auth: none
 }
+
+tests {
+  test("database is reachable", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()).to.deep.equal({ status: "ok", database: "connected" });
+  });
+}

@@ -21,8 +21,20 @@ The API is available at `http://localhost:3000`.
 4. Select the `local` environment.
 5. Run the requests in numeric order.
 
-Bruno's cookie jar stores the session cookie returned by **Sign in with email**.
-The later session, profile, and slot requests reuse that cookie.
+The collection captures Better Auth's signed session token from the
+`set-auth-token` response header. It exchanges that session for a short-lived
+JWT, then sends the JWT as `Authorization: Bearer ...` to PeerSlot application
+routes. Runtime variables keep both credentials in memory only.
+
+Run the full collection to test sign-up, sign-in, JWT issuance, JWKS, protected
+routes, refresh, sign-out, and rejection of refresh after session revocation.
+Every request includes Bruno tests, and token responses use
+`script:post-response` to supply later requests.
+
+The POST requests send `Origin: {{baseUrl}}`. Better Auth validates this header
+against `trustedOrigins` when Bruno's cookie jar includes a session cookie. If
+you change `baseUrl`, update `BETTER_AUTH_URL` to the same origin and restart
+the development server.
 
 Change `testEmail` in `bruno/environments/local.bru` when you want a new user.
 Better Auth will reject a duplicate signup, but the existing account can still
@@ -54,18 +66,33 @@ Call `GET /api/me` to verify `capabilities.canProvide` is `true`, then run
 
 ## Endpoints
 
-| Method | Path                       | Authentication  | Purpose                                 |
-| ------ | -------------------------- | --------------- | --------------------------------------- |
-| `GET`  | `/api/health`              | No              | Verify the application can query Neon   |
-| `POST` | `/api/auth/sign-up/email`  | No              | Create an email/password account        |
-| `POST` | `/api/auth/sign-in/email`  | No              | Create a session cookie                 |
-| `GET`  | `/api/auth/get-session`    | Cookie          | Read the Better Auth session            |
-| `POST` | `/api/auth/sign-out`       | Cookie          | Revoke the current session              |
-| `POST` | `/api/auth/sign-in/social` | No              | Start a Google or Microsoft OAuth flow  |
-| `GET`  | `/api/me`                  | Cookie          | Read the user and PeerSlot capabilities |
-| `GET`  | `/api/slots`               | Cookie          | List future slots for the current user  |
-| `GET`  | `/api/slots?teacherId=...` | Cookie          | List a teacher's future slots           |
-| `POST` | `/api/slots`               | Provider cookie | Create a future availability slot       |
+| Method | Path                       | Authentication       | Purpose                                  |
+| ------ | -------------------------- | -------------------- | ---------------------------------------- |
+| `GET`  | `/api/health`              | No                   | Verify the application can query Neon    |
+| `POST` | `/api/auth/sign-up/email`  | No                   | Create an email/password account         |
+| `POST` | `/api/auth/sign-in/email`  | No                   | Create a revocable Better Auth session   |
+| `GET`  | `/api/auth/get-session`    | Session Bearer/cookie | Inspect the session and receive a JWT     |
+| `GET`  | `/api/auth/token`          | Session Bearer/cookie | Mint a 15-minute JWT                      |
+| `GET`  | `/api/auth/jwks`           | No                   | Publish public JWT verification keys     |
+| `POST` | `/api/auth/refresh`        | Session Bearer/cookie | Mint a replacement 15-minute JWT         |
+| `POST` | `/api/auth/sign-out`       | Session Bearer/cookie | Revoke the current session                |
+| `POST` | `/api/auth/sign-in/social` | No                   | Start Google or Microsoft OAuth          |
+| `GET`  | `/api/me`                  | JWT                  | Read user and PeerSlot capabilities      |
+| `GET`  | `/api/slots`               | JWT                  | List future slots for the current user   |
+| `GET`  | `/api/slots?teacherId=...` | JWT                  | List a provider's future slots           |
+| `POST` | `/api/slots`               | Provider JWT         | Create a future availability slot        |
+
+## Token lifecycle
+
+- The Better Auth session token is the revocable credential used only for
+  session inspection, JWT issuance, refresh, and sign-out.
+- PeerSlot application routes accept only asymmetric JWT access tokens. They
+  validate signature, issuer, audience, and expiration.
+- JWTs expire after 15 minutes. `POST /api/auth/refresh` requires an active
+  Better Auth session and returns `{ token, tokenType, expiresIn }`.
+- Signing out revokes the session, preventing further JWT refreshes.
+- Signing keys rotate every 30 days with a one-day verification grace period;
+  private keys remain encrypted in the database.
 
 ## OAuth testing
 
@@ -79,13 +106,13 @@ The Bruno social-login requests return an authorization URL when
 `disableRedirect` is enabled. Open that URL in a browser to complete the OAuth
 flow. Browser testing is more convenient than Bruno for the redirect and
 consent portion, while Bruno remains useful for inspecting the initial response
-and testing cookie-authenticated API routes.
+and testing Bearer-authenticated API routes.
 
 ## Useful status codes
 
 - `200`: request succeeded
 - `201`: slot created
 - `400`: malformed input
-- `401`: missing or invalid session
+- `401`: missing, invalid, expired, or revoked authentication
 - `403`: signed in, but missing provider capability
 - `503`: the application could not reach Neon
