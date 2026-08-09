@@ -28,12 +28,12 @@ JWT, then sends the JWT as `Authorization: Bearer ...` to PeerSlot application
 routes. Runtime variables keep both credentials in memory only.
 
 Requests are divided into `health`, `auth`, `provider`, `booking-pages`,
-`availability-windows`, and `slots`. Run the full collection to test sign-up,
-sign-in, JWT issuance, JWKS, refresh and session revocation, provider
-onboarding, booking-page publication and link regeneration, availability
-derivation and lifecycle rules, public lookup, and protected slot routes. Every
-request includes Bruno tests, and response scripts supply runtime variables to
-later folders.
+`availability-windows`, `available-times`, and `slots`. Run the full collection
+to test sign-up, sign-in, JWT issuance, JWKS, refresh and session revocation,
+provider onboarding, booking-page publication and link regeneration,
+availability-window lifecycle rules, server-side available-time calculation,
+public lookup, and protected slot routes. Every request includes Bruno tests,
+and response scripts supply runtime variables to later folders.
 
 The Auth folder revokes the session after minting the access JWT. The later
 folders intentionally continue with that short-lived JWT, while the Auth tests
@@ -65,36 +65,41 @@ checks that it derives six 30-minute appointment times. It also covers UTC and
 provider-time-zone representations, past and overlapping-window rejection,
 editing and slot regeneration, disabling/re-enabling, and safe removal.
 
+The Available times folder creates an isolated calculation fixture and checks
+the public date-range endpoint for ordered results plus English and Turkish
+labels. It also checks invalid-range rejection and removes its fixture.
+
 In the browser, the same flow lives at `/en/auth/provider` and
 `/tr/auth/provider`. Email/password, Google, and Microsoft authentication all
 continue into the same provider setup form and dashboard.
 
 ## Endpoints
 
-| Method   | Path                                | Authentication        | Purpose                                |
-| -------- | ----------------------------------- | --------------------- | -------------------------------------- |
-| `GET`    | `/api/health`                       | No                    | Verify the application can query Neon  |
-| `POST`   | `/api/auth/sign-up/email`           | No                    | Create an email/password account       |
-| `POST`   | `/api/auth/sign-in/email`           | No                    | Create a revocable Better Auth session |
-| `GET`    | `/api/auth/get-session`             | Session Bearer/cookie | Inspect the session and receive a JWT  |
-| `GET`    | `/api/auth/token`                   | Session Bearer/cookie | Mint a 15-minute JWT                   |
-| `GET`    | `/api/auth/jwks`                    | No                    | Publish public JWT verification keys   |
-| `POST`   | `/api/auth/refresh`                 | Session Bearer/cookie | Mint a replacement 15-minute JWT       |
-| `POST`   | `/api/auth/sign-out`                | Session Bearer/cookie | Revoke the current session             |
-| `POST`   | `/api/auth/sign-in/social`          | No                    | Start Google or Microsoft OAuth        |
-| `GET`    | `/api/me`                           | JWT                   | Read user and PeerSlot capabilities    |
-| `GET`    | `/api/provider`                     | JWT                   | Read provider onboarding status        |
-| `POST`   | `/api/provider`                     | JWT                   | Create/update profile and booking page |
-| `GET`    | `/api/booking-page`                 | Provider JWT          | Read the provider's booking page       |
-| `PATCH`  | `/api/booking-page`                 | Provider JWT          | Update settings or publication state   |
-| `POST`   | `/api/booking-page/regenerate-link` | Provider JWT          | Replace a compromised public slug      |
-| `GET`    | `/api/booking-pages/:slug`          | No                    | Read a published booking page          |
-| `GET`    | `/api/availability-windows`         | Provider JWT          | List provider availability windows     |
-| `POST`   | `/api/availability-windows`         | Provider JWT          | Create a window and derive slots       |
-| `PATCH`  | `/api/availability-windows/:id`     | Provider JWT          | Edit, disable, or re-enable a window   |
-| `DELETE` | `/api/availability-windows/:id`     | Provider JWT          | Remove or preserve a future window     |
-| `GET`    | `/api/slots`                        | JWT                   | List future slots for the current user |
-| `GET`    | `/api/slots?teacherId=...`          | JWT                   | List a provider's future slots         |
+| Method   | Path                                    | Authentication        | Purpose                                |
+| -------- | --------------------------------------- | --------------------- | -------------------------------------- |
+| `GET`    | `/api/health`                           | No                    | Verify the application can query Neon  |
+| `POST`   | `/api/auth/sign-up/email`               | No                    | Create an email/password account       |
+| `POST`   | `/api/auth/sign-in/email`               | No                    | Create a revocable Better Auth session |
+| `GET`    | `/api/auth/get-session`                 | Session Bearer/cookie | Inspect the session and receive a JWT  |
+| `GET`    | `/api/auth/token`                       | Session Bearer/cookie | Mint a 15-minute JWT                   |
+| `GET`    | `/api/auth/jwks`                        | No                    | Publish public JWT verification keys   |
+| `POST`   | `/api/auth/refresh`                     | Session Bearer/cookie | Mint a replacement 15-minute JWT       |
+| `POST`   | `/api/auth/sign-out`                    | Session Bearer/cookie | Revoke the current session             |
+| `POST`   | `/api/auth/sign-in/social`              | No                    | Start Google or Microsoft OAuth        |
+| `GET`    | `/api/me`                               | JWT                   | Read user and PeerSlot capabilities    |
+| `GET`    | `/api/provider`                         | JWT                   | Read provider onboarding status        |
+| `POST`   | `/api/provider`                         | JWT                   | Create/update profile and booking page |
+| `GET`    | `/api/booking-page`                     | Provider JWT          | Read the provider's booking page       |
+| `PATCH`  | `/api/booking-page`                     | Provider JWT          | Update settings or publication state   |
+| `POST`   | `/api/booking-page/regenerate-link`     | Provider JWT          | Replace a compromised public slug      |
+| `GET`    | `/api/booking-pages/:slug`              | No                    | Read a published booking page          |
+| `GET`    | `/api/availability-windows`             | Provider JWT          | List provider availability windows     |
+| `POST`   | `/api/availability-windows`             | Provider JWT          | Create a window and derive slots       |
+| `PATCH`  | `/api/availability-windows/:id`         | Provider JWT          | Edit, disable, or re-enable a window   |
+| `DELETE` | `/api/availability-windows/:id`         | Provider JWT          | Remove or preserve a future window     |
+| `GET`    | `/api/booking-pages/:slug/availability` | No                    | Calculate available times in a range   |
+| `GET`    | `/api/slots`                            | JWT                   | List future slots for the current user |
+| `GET`    | `/api/slots?teacherId=...`              | JWT                   | List a provider's future slots         |
 
 ## Availability lifecycle
 
@@ -105,7 +110,15 @@ continue into the same provider setup form and dashboard.
   configured appointment. Active windows on the same booking page cannot
   overlap.
 - PeerSlot derives appointment times from the booking page's appointment
-  duration and booking interval. Providers no longer create slots manually.
+  duration and booking interval. For the MVP these settings are equal, which
+  prevents generated times from overlapping. Providers no longer create slots
+  manually.
+- The public calculation endpoint requires offset-aware `startsAt` and `endsAt`
+  query parameters. It returns ordered UTC instants and `localized.en` plus
+  `localized.tr` labels in the provider's configured time zone.
+- Minimum notice and scheduled appointments remove candidate times. Cancelled
+  appointments do not block their former times, and inactive windows are not
+  loaded.
 - Disabling a window removes unbooked derived slots. Removing a future window
   deletes it only when it has no appointments; otherwise the window is disabled
   and retained with its booked slots.

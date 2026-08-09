@@ -26,11 +26,26 @@ describe("booking pages", () => {
         title: "Book with Ceyda",
         timeZone: "Europe/Istanbul",
         appointmentDurationMinutes: 30,
-        bookingIntervalMinutes: 15,
+        bookingIntervalMinutes: 30,
         minimumNoticeHours: 24,
         isPublished: false,
       }),
-    ).toMatchObject({ isPublished: false, bookingIntervalMinutes: 15 });
+    ).toMatchObject({ isPublished: false, bookingIntervalMinutes: 30 });
+  });
+
+  it("keeps appointment duration equal to the interval for the MVP", () => {
+    expect(
+      bookingPageSettingsSchema.parse({ appointmentDurationMinutes: 45 }),
+    ).toMatchObject({
+      appointmentDurationMinutes: 45,
+      bookingIntervalMinutes: 45,
+    });
+    expect(
+      bookingPageSettingsSchema.safeParse({
+        appointmentDurationMinutes: 30,
+        bookingIntervalMinutes: 15,
+      }).success,
+    ).toBe(false);
   });
 
   it("rejects empty, unknown, or invalid updates", () => {

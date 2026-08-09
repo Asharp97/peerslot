@@ -1,0 +1,54 @@
+meta {
+  name: Create calculation test window
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/availability-windows
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  content-type: application/json
+  origin: {{baseUrl}}
+}
+
+body:json {
+  {
+    "startsAt": "{{calculationStartsAt}}",
+    "endsAt": "{{calculationEndsAt}}"
+  }
+}
+
+script:pre-request {
+  const startsAt = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
+  startsAt.setUTCMinutes(0, 0, 0);
+  startsAt.setUTCHours(startsAt.getUTCHours() + 1);
+  const endsAt = new Date(startsAt.getTime() + 3 * 60 * 60 * 1000);
+  const rangeStartsAt = new Date(startsAt.getTime() - 60 * 60 * 1000);
+  const rangeEndsAt = new Date(endsAt.getTime() + 60 * 60 * 1000);
+
+  bru.setVar("calculationStartsAt", startsAt.toISOString());
+  bru.setVar("calculationEndsAt", endsAt.toISOString());
+  bru.setVar("calculationRangeStartsAt", rangeStartsAt.toISOString());
+  bru.setVar("calculationRangeEndsAt", rangeEndsAt.toISOString());
+}
+
+script:post-response {
+  if (res.getBody().window) {
+    bru.setVar("calculationWindowId", res.getBody().window.id);
+  }
+}
+
+tests {
+  test("calculation fixture derives six source slots", function () {
+    expect(res.getStatus()).to.equal(201);
+    expect(res.getBody().slots).to.have.length(6);
+  });
+}

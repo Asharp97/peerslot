@@ -23,6 +23,28 @@ export const bookingPageSettingsSchema = z
   .strict()
   .refine((settings) => Object.keys(settings).length > 0, {
     message: "At least one booking page setting is required",
+  })
+  .refine(
+    ({ appointmentDurationMinutes, bookingIntervalMinutes }) =>
+      appointmentDurationMinutes === undefined ||
+      bookingIntervalMinutes === undefined ||
+      appointmentDurationMinutes === bookingIntervalMinutes,
+    {
+      message: "Appointment duration must equal the booking interval",
+      path: ["bookingIntervalMinutes"],
+    },
+  )
+  .transform((settings) => {
+    const schedulingInterval =
+      settings.appointmentDurationMinutes ?? settings.bookingIntervalMinutes;
+
+    if (schedulingInterval === undefined) return settings;
+
+    return {
+      ...settings,
+      appointmentDurationMinutes: schedulingInterval,
+      bookingIntervalMinutes: schedulingInterval,
+    };
   });
 
 export const bookingSlugSchema = z

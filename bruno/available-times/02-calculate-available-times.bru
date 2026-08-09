@@ -1,0 +1,25 @@
+meta {
+  name: Calculate public available times
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/booking-pages/{{bookingSlug}}/availability?startsAt={{calculationRangeStartsAt}}&endsAt={{calculationRangeEndsAt}}
+  body: none
+  auth: none
+}
+
+tests {
+  test("window produces ordered localized appointment times", function () {
+    const body = res.getBody();
+    const starts = body.availableTimes.map((time) => time.startsAt);
+
+    expect(res.getStatus()).to.equal(200);
+    expect(body.timeZone).to.equal("Europe/Istanbul");
+    expect(body.availableTimes).to.have.length(6);
+    expect(starts).to.deep.equal([...starts].sort());
+    expect(body.availableTimes[0].localized.en).to.be.a("string");
+    expect(body.availableTimes[0].localized.tr).to.be.a("string");
+  });
+}

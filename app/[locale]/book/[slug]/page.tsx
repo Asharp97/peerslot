@@ -1,19 +1,14 @@
-import { and, asc, eq, gt, isNull, notExists, or } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { CalendarDays, Clock3, Globe2 } from "lucide-react";
 import { hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 
 import { db } from "@/db";
-import {
-  appointments,
-  availabilitySlots,
-  availabilityWindows,
-  bookingPages,
-  providerProfiles,
-} from "@/db/schema";
+import { bookingPages, providerProfiles } from "@/db/schema";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
+import { getAvailableTimesForPublishedBookingPage } from "@/lib/available-times";
 
 type BookingPageProps = {
   params: Promise<{ locale: string; slug: string }>;
@@ -34,7 +29,6 @@ export default async function BookingPage({ params }: BookingPageProps) {
       title: bookingPages.title,
       timeZone: bookingPages.timeZone,
       duration: bookingPages.appointmentDurationMinutes,
-      minimumNoticeHours: bookingPages.minimumNoticeHours,
       rest: providerProfiles.restBetweenSessionsMinutes,
     })
     .from(bookingPages)
@@ -47,47 +41,13 @@ export default async function BookingPage({ params }: BookingPageProps) {
 
   if (!provider) notFound();
 
-  const earliestStart = new Date(
-    new Date().getTime() + provider.minimumNoticeHours * 60 * 60 * 1000,
-  );
-  const slots = await db
-    .select({
-      id: availabilitySlots.id,
-      startsAt: availabilitySlots.startsAt,
-      endsAt: availabilitySlots.endsAt,
-    })
-    .from(availabilitySlots)
-    .leftJoin(
-      availabilityWindows,
-      eq(availabilityWindows.id, availabilitySlots.availabilityWindowId),
-    )
-    .where(
-      and(
-        eq(availabilitySlots.teacherId, provider.userId),
-        gt(availabilitySlots.startsAt, earliestStart),
-        or(
-          isNull(availabilitySlots.availabilityWindowId),
-          eq(availabilityWindows.isActive, true),
-        ),
-        notExists(
-          db
-            .select({ id: appointments.id })
-            .from(appointments)
-            .where(eq(appointments.slotId, availabilitySlots.id)),
-        ),
-      ),
-    )
-    .orderBy(asc(availabilitySlots.startsAt))
-    .limit(12);
-
-  const formatter = new Intl.DateTimeFormat(locale, {
-    timeZone: provider.timeZone,
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+  const rangeStartsAt = new Date();
+  const availability = await getAvailableTimesForPublishedBookingPage(slug, {
+    startsAt: rangeStartsAt,
+    endsAt: new Date(rangeStartsAt.getTime() + 30 * 24 * 60 * 60 * 1000),
   });
+  const slots = availability?.availableTimes.slice(0, 12) ?? [];
+  const availabilityLocale = locale === "tr" ? "tr" : "en";
 
   return (
     <main className="min-h-screen bg-lumen-cream px-4 py-8 text-vast-ink sm:py-14">
@@ -148,10 +108,10 @@ export default async function BookingPage({ params }: BookingPageProps) {
                 {slots.map((slot) => (
                   <button
                     className="min-h-14 rounded-xl border-2 border-vast-ink bg-lumen-cream px-4 text-left text-sm font-semibold transition hover:-translate-y-0.5 hover:bg-lavender-whisper"
-                    key={slot.id}
+                    key={slot.startsAt.toISOString()}
                     type="button"
                   >
-                    {formatter.format(slot.startsAt)}
+                    {slot.localized[availabilityLocale]}
                   </button>
                 ))}
               </div>

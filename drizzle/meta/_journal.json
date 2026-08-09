@@ -43,6 +43,13 @@
       "when": 1786283324358,
       "tag": "0005_availability_windows",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786301651659,
+      "tag": "0006_mvp_booking_interval",
+      "breakpoints": true
     }
   ]
 }

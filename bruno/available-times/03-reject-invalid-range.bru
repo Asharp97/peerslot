@@ -1,0 +1,18 @@
+meta {
+  name: Reject invalid calculation range
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/booking-pages/{{bookingSlug}}/availability?startsAt={{calculationRangeEndsAt}}&endsAt={{calculationRangeStartsAt}}
+  body: none
+  auth: none
+}
+
+tests {
+  test("range end must follow its start", function () {
+    expect(res.getStatus()).to.equal(400);
+    expect(res.getBody().error).to.equal("Invalid availability range");
+  });
+}

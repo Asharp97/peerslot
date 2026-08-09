@@ -210,6 +210,14 @@ appointment starts using the page's duration and booking interval. Active
 windows cannot overlap. Disabling a window removes its unbooked derived slots;
 windows and slots referenced by appointments are retained for history.
 
+The public availability service accepts a booking page and UTC date range,
+loads its active windows, and returns ordered appointment times that fit fully
+inside those windows and the requested range. It applies minimum notice,
+scheduled-appointment, and disabled-window rules server-side. Each result
+includes English and Turkish labels formatted in the provider's time zone. For
+the MVP, appointment duration and booking interval must be equal so generated
+times cannot overlap.
+
 An audit table for reschedule history can be introduced after the basic
 workflow is working.
 

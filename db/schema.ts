@@ -127,6 +127,10 @@ export const bookingPages = pgTable(
       sql`${table.bookingIntervalMinutes} between 5 and 180`,
     ),
     check(
+      "booking_page_duration_matches_interval",
+      sql`${table.appointmentDurationMinutes} = ${table.bookingIntervalMinutes}`,
+    ),
+    check(
       "booking_page_notice_valid",
       sql`${table.minimumNoticeHours} between 0 and 720`,
     ),
