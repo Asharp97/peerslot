@@ -3,10 +3,8 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { bookingPages, providerProfiles } from "@/db/schema";
-import {
-  generateBookingSlug,
-  type ProviderOnboardingInput,
-} from "@/lib/provider-onboarding";
+import { withBookingSlugRetries } from "@/lib/booking-page";
+import { type ProviderOnboardingInput } from "@/lib/provider-onboarding";
 
 export type ProviderProfile = typeof providerProfiles.$inferSelect;
 
@@ -53,7 +51,7 @@ export async function findProviderSetup(userId: string) {
     .from(providerProfiles)
     .leftJoin(
       bookingPages,
-      eq(bookingPages.providerUserId, providerProfiles.userId),
+      eq(bookingPages.providerId, providerProfiles.userId),
     )
     .where(eq(providerProfiles.userId, userId))
     .limit(1);
@@ -65,48 +63,40 @@ export async function completeProviderOnboarding(
   userId: string,
   input: ProviderOnboardingInput,
 ) {
-  for (let attempt = 0; attempt < 5; attempt += 1) {
-    const slug = generateBookingSlug();
+  return withBookingSlugRetries(async (slug) => {
+    await db.batch([
+      db
+        .insert(providerProfiles)
+        .values({ userId, ...input })
+        .onConflictDoUpdate({
+          target: providerProfiles.userId,
+          set: { ...input, updatedAt: new Date() },
+        }),
+      db
+        .insert(bookingPages)
+        .values({
+          providerId: userId,
+          slug,
+          title: `Book with ${input.displayName}`,
+          timeZone: input.timeZone,
+          appointmentDurationMinutes: input.defaultAppointmentDurationMinutes,
+          bookingIntervalMinutes: input.defaultAppointmentDurationMinutes,
+          minimumNoticeHours: input.minimumBookingNoticeMinutes / 60,
+          isPublished: true,
+        })
+        .onConflictDoNothing({ target: bookingPages.providerId }),
+      db
+        .update(user)
+        .set({ name: input.displayName })
+        .where(eq(user.id, userId)),
+    ]);
 
-    try {
-      await db.batch([
-        db
-          .insert(providerProfiles)
-          .values({ userId, ...input })
-          .onConflictDoUpdate({
-            target: providerProfiles.userId,
-            set: { ...input, updatedAt: new Date() },
-          }),
-        db
-          .insert(bookingPages)
-          .values({ providerUserId: userId, slug })
-          .onConflictDoNothing({ target: bookingPages.providerUserId }),
-        db
-          .update(user)
-          .set({ name: input.displayName })
-          .where(eq(user.id, userId)),
-      ]);
+    const setup = await findProviderSetup(userId);
 
-      const setup = await findProviderSetup(userId);
-
-      if (setup?.bookingPage) {
-        return setup;
-      }
-    } catch (error) {
-      if (!isUniqueViolation(error)) {
-        throw error;
-      }
+    if (setup?.bookingPage) {
+      return setup;
     }
-  }
 
-  throw new Error("Unable to generate a unique booking page slug.");
-}
-
-function isUniqueViolation(error: unknown) {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    error.code === "23505"
-  );
+    throw new Error("Unable to load the completed provider setup.");
+  });
 }

@@ -1,7 +1,7 @@
 meta {
-  name: Get Google sign-in URL
+  name: Get Microsoft sign-in URL
   type: http
-  seq: 12
+  seq: 9
 }
 
 post {
@@ -17,17 +17,17 @@ headers {
 
 body:json {
   {
-    "provider": "google",
+    "provider": "microsoft",
     "callbackURL": "{{baseUrl}}/en/auth/provider",
     "disableRedirect": true
   }
 }
 
 tests {
-  test("Google OAuth is configured or explicitly unavailable", function () {
+  test("Microsoft OAuth is configured or explicitly unavailable", function () {
     expect(res.getStatus()).to.be.oneOf([200, 400, 404]);
     if (res.getStatus() === 200) {
-      expect(res.getBody().url).to.include("accounts.google.com");
+      expect(res.getBody().url).to.include("login.microsoftonline.com");
     }
   });
 }

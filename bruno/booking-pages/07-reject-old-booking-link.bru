@@ -1,0 +1,17 @@
+meta {
+  name: Reject old booking link
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/api/booking-pages/{{previousBookingSlug}}
+  body: none
+  auth: none
+}
+
+tests {
+  test("old slug stops resolving immediately", function () {
+    expect(res.getStatus()).to.equal(404);
+  });
+}

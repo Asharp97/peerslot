@@ -152,8 +152,14 @@ erDiagram
 
     BOOKING_PAGES {
         uuid id PK
-        text provider_user_id FK
+        text provider_id FK,UK
         text slug UK
+        text title
+        text time_zone
+        integer appointment_duration_minutes
+        integer booking_interval_minutes
+        integer minimum_notice_hours
+        boolean is_published
         timestamptz created_at
         timestamptz updated_at
     }
@@ -180,6 +186,11 @@ erDiagram
 The appointment's `slot_id` will be unique so PostgreSQL, rather than a
 browser-side check, prevents double-booking. The database will also constrain
 `reschedule_count` to `0` or `1`.
+
+Each provider has exactly one booking page in the MVP. Its unique
+eight-character slug is a public locator, not an authentication credential.
+Providers can publish or hide the page and rotate the slug immediately if a
+link is compromised.
 
 An audit table for reschedule history can be introduced after the basic
 workflow is working.

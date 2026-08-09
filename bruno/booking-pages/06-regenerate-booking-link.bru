@@ -1,0 +1,36 @@
+meta {
+  name: Regenerate compromised booking link
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/booking-page/regenerate-link
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  origin: {{baseUrl}}
+}
+
+script:post-response {
+  if (res.getBody().bookingPage) {
+    bru.setVar("previousBookingSlug", bru.getVar("bookingSlug"));
+    bru.setVar("bookingSlug", res.getBody().bookingPage.slug);
+  }
+}
+
+tests {
+  test("regeneration replaces the public slug", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().bookingPage.slug).to.have.length(8);
+    expect(res.getBody().bookingPage.slug).not.to.equal(
+      bru.getVar("previousBookingSlug")
+    );
+  });
+}

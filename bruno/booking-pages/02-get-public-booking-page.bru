@@ -1,0 +1,21 @@
+meta {
+  name: Get published booking page
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/booking-pages/{{bookingSlug}}
+  body: none
+  auth: none
+}
+
+tests {
+  test("published page is publicly readable", function () {
+    const page = res.getBody().bookingPage;
+    expect(res.getStatus()).to.equal(200);
+    expect(page.slug).to.equal(bru.getVar("bookingSlug"));
+    expect(page.provider.displayName).to.equal("Ceyda");
+    expect(page).not.to.have.property("providerId");
+  });
+}

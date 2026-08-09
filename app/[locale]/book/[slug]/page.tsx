@@ -25,23 +25,24 @@ export default async function BookingPage({ params }: BookingPageProps) {
       userId: providerProfiles.userId,
       displayName: providerProfiles.displayName,
       professionalTitle: providerProfiles.professionalTitle,
-      timeZone: providerProfiles.timeZone,
-      duration: providerProfiles.defaultAppointmentDurationMinutes,
-      minimumNotice: providerProfiles.minimumBookingNoticeMinutes,
+      title: bookingPages.title,
+      timeZone: bookingPages.timeZone,
+      duration: bookingPages.appointmentDurationMinutes,
+      minimumNoticeHours: bookingPages.minimumNoticeHours,
       rest: providerProfiles.restBetweenSessionsMinutes,
     })
     .from(bookingPages)
     .innerJoin(
       providerProfiles,
-      eq(providerProfiles.userId, bookingPages.providerUserId),
+      eq(providerProfiles.userId, bookingPages.providerId),
     )
-    .where(eq(bookingPages.slug, slug))
+    .where(and(eq(bookingPages.slug, slug), eq(bookingPages.isPublished, true)))
     .limit(1);
 
   if (!provider) notFound();
 
   const earliestStart = new Date(
-    new Date().getTime() + provider.minimumNotice * 60 * 1000,
+    new Date().getTime() + provider.minimumNoticeHours * 60 * 60 * 1000,
   );
   const slots = await db
     .select({
@@ -116,7 +117,7 @@ export default async function BookingPage({ params }: BookingPageProps) {
 
           <section className="p-7 sm:p-10">
             <h2 className="font-display text-4xl tracking-[-0.03em]">
-              {t("availableTimes")}
+              {provider.title}
             </h2>
             <p className="mt-2 text-sm leading-6 text-[#62625a]">
               {t("availableTimesBody")}

@@ -1,9 +1,6 @@
-import { randomInt } from "node:crypto";
-
 import { z } from "zod";
 
-const slugAlphabet =
-  "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+import { isValidTimeZone } from "./booking-page";
 
 export const appointmentDurationOptions = [15, 30, 45, 60, 90] as const;
 export const bookingNoticeOptions = [0, 60, 240, 720, 1440, 2880] as const;
@@ -38,21 +35,3 @@ export const providerOnboardingSchema = z.object({
 });
 
 export type ProviderOnboardingInput = z.infer<typeof providerOnboardingSchema>;
-
-export function generateBookingSlug(
-  pickIndex: (maximum: number) => number = randomInt,
-) {
-  return Array.from(
-    { length: 8 },
-    () => slugAlphabet[pickIndex(slugAlphabet.length)],
-  ).join("");
-}
-
-export function isValidTimeZone(timeZone: string) {
-  try {
-    new Intl.DateTimeFormat("en", { timeZone }).format();
-    return true;
-  } catch {
-    return false;
-  }
-}

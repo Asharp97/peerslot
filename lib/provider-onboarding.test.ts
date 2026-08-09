@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  generateBookingSlug,
-  isValidTimeZone,
-  providerOnboardingSchema,
-} from "./provider-onboarding";
+import { providerOnboardingSchema } from "./provider-onboarding";
+import { generateBookingSlug, isValidTimeZone } from "./booking-page";
 
 describe("provider onboarding", () => {
   it("generates an eight-character booking slug", () => {

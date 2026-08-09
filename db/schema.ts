@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  boolean,
   check,
   index,
   integer,
@@ -86,11 +87,21 @@ export const bookingPages = pgTable(
   "booking_pages",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    providerUserId: text("provider_user_id")
+    providerId: text("provider_id")
       .notNull()
       .unique()
-      .references(() => user.id, { onDelete: "cascade" }),
+      .references(() => providerProfiles.userId, { onDelete: "cascade" }),
     slug: text("slug").notNull().unique(),
+    title: text("title").default("Book a meeting").notNull(),
+    timeZone: text("time_zone").default("UTC").notNull(),
+    appointmentDurationMinutes: integer("appointment_duration_minutes")
+      .default(30)
+      .notNull(),
+    bookingIntervalMinutes: integer("booking_interval_minutes")
+      .default(30)
+      .notNull(),
+    minimumNoticeHours: integer("minimum_notice_hours").default(24).notNull(),
+    isPublished: boolean("is_published").default(true).notNull(),
     createdAt: timestamp("created_at", {
       withTimezone: true,
       mode: "date",
@@ -107,6 +118,18 @@ export const bookingPages = pgTable(
   },
   (table) => [
     check("booking_page_slug_length", sql`char_length(${table.slug}) = 8`),
+    check(
+      "booking_page_duration_valid",
+      sql`${table.appointmentDurationMinutes} between 15 and 180`,
+    ),
+    check(
+      "booking_page_interval_valid",
+      sql`${table.bookingIntervalMinutes} between 5 and 180`,
+    ),
+    check(
+      "booking_page_notice_valid",
+      sql`${table.minimumNoticeHours} between 0 and 720`,
+    ),
   ],
 );
 

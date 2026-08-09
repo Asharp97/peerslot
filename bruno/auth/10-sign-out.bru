@@ -1,7 +1,7 @@
 meta {
   name: Sign out
   type: http
-  seq: 14
+  seq: 10
 }
 
 post {
@@ -22,7 +22,6 @@ script:post-response {
   if (res.getStatus() === 200) {
     bru.setVar("revokedSessionToken", bru.getVar("sessionToken"));
     bru.deleteVar("sessionToken");
-    bru.deleteVar("accessToken");
   }
 }
 

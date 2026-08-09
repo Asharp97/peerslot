@@ -522,7 +522,7 @@ function NumberSelect({
   onChange: (value: number) => void;
 }) {
   return (
-    <label className="block text-sm font-semibold">
+    <label className="flex flex-col justify-between text-sm font-semibold">
       {label}
       <select
         className={fieldClassName}

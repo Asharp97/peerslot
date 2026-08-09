@@ -1,0 +1,22 @@
+meta {
+  name: Booking slug is not authentication
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/api/me
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{bookingSlug}}
+}
+
+tests {
+  test("public slug cannot authenticate a user", function () {
+    expect(res.getStatus()).to.equal(401);
+    expect(res.getBody()).to.deep.equal({ error: "Unauthorized" });
+  });
+}

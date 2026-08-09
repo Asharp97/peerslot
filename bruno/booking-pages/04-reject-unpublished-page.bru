@@ -1,0 +1,18 @@
+meta {
+  name: Hide unpublished booking page
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/booking-pages/{{bookingSlug}}
+  body: none
+  auth: none
+}
+
+tests {
+  test("unpublished page is not publicly discoverable", function () {
+    expect(res.getStatus()).to.equal(404);
+    expect(res.getBody()).to.deep.equal({ error: "Booking page not found" });
+  });
+}

@@ -1,7 +1,7 @@
 meta {
   name: Complete provider onboarding
   type: http
-  seq: 9
+  seq: 1
 }
 
 post {
@@ -43,6 +43,12 @@ tests {
     expect(res.getBody().profile.displayName).to.equal("Ceyda");
     expect(res.getBody().profile.restBetweenSessionsMinutes).to.equal(10);
     expect(res.getBody().bookingPage.slug).to.have.length(8);
+    expect(res.getBody().bookingPage.title).to.equal("Book with Ceyda");
+    expect(res.getBody().bookingPage.timeZone).to.equal("Europe/Istanbul");
+    expect(res.getBody().bookingPage.appointmentDurationMinutes).to.equal(30);
+    expect(res.getBody().bookingPage.bookingIntervalMinutes).to.equal(30);
+    expect(res.getBody().bookingPage.minimumNoticeHours).to.equal(24);
+    expect(res.getBody().bookingPage.isPublished).to.equal(true);
     expect(res.getBody().capabilities.canProvide).to.equal(true);
   });
 }

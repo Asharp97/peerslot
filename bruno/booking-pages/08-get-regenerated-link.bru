@@ -1,0 +1,18 @@
+meta {
+  name: Get regenerated booking link
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/api/booking-pages/{{bookingSlug}}
+  body: none
+  auth: none
+}
+
+tests {
+  test("new slug resolves the published page", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().bookingPage.slug).to.equal(bru.getVar("bookingSlug"));
+  });
+}

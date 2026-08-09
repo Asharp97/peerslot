@@ -1,0 +1,35 @@
+meta {
+  name: Get my booking page
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/booking-page
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+script:post-response {
+  if (res.getBody().bookingPage) {
+    bru.setVar("bookingSlug", res.getBody().bookingPage.slug);
+  }
+}
+
+tests {
+  test("provider owns one configured booking page", function () {
+    const page = res.getBody().bookingPage;
+    expect(res.getStatus()).to.equal(200);
+    expect(page.slug).to.have.length(8);
+    expect(page.title).to.equal("Book with Ceyda");
+    expect(page.timeZone).to.equal("Europe/Istanbul");
+    expect(page.appointmentDurationMinutes).to.equal(30);
+    expect(page.bookingIntervalMinutes).to.equal(30);
+    expect(page.minimumNoticeHours).to.equal(24);
+    expect(page.isPublished).to.equal(true);
+  });
+}
