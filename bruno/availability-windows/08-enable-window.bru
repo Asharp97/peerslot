@@ -1,0 +1,34 @@
+meta {
+  name: Re-enable availability window
+  type: http
+  seq: 8
+}
+
+patch {
+  url: {{baseUrl}}/api/availability-windows/{{availabilityWindowId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  content-type: application/json
+  origin: {{baseUrl}}
+}
+
+body:json {
+  {
+    "isActive": true
+  }
+}
+
+tests {
+  test("re-enabling restores derived slots", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().window.isActive).to.equal(true);
+    expect(res.getBody().slots).to.have.length(8);
+  });
+}

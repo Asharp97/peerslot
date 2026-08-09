@@ -123,13 +123,14 @@ deploy while the workflow is being validated.
 ## Initial data model
 
 Better Auth manages its authentication records in Neon. PeerSlot initially
-uses five application tables:
+uses six application tables:
 
 ```mermaid
 erDiagram
     PROFILES ||--o| PROVIDER_PROFILES : enables
     PROVIDER_PROFILES ||--|| BOOKING_PAGES : publishes
-    PROVIDER_PROFILES ||--o{ AVAILABILITY_SLOTS : creates
+    BOOKING_PAGES ||--o{ AVAILABILITY_WINDOWS : owns
+    AVAILABILITY_WINDOWS ||--o{ AVAILABILITY_SLOTS : derives
     PROFILES ||--o{ APPOINTMENTS : attends
     AVAILABILITY_SLOTS ||--o| APPOINTMENTS : reserves
 
@@ -164,9 +165,20 @@ erDiagram
         timestamptz updated_at
     }
 
+    AVAILABILITY_WINDOWS {
+        uuid id PK
+        uuid booking_page_id FK
+        timestamptz starts_at
+        timestamptz ends_at
+        boolean is_active
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
     AVAILABILITY_SLOTS {
         uuid id PK
         text teacher_id FK
+        uuid availability_window_id FK
         timestamptz starts_at
         timestamptz ends_at
         timestamptz created_at
@@ -191,6 +203,12 @@ Each provider has exactly one booking page in the MVP. Its unique
 eight-character slug is a public locator, not an authentication credential.
 Providers can publish or hide the page and rotate the slug immediately if a
 link is compromised.
+
+Providers enter free-time windows in their booking-page time zone. The API
+stores the instants as UTC-backed `timestamptz` values and derives individual
+appointment starts using the page's duration and booking interval. Active
+windows cannot overlap. Disabling a window removes its unbooked derived slots;
+windows and slots referenced by appointments are retained for history.
 
 An audit table for reschedule history can be introduced after the basic
 workflow is working.

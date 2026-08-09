@@ -1,0 +1,27 @@
+meta {
+  name: List availability windows
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/availability-windows
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+tests {
+  test("provider sees windows in the booking-page time zone", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().windows).to.be.an("array").and.not.be.empty;
+    const window = res.getBody().windows.find(
+      (item) => item.id === bru.getVar("availabilityWindowId")
+    );
+    expect(window.timeZone).to.equal("Europe/Istanbul");
+    expect(window.localStartsAt).to.be.a("string");
+  });
+}

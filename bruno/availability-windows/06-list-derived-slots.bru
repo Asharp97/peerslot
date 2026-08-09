@@ -1,0 +1,27 @@
+meta {
+  name: List derived appointment times
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/api/slots
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+tests {
+  test("active edited window exposes eight appointment times", function () {
+    const startsAt = bru.getVar("windowStartsAt");
+    const derived = res.getBody().slots.filter(
+      (slot) => slot.startsAt >= startsAt &&
+        slot.startsAt < bru.getVar("editedWindowEndsAt")
+    );
+    expect(res.getStatus()).to.equal(200);
+    expect(derived).to.have.length(8);
+  });
+}

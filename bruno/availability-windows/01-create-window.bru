@@ -1,0 +1,65 @@
+meta {
+  name: Create availability window
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/availability-windows
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  content-type: application/json
+  origin: {{baseUrl}}
+}
+
+body:json {
+  {
+    "startsAt": "{{windowStartsAt}}",
+    "endsAt": "{{windowEndsAt}}"
+  }
+}
+
+script:pre-request {
+  const startsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  startsAt.setUTCMinutes(0, 0, 0);
+  startsAt.setUTCHours(startsAt.getUTCHours() + 1);
+  const endsAt = new Date(startsAt.getTime() + 3 * 60 * 60 * 1000);
+  const editedEndsAt = new Date(startsAt.getTime() + 4 * 60 * 60 * 1000);
+  const overlapStartsAt = new Date(startsAt.getTime() + 30 * 60 * 1000);
+  const overlapEndsAt = new Date(startsAt.getTime() + 90 * 60 * 1000);
+  const pastStartsAt = new Date(Date.now() - 2 * 60 * 60 * 1000);
+  const pastEndsAt = new Date(Date.now() - 60 * 60 * 1000);
+
+  bru.setVar("windowStartsAt", startsAt.toISOString());
+  bru.setVar("windowEndsAt", endsAt.toISOString());
+  bru.setVar("editedWindowEndsAt", editedEndsAt.toISOString());
+  bru.setVar("overlapStartsAt", overlapStartsAt.toISOString());
+  bru.setVar("overlapEndsAt", overlapEndsAt.toISOString());
+  bru.setVar("pastStartsAt", pastStartsAt.toISOString());
+  bru.setVar("pastEndsAt", pastEndsAt.toISOString());
+}
+
+script:post-response {
+  if (res.getBody().window) {
+    bru.setVar("availabilityWindowId", res.getBody().window.id);
+  }
+}
+
+tests {
+  test("three-hour window derives six 30-minute slots", function () {
+    const body = res.getBody();
+    expect(res.getStatus()).to.equal(201);
+    expect(body.window.startsAt).to.equal(bru.getVar("windowStartsAt"));
+    expect(body.window.endsAt).to.equal(bru.getVar("windowEndsAt"));
+    expect(body.window.timeZone).to.equal("Europe/Istanbul");
+    expect(body.window.localStartsAt).to.be.a("string");
+    expect(body.slots).to.have.length(6);
+  });
+}

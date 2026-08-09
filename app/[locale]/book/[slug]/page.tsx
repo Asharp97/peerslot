@@ -1,11 +1,17 @@
-import { and, asc, eq, gt } from "drizzle-orm";
+import { and, asc, eq, gt, isNull, notExists, or } from "drizzle-orm";
 import { CalendarDays, Clock3, Globe2 } from "lucide-react";
 import { hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 
 import { db } from "@/db";
-import { availabilitySlots, bookingPages, providerProfiles } from "@/db/schema";
+import {
+  appointments,
+  availabilitySlots,
+  availabilityWindows,
+  bookingPages,
+  providerProfiles,
+} from "@/db/schema";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 
@@ -51,10 +57,24 @@ export default async function BookingPage({ params }: BookingPageProps) {
       endsAt: availabilitySlots.endsAt,
     })
     .from(availabilitySlots)
+    .leftJoin(
+      availabilityWindows,
+      eq(availabilityWindows.id, availabilitySlots.availabilityWindowId),
+    )
     .where(
       and(
         eq(availabilitySlots.teacherId, provider.userId),
         gt(availabilitySlots.startsAt, earliestStart),
+        or(
+          isNull(availabilitySlots.availabilityWindowId),
+          eq(availabilityWindows.isActive, true),
+        ),
+        notExists(
+          db
+            .select({ id: appointments.id })
+            .from(appointments)
+            .where(eq(appointments.slotId, availabilitySlots.id)),
+        ),
       ),
     )
     .orderBy(asc(availabilitySlots.startsAt))

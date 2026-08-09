@@ -102,6 +102,8 @@ export function ProviderDashboard({ copy }: { copy: DashboardCopy }) {
     await fetch("/api/auth/sign-out", {
       method: "POST",
       credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}), // Pass an empty JSON object
     });
     router.replace("/auth/provider");
   }

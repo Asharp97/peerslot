@@ -1,0 +1,34 @@
+meta {
+  name: Reject overlapping window
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/availability-windows
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  content-type: application/json
+  origin: {{baseUrl}}
+}
+
+body:json {
+  {
+    "startsAt": "{{overlapStartsAt}}",
+    "endsAt": "{{overlapEndsAt}}"
+  }
+}
+
+tests {
+  test("active windows cannot overlap", function () {
+    expect(res.getStatus()).to.equal(409);
+    expect(res.getBody().error).to.include("overlaps");
+  });
+}

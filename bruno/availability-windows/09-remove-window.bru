@@ -1,0 +1,30 @@
+meta {
+  name: Remove future availability window
+  type: http
+  seq: 9
+}
+
+delete {
+  url: {{baseUrl}}/api/availability-windows/{{availabilityWindowId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  origin: {{baseUrl}}
+}
+
+tests {
+  test("unbooked future window is removed", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()).to.deep.equal({
+      deleted: true,
+      preservedForAppointments: false,
+      window: null
+    });
+  });
+}

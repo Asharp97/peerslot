@@ -133,6 +133,45 @@ export const bookingPages = pgTable(
   ],
 );
 
+export const availabilityWindows = pgTable(
+  "availability_windows",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    bookingPageId: uuid("booking_page_id")
+      .notNull()
+      .references(() => bookingPages.id, { onDelete: "cascade" }),
+    startsAt: timestamp("starts_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
+    endsAt: timestamp("ends_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", {
+      withTimezone: true,
+      mode: "date",
+    })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("availability_windows_booking_page_idx").on(table.bookingPageId),
+    check(
+      "availability_window_ends_after_start",
+      sql`${table.endsAt} > ${table.startsAt}`,
+    ),
+  ],
+);
+
 export const availabilitySlots = pgTable(
   "availability_slots",
   {
@@ -140,6 +179,10 @@ export const availabilitySlots = pgTable(
     teacherId: text("teacher_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+    availabilityWindowId: uuid("availability_window_id").references(
+      () => availabilityWindows.id,
+      { onDelete: "cascade" },
+    ),
     startsAt: timestamp("starts_at", {
       withTimezone: true,
       mode: "date",
@@ -156,6 +199,7 @@ export const availabilitySlots = pgTable(
       .notNull(),
   },
   (table) => [
+    index("availability_slots_window_idx").on(table.availabilityWindowId),
     uniqueIndex("teacher_slot_start_unique").on(
       table.teacherId,
       table.startsAt,

@@ -1,0 +1,37 @@
+meta {
+  name: Edit availability window
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/api/availability-windows/{{availabilityWindowId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  content-type: application/json
+  origin: {{baseUrl}}
+}
+
+body:json {
+  {
+    "startsAt": "{{windowStartsAt}}",
+    "endsAt": "{{editedWindowEndsAt}}"
+  }
+}
+
+tests {
+  test("editing the window regenerates derived slots", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().window.endsAt).to.equal(
+      bru.getVar("editedWindowEndsAt")
+    );
+    expect(res.getBody().slots).to.have.length(8);
+  });
+}

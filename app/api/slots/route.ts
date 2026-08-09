@@ -1,24 +1,13 @@
-import { and, asc, eq, gt, lt } from "drizzle-orm";
+import { and, asc, eq, gt, isNull, notExists, or } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { z } from "zod";
 
 import { db } from "@/db";
-import { availabilitySlots } from "@/db/schema";
+import {
+  appointments,
+  availabilitySlots,
+  availabilityWindows,
+} from "@/db/schema";
 import { getCurrentUser } from "@/lib/current-user";
-
-const createSlotSchema = z
-  .object({
-    startsAt: z.coerce.date(),
-    endsAt: z.coerce.date(),
-  })
-  .refine(({ startsAt, endsAt }) => endsAt > startsAt, {
-    message: "endsAt must be after startsAt",
-    path: ["endsAt"],
-  })
-  .refine(({ startsAt }) => startsAt > new Date(), {
-    message: "startsAt must be in the future",
-    path: ["startsAt"],
-  });
 
 export async function GET(request: Request) {
   const currentUser = await getCurrentUser(request);
@@ -38,98 +27,27 @@ export async function GET(request: Request) {
       endsAt: availabilitySlots.endsAt,
     })
     .from(availabilitySlots)
+    .leftJoin(
+      availabilityWindows,
+      eq(availabilityWindows.id, availabilitySlots.availabilityWindowId),
+    )
     .where(
       and(
         eq(availabilitySlots.teacherId, teacherId),
         gt(availabilitySlots.startsAt, new Date()),
+        or(
+          isNull(availabilitySlots.availabilityWindowId),
+          eq(availabilityWindows.isActive, true),
+        ),
+        notExists(
+          db
+            .select({ id: appointments.id })
+            .from(appointments)
+            .where(eq(appointments.slotId, availabilitySlots.id)),
+        ),
       ),
     )
     .orderBy(asc(availabilitySlots.startsAt));
 
   return NextResponse.json({ slots });
-}
-
-export async function POST(request: Request) {
-  const currentUser = await getCurrentUser(request);
-
-  if (!currentUser) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  if (!currentUser.capabilities.canProvide) {
-    return NextResponse.json(
-      { error: "Only providers can create availability slots" },
-      { status: 403 },
-    );
-  }
-
-  const input = createSlotSchema.safeParse(
-    await request.json().catch(() => null),
-  );
-
-  if (!input.success) {
-    return NextResponse.json(
-      {
-        error: "Invalid request body",
-        issues: input.error.issues,
-      },
-      { status: 400 },
-    );
-  }
-
-  const restMinutes = currentUser.provider?.restBetweenSessionsMinutes ?? 10;
-  const restMilliseconds = restMinutes * 60 * 1000;
-  const [conflictingSlot] = await db
-    .select({ id: availabilitySlots.id })
-    .from(availabilitySlots)
-    .where(
-      and(
-        eq(availabilitySlots.teacherId, currentUser.user.id),
-        lt(
-          availabilitySlots.startsAt,
-          new Date(input.data.endsAt.getTime() + restMilliseconds),
-        ),
-        gt(
-          availabilitySlots.endsAt,
-          new Date(input.data.startsAt.getTime() - restMilliseconds),
-        ),
-      ),
-    )
-    .limit(1);
-
-  if (conflictingSlot) {
-    return NextResponse.json(
-      {
-        error: `Availability must leave ${restMinutes} minutes between sessions`,
-      },
-      { status: 409 },
-    );
-  }
-
-  try {
-    const [slot] = await db
-      .insert(availabilitySlots)
-      .values({
-        teacherId: currentUser.user.id,
-        startsAt: input.data.startsAt,
-        endsAt: input.data.endsAt,
-      })
-      .returning();
-
-    return NextResponse.json({ slot }, { status: 201 });
-  } catch (error) {
-    if (
-      typeof error === "object" &&
-      error !== null &&
-      "code" in error &&
-      error.code === "23505"
-    ) {
-      return NextResponse.json(
-        { error: "A slot already starts at that time" },
-        { status: 409 },
-      );
-    }
-
-    throw error;
-  }
 }
