@@ -16,10 +16,10 @@ rules. The first version focuses on a deliberately narrow workflow:
 - Two students can never claim the same slot.
 
 > [!NOTE]
-> PeerSlot is in the initial development stage. The Next.js application and
-> Neon schema, authentication routes, and initial slot APIs are in place.
-> Scheduling screens and the complete appointment workflow are still being
-> implemented.
+> PeerSlot is in the initial development stage. Provider authentication,
+> onboarding, booking-page creation, and initial slot APIs are in place.
+> Availability management and the complete appointment workflow are still
+> being implemented.
 
 ## The problem
 
@@ -88,8 +88,10 @@ Better Auth provides email/password sessions, short-lived JWT access tokens,
 and optional Google and Microsoft OAuth. PeerSlot application APIs accept
 15-minute JWTs; the revocable Better Auth session is used to issue and refresh
 them. Public verification keys are exposed through JWKS. Authentication
-establishes who the user is. A provider profile grants the capability to
-publish availability, while every authenticated user can book appointments.
+establishes who the user is. Provider onboarding creates a profile and one
+public booking page with an eight-character slug. The profile grants the
+capability to publish availability, while every authenticated user can book
+appointments.
 
 FullCalendar and Resend are installed for the later calendar and notification
 work, but are not integrated into the current UI yet.
@@ -121,11 +123,12 @@ deploy while the workflow is being validated.
 ## Initial data model
 
 Better Auth manages its authentication records in Neon. PeerSlot initially
-uses four application tables:
+uses five application tables:
 
 ```mermaid
 erDiagram
     PROFILES ||--o| PROVIDER_PROFILES : enables
+    PROVIDER_PROFILES ||--|| BOOKING_PAGES : publishes
     PROVIDER_PROFILES ||--o{ AVAILABILITY_SLOTS : creates
     PROFILES ||--o{ APPOINTMENTS : attends
     AVAILABILITY_SLOTS ||--o| APPOINTMENTS : reserves
@@ -137,7 +140,22 @@ erDiagram
 
     PROVIDER_PROFILES {
         text user_id PK
+        text display_name
+        text professional_title
+        text time_zone
+        integer default_appointment_duration_minutes
+        integer minimum_booking_notice_minutes
+        integer rest_between_sessions_minutes
         timestamptz created_at
+        timestamptz updated_at
+    }
+
+    BOOKING_PAGES {
+        uuid id PK
+        text provider_user_id FK
+        text slug UK
+        timestamptz created_at
+        timestamptz updated_at
     }
 
     AVAILABILITY_SLOTS {
@@ -198,6 +216,11 @@ pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+Provider registration and sign-in are available at
+`http://localhost:3000/en/auth/provider`. Email/password, Google, and Microsoft
+authentication all continue into the same setup form. It defaults rest time to
+10 minutes, creates the provider's booking page, and redirects to the dashboard.
 
 ### Localization
 
@@ -260,6 +283,7 @@ For endpoint examples and the included Bruno collection, see
 ### MVP
 
 - [x] Add user profiles and provider capabilities
+- [x] Add provider registration, onboarding, and booking-page creation
 - [x] Add initial teacher availability APIs
 - [ ] Build teacher availability management
 - [ ] Build the student appointment view

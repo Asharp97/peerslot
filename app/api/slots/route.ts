@@ -1,4 +1,4 @@
-import { and, asc, eq, gt } from "drizzle-orm";
+import { and, asc, eq, gt, lt } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -74,6 +74,35 @@ export async function POST(request: Request) {
         issues: input.error.issues,
       },
       { status: 400 },
+    );
+  }
+
+  const restMinutes = currentUser.provider?.restBetweenSessionsMinutes ?? 10;
+  const restMilliseconds = restMinutes * 60 * 1000;
+  const [conflictingSlot] = await db
+    .select({ id: availabilitySlots.id })
+    .from(availabilitySlots)
+    .where(
+      and(
+        eq(availabilitySlots.teacherId, currentUser.user.id),
+        lt(
+          availabilitySlots.startsAt,
+          new Date(input.data.endsAt.getTime() + restMilliseconds),
+        ),
+        gt(
+          availabilitySlots.endsAt,
+          new Date(input.data.startsAt.getTime() - restMilliseconds),
+        ),
+      ),
+    )
+    .limit(1);
+
+  if (conflictingSlot) {
+    return NextResponse.json(
+      {
+        error: `Availability must leave ${restMinutes} minutes between sessions`,
+      },
+      { status: 409 },
     );
   }
 

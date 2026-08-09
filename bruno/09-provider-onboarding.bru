@@ -1,0 +1,48 @@
+meta {
+  name: Complete provider onboarding
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/api/provider
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  content-type: application/json
+  origin: {{baseUrl}}
+}
+
+body:json {
+  {
+    "displayName": "Ceyda",
+    "professionalTitle": "Counselor",
+    "timeZone": "Europe/Istanbul",
+    "defaultAppointmentDurationMinutes": 30,
+    "minimumBookingNoticeMinutes": 1440,
+    "restBetweenSessionsMinutes": 10
+  }
+}
+
+script:post-response {
+  if (res.getBody().bookingPage) {
+    bru.setVar("bookingSlug", res.getBody().bookingPage.slug);
+  }
+}
+
+tests {
+  test("provider profile and booking page are ready", function () {
+    expect(res.getStatus()).to.be.oneOf([200, 201]);
+    expect(res.getBody().status).to.equal("active");
+    expect(res.getBody().profile.displayName).to.equal("Ceyda");
+    expect(res.getBody().profile.restBetweenSessionsMinutes).to.equal(10);
+    expect(res.getBody().bookingPage.slug).to.have.length(8);
+    expect(res.getBody().capabilities.canProvide).to.equal(true);
+  });
+}

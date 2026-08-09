@@ -39,6 +39,7 @@ export async function getCurrentUser(request: Request) {
 
   return {
     user: currentUser,
+    provider: providerProfile,
     authentication: "jwt" as const,
     capabilities: resolveUserCapabilities(providerProfile !== null),
   };

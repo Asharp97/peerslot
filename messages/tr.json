@@ -19,14 +19,14 @@
       "english": "İngilizceye geç",
       "turkish": "Türkçeye geç"
     },
-    "headerCta": "Takvimi gör",
+    "headerCta": "Rezervasyon sayfanı oluştur",
     "hero": {
       "eyebrow": "Sınırları belli planlama",
       "titleMuted": "Planlar değişir.",
       "titleLead": "Takviminiz",
       "titleEmphasis": "sakin kalır.",
       "body": "Öğrencilere bir görüşmeyi, 24 saatlik süre dolmadan önce onayladığınız başka bir saate taşımaları için tek ve adil bir yol sunun.",
-      "primaryCta": "Akışı incele",
+      "primaryCta": "Rezervasyon sayfanı oluştur",
       "secondaryCta": "Nasıl çalışır?",
       "rulesLabel": "PeerSlot planlama kuralları",
       "rules": [
@@ -136,7 +136,7 @@
       "eyebrow": "Hayata yer açın",
       "title": "Görüşme kalsın. Saati değişsin.",
       "body": "Öğretmenler için daha sakin bir takvim, öğrenciler için adil bir ikinci şans.",
-      "button": "PeerSlot'u incele"
+      "button": "Rezervasyon sayfanı oluştur"
     },
     "footer": {
       "tagline": "Karmaşa olmadan değişen görüşmeler.",
@@ -147,5 +147,86 @@
       ],
       "copyright": "© {year} PeerSlot"
     }
+  },
+  "ProviderAuth": {
+    "eyebrow": "Sağlayıcılar için",
+    "title": "Sunduğunuz her görüşme için tek sayfa.",
+    "body": "Sağlayıcı hesabınızı oluşturun, planlama varsayılanlarını seçin ve sınırlarınızı koruyan bir rezervasyon sayfası paylaşın.",
+    "securityNote": "PeerSlot, sağlayıcı API'leri için kısa ömürlü JWT kullanır. Tarayıcı oturumunuz yalnızca erişim belirtecini oluşturmak ve yenilemek için kullanılır.",
+    "flow": {
+      "checking": "Sağlayıcı hesabınız kontrol ediliyor…",
+      "brandTagline": "Sağlayıcı erişimi",
+      "signInTab": "Giriş yap",
+      "registerTab": "Kayıt ol",
+      "signInTitle": "Tekrar hoş geldiniz.",
+      "registerTitle": "Sağlayıcı hesabınızı oluşturun.",
+      "signInBody": "Rezervasyon sayfanızı ve uygunluk saatlerinizi yönetmek için giriş yapın.",
+      "registerBody": "E-posta, Google veya Microsoft ile başlayın. Kurulum yaklaşık bir dakika sürer.",
+      "nameLabel": "Adınız",
+      "emailLabel": "E-posta",
+      "passwordLabel": "Parola",
+      "signInAction": "Giriş yap",
+      "registerAction": "Sağlayıcı hesabı oluştur",
+      "orContinue": "veya şununla devam et",
+      "googleAction": "Google",
+      "microsoftAction": "Microsoft",
+      "onboardingEyebrow": "Sağlayıcı kurulumu",
+      "onboardingTitle": "Rezervasyon sayfanızı oluşturun.",
+      "onboardingBody": "Bu varsayılanlar öğrencilerin gördüğü saatleri belirler. Daha sonra panelinizden değiştirebilirsiniz.",
+      "displayNameLabel": "Görünen ad",
+      "professionalTitleLabel": "Mesleki unvan",
+      "professionalTitlePlaceholder": "Danışman",
+      "timeZoneLabel": "Saat dilimi",
+      "durationLabel": "Görüşme süresi",
+      "noticeLabel": "Minimum rezervasyon bildirimi",
+      "restLabel": "Görüşmeler arası dinlenme",
+      "restHelp": "Ardışık görüşmelerin birbirine değmemesi için varsayılan olarak on dakika seçilir.",
+      "createAction": "Rezervasyon sayfası oluştur",
+      "minutes": "dk",
+      "noticeOptions": {
+        "0": "Minimum yok",
+        "60": "1 saat",
+        "240": "4 saat",
+        "720": "12 saat",
+        "1440": "24 saat",
+        "2880": "48 saat"
+      },
+      "errors": {
+        "auth": "Kimlik doğrulama tamamlanamadı. Bilgilerinizi kontrol edip tekrar deneyin.",
+        "social": "Bu sosyal sağlayıcı kullanılamıyor veya yapılandırılmamış.",
+        "session": "Erişim belirteci oluşturulamadı. Lütfen tekrar giriş yapın.",
+        "onboarding": "Sağlayıcı profiliniz oluşturulamadı. Alanları kontrol edip tekrar deneyin."
+      }
+    }
+  },
+  "ProviderDashboard": {
+    "content": {
+      "checking": "Sağlayıcı paneliniz yükleniyor…",
+      "eyebrow": "Sağlayıcı paneli",
+      "title": "Rezervasyon sayfanız hazır.",
+      "welcome": "Hoş geldiniz, {name}. Sayfanızı paylaşın, ardından size uygun saatleri ekleyin.",
+      "bookingPage": "Rezervasyon sayfası",
+      "live": "Yayında",
+      "viewPage": "Sayfayı gör",
+      "copyLink": "Bağlantıyı kopyala",
+      "copied": "Kopyalandı",
+      "settings": "Planlama varsayılanları",
+      "duration": "Süre",
+      "notice": "Rezervasyon bildirimi",
+      "rest": "Dinlenme süresi",
+      "timeZone": "Saat dilimi",
+      "minutes": "dk",
+      "signOut": "Çıkış yap"
+    }
+  },
+  "BookingPage": {
+    "eyebrow": "Görüşme rezervasyonu",
+    "duration": "Süre",
+    "timeZone": "Saat dilimi",
+    "rest": "Görüşmeler arası dinlenme",
+    "minutes": "dakika",
+    "availableTimes": "Bir saat seçin",
+    "availableTimesBody": "Tüm saatler sağlayıcının saat diliminde gösterilir ve minimum rezervasyon bildirimine uyar.",
+    "noTimes": "Henüz rezervasyon yapılabilir saat yok. Lütfen daha sonra tekrar kontrol edin."
   }
 }

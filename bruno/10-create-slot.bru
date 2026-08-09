@@ -1,7 +1,7 @@
 meta {
   name: Create provider slot
   type: http
-  seq: 9
+  seq: 10
 }
 
 post {
@@ -40,12 +40,8 @@ script:post-response {
 }
 
 tests {
-  test("JWT reaches the provider capability guard", function () {
-    expect(res.getStatus()).to.be.oneOf([201, 403]);
-    if (res.getStatus() === 201) {
-      expect(res.getBody().slot.startsAt).to.equal(bru.getVar("slotStartsAt"));
-    } else {
-      expect(res.getBody().error).to.include("providers");
-    }
+  test("onboarded provider creates an availability slot", function () {
+    expect(res.getStatus()).to.equal(201);
+    expect(res.getBody().slot.startsAt).to.equal(bru.getVar("slotStartsAt"));
   });
 }

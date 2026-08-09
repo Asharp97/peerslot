@@ -302,14 +302,14 @@ export default async function Home({ params }: HomeProps) {
                 tr: t("languageSwitcher.turkish"),
               }}
             />
-            <a
-              href="#product"
+            <Link
+              href="/auth/provider"
               className="inline-flex min-h-13 items-center justify-center gap-2 rounded-3xl border-2 border-vast-ink bg-lavender-whisper px-4.5 text-sm leading-none font-semibold transition duration-200 hover:-translate-y-0.5 hover:bg-ember-glow max-sm:min-h-[42px] max-sm:min-w-[42px] max-sm:px-2 max-sm:text-xs"
               aria-label={t("headerCta")}
             >
               <span className="max-sm:hidden">{t("headerCta")}</span>
               <ArrowRight size={16} aria-hidden="true" />
-            </a>
+            </Link>
           </div>
         </nav>
       </header>
@@ -361,8 +361,8 @@ export default async function Home({ params }: HomeProps) {
           </p>
 
           <div className="relative z-10 mt-8 flex gap-3 max-sm:w-full max-sm:flex-col">
-            <a
-              href="#product"
+            <Link
+              href="/auth/provider"
               className={clsx(
                 buttonBase,
                 "bg-lavender-whisper hover:bg-ember-glow max-sm:w-full",
@@ -370,7 +370,7 @@ export default async function Home({ params }: HomeProps) {
             >
               {t("hero.primaryCta")}
               <ArrowRight size={18} aria-hidden="true" />
-            </a>
+            </Link>
             <a
               href="#how-it-works"
               className={clsx(
@@ -629,8 +629,8 @@ export default async function Home({ params }: HomeProps) {
               <p className="max-w-[360px] text-[17px] leading-[1.5]">
                 {t("finalCta.body")}
               </p>
-              <a
-                href="#product"
+              <Link
+                href="/auth/provider"
                 className={clsx(
                   buttonBase,
                   "mt-7 bg-vast-ink text-lumen-cream hover:bg-forest-ink",
@@ -638,7 +638,7 @@ export default async function Home({ params }: HomeProps) {
               >
                 {t("finalCta.button")}
                 <ArrowRight size={18} aria-hidden="true" />
-              </a>
+              </Link>
             </div>
           </div>
         </section>

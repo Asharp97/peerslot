@@ -11,6 +11,7 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     user: currentUser.user,
+    provider: currentUser.provider,
     capabilities: currentUser.capabilities,
     authentication: currentUser.authentication,
   });

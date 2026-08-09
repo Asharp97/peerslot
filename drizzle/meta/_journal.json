@@ -22,6 +22,13 @@
       "when": 1786029801791,
       "tag": "0002_jwt_auth",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1786208126455,
+      "tag": "0003_provider_booking_pages",
+      "breakpoints": true
     }
   ]
 }

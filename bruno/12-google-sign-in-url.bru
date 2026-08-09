@@ -1,7 +1,7 @@
 meta {
   name: Get Google sign-in URL
   type: http
-  seq: 11
+  seq: 12
 }
 
 post {
@@ -18,7 +18,7 @@ headers {
 body:json {
   {
     "provider": "google",
-    "callbackURL": "{{baseUrl}}",
+    "callbackURL": "{{baseUrl}}/en/auth/provider",
     "disableRedirect": true
   }
 }

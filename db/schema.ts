@@ -30,17 +30,85 @@ export const profiles = pgTable("profiles", {
     .notNull(),
 });
 
-export const providerProfiles = pgTable("provider_profiles", {
-  userId: text("user_id")
-    .primaryKey()
-    .references(() => user.id, { onDelete: "cascade" }),
-  createdAt: timestamp("created_at", {
-    withTimezone: true,
-    mode: "date",
-  })
-    .defaultNow()
-    .notNull(),
-});
+export const providerProfiles = pgTable(
+  "provider_profiles",
+  {
+    userId: text("user_id")
+      .primaryKey()
+      .references(() => user.id, { onDelete: "cascade" }),
+    displayName: text("display_name").default("Provider").notNull(),
+    professionalTitle: text("professional_title")
+      .default("Professional")
+      .notNull(),
+    timeZone: text("time_zone").default("UTC").notNull(),
+    defaultAppointmentDurationMinutes: integer(
+      "default_appointment_duration_minutes",
+    )
+      .default(30)
+      .notNull(),
+    minimumBookingNoticeMinutes: integer("minimum_booking_notice_minutes")
+      .default(24 * 60)
+      .notNull(),
+    restBetweenSessionsMinutes: integer("rest_between_sessions_minutes")
+      .default(10)
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", {
+      withTimezone: true,
+      mode: "date",
+    })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    check(
+      "provider_duration_valid",
+      sql`${table.defaultAppointmentDurationMinutes} between 15 and 180`,
+    ),
+    check(
+      "provider_booking_notice_valid",
+      sql`${table.minimumBookingNoticeMinutes} between 0 and 43200`,
+    ),
+    check(
+      "provider_rest_time_valid",
+      sql`${table.restBetweenSessionsMinutes} between 0 and 120`,
+    ),
+  ],
+);
+
+export const bookingPages = pgTable(
+  "booking_pages",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    providerUserId: text("provider_user_id")
+      .notNull()
+      .unique()
+      .references(() => user.id, { onDelete: "cascade" }),
+    slug: text("slug").notNull().unique(),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", {
+      withTimezone: true,
+      mode: "date",
+    })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    check("booking_page_slug_length", sql`char_length(${table.slug}) = 8`),
+  ],
+);
 
 export const availabilitySlots = pgTable(
   "availability_slots",

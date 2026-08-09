@@ -19,14 +19,14 @@
       "english": "Switch to English",
       "turkish": "Switch to Turkish"
     },
-    "headerCta": "See the schedule",
+    "headerCta": "Create your booking page",
     "hero": {
       "eyebrow": "Scheduling, with boundaries",
       "titleMuted": "Plans change.",
       "titleLead": "Your calendar",
       "titleEmphasis": "stays calm.",
       "body": "Give students one fair way to move a meeting—into a time you already approved, before the 24-hour window closes.",
-      "primaryCta": "Watch the flow",
+      "primaryCta": "Create your booking page",
       "secondaryCta": "How it works",
       "rulesLabel": "PeerSlot scheduling rules",
       "rules": [
@@ -136,7 +136,7 @@
       "eyebrow": "Make room for real life",
       "title": "Keep the meeting. Change the slot.",
       "body": "A quieter calendar for teachers, and a fair second chance for students.",
-      "button": "Preview PeerSlot"
+      "button": "Create your booking page"
     },
     "footer": {
       "tagline": "Meetings that move without the mess.",
@@ -147,5 +147,86 @@
       ],
       "copyright": "© {year} PeerSlot"
     }
+  },
+  "ProviderAuth": {
+    "eyebrow": "For providers",
+    "title": "One page for every meeting you offer.",
+    "body": "Create your provider account, choose your scheduling defaults, and share a booking page that stays inside your boundaries.",
+    "securityNote": "PeerSlot uses a short-lived JWT for provider APIs. Your browser session is used only to issue and refresh that access token.",
+    "flow": {
+      "checking": "Checking your provider account…",
+      "brandTagline": "Provider access",
+      "signInTab": "Sign in",
+      "registerTab": "Register",
+      "signInTitle": "Welcome back.",
+      "registerTitle": "Create your provider account.",
+      "signInBody": "Sign in to manage your booking page and availability.",
+      "registerBody": "Start with email, Google, or Microsoft. Setup takes about a minute.",
+      "nameLabel": "Your name",
+      "emailLabel": "Email",
+      "passwordLabel": "Password",
+      "signInAction": "Sign in",
+      "registerAction": "Create provider account",
+      "orContinue": "or continue with",
+      "googleAction": "Google",
+      "microsoftAction": "Microsoft",
+      "onboardingEyebrow": "Provider setup",
+      "onboardingTitle": "Create your booking page.",
+      "onboardingBody": "These defaults shape the times students see. You can refine them later from your dashboard.",
+      "displayNameLabel": "Display name",
+      "professionalTitleLabel": "Professional title",
+      "professionalTitlePlaceholder": "Counselor",
+      "timeZoneLabel": "Time zone",
+      "durationLabel": "Appointment duration",
+      "noticeLabel": "Minimum booking notice",
+      "restLabel": "Rest between sessions",
+      "restHelp": "Ten minutes is selected by default so consecutive meetings never touch.",
+      "createAction": "Create booking page",
+      "minutes": "min",
+      "noticeOptions": {
+        "0": "No minimum",
+        "60": "1 hour",
+        "240": "4 hours",
+        "720": "12 hours",
+        "1440": "24 hours",
+        "2880": "48 hours"
+      },
+      "errors": {
+        "auth": "We could not complete authentication. Check your details and try again.",
+        "social": "This social provider is unavailable or not configured.",
+        "session": "We could not create an access token. Please sign in again.",
+        "onboarding": "Your provider profile could not be created. Review the fields and try again."
+      }
+    }
+  },
+  "ProviderDashboard": {
+    "content": {
+      "checking": "Loading your provider dashboard…",
+      "eyebrow": "Provider dashboard",
+      "title": "Your booking page is ready.",
+      "welcome": "Welcome, {name}. Share your page, then add the times that work for you.",
+      "bookingPage": "Booking page",
+      "live": "Live",
+      "viewPage": "View page",
+      "copyLink": "Copy link",
+      "copied": "Copied",
+      "settings": "Scheduling defaults",
+      "duration": "Duration",
+      "notice": "Booking notice",
+      "rest": "Rest time",
+      "timeZone": "Time zone",
+      "minutes": "min",
+      "signOut": "Sign out"
+    }
+  },
+  "BookingPage": {
+    "eyebrow": "Book a meeting",
+    "duration": "Duration",
+    "timeZone": "Time zone",
+    "rest": "Rest between sessions",
+    "minutes": "minutes",
+    "availableTimes": "Choose a time",
+    "availableTimesBody": "All times are shown in the provider’s time zone and respect their minimum booking notice.",
+    "noTimes": "No bookable times are available yet. Please check again later."
   }
 }
