@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { and, asc, eq, gt, lt, ne, notExists } from "drizzle-orm";
+import { and, asc, eq, ne, notExists } from "drizzle-orm";
 
 import { db } from "@/db";
 import {
@@ -12,8 +12,11 @@ import {
   availabilityWindowRemovalMode,
   deriveAvailabilitySlots,
   formatInTimeZone,
+  type AvailabilityRecurrence,
   type AvailabilityWindowRange,
+  type AvailabilityWindowRule,
 } from "@/lib/availability-window";
+import { availabilityRulesOverlap } from "@/lib/availability-recurrence";
 import { findBookingPage } from "@/lib/booking-pages";
 import { isPostgresError } from "@/lib/database-errors";
 
@@ -21,6 +24,7 @@ type AvailabilityWindowUpdate = {
   startsAt?: Date;
   endsAt?: Date;
   isActive?: boolean;
+  recurrence?: AvailabilityRecurrence;
 };
 
 export class AvailabilityWindowNotFoundError extends Error {
@@ -66,22 +70,23 @@ export async function listAvailabilityWindows(providerId: string) {
 
 export async function createAvailabilityWindow(
   providerId: string,
-  range: AvailabilityWindowRange,
+  rule: AvailabilityWindowRule,
 ) {
   const bookingPage = await requireBookingPage(providerId);
-  validateFutureRange(range);
-  await assertNoActiveOverlap(bookingPage.id, range);
+  validateFutureRange(rule);
+  await assertNoActiveOverlap(bookingPage.id, rule, bookingPage.timeZone);
 
   const windowId = randomUUID();
-  const slots = deriveSlots(range, bookingPage);
+  const slots = deriveSlots(rule, bookingPage);
 
   try {
     await db.batch([
       db.insert(availabilityWindows).values({
         id: windowId,
         bookingPageId: bookingPage.id,
-        startsAt: range.startsAt,
-        endsAt: range.endsAt,
+        startsAt: rule.startsAt,
+        endsAt: rule.endsAt,
+        recurrence: rule.recurrence,
       }),
       db.insert(availabilitySlots).values(
         slots.map((slot) => ({
@@ -110,16 +115,23 @@ export async function updateAvailabilityWindow(
   };
   const timesChanged = input.startsAt !== undefined;
   const isActive = input.isActive ?? current.window.isActive;
+  const recurrence = input.recurrence ?? current.window.recurrence;
+  const ruleChanged = timesChanged || input.recurrence !== undefined;
 
-  if (isActive || timesChanged) {
+  if (timesChanged || (isActive && recurrence === "none")) {
     validateFutureRange(range);
   }
 
   if (isActive) {
-    await assertNoActiveOverlap(current.bookingPage.id, range, windowId);
+    await assertNoActiveOverlap(
+      current.bookingPage.id,
+      { ...range, recurrence },
+      current.bookingPage.timeZone,
+      windowId,
+    );
   }
 
-  if (timesChanged && (await windowHasAppointments(windowId))) {
+  if (ruleChanged && (await windowHasAppointments(windowId))) {
     throw new AvailabilityWindowHasAppointmentsError();
   }
 
@@ -128,6 +140,7 @@ export async function updateAvailabilityWindow(
     .set({
       ...(timesChanged ? range : {}),
       isActive,
+      recurrence,
       updatedAt: new Date(),
     })
     .where(eq(availabilityWindows.id, windowId));
@@ -135,7 +148,7 @@ export async function updateAvailabilityWindow(
   try {
     if (!isActive) {
       await db.batch([updateQuery, deleteUnbookedWindowSlots(windowId)]);
-    } else if (timesChanged) {
+    } else if (ruleChanged) {
       const slots = deriveSlots(range, current.bookingPage);
       await db.batch([
         db
@@ -181,7 +194,10 @@ export async function removeAvailabilityWindow(
 ) {
   const current = await requireOwnedAvailabilityWindow(windowId, providerId);
 
-  if (current.window.startsAt <= new Date()) {
+  if (
+    current.window.recurrence === "none" &&
+    current.window.startsAt <= new Date()
+  ) {
     throw new AvailabilityWindowValidationError(
       "Only future availability windows can be removed",
     );
@@ -260,26 +276,28 @@ async function requireOwnedAvailabilityWindow(
 
 async function assertNoActiveOverlap(
   bookingPageId: string,
-  range: AvailabilityWindowRange,
+  rule: AvailabilityWindowRule,
+  timeZone: string,
   excludedWindowId?: string,
 ) {
-  const [overlap] = await db
-    .select({ id: availabilityWindows.id })
+  const activeWindows = await db
+    .select()
     .from(availabilityWindows)
     .where(
       and(
         eq(availabilityWindows.bookingPageId, bookingPageId),
         eq(availabilityWindows.isActive, true),
-        lt(availabilityWindows.startsAt, range.endsAt),
-        gt(availabilityWindows.endsAt, range.startsAt),
         excludedWindowId
           ? ne(availabilityWindows.id, excludedWindowId)
           : undefined,
       ),
-    )
-    .limit(1);
+    );
 
-  if (overlap) {
+  if (
+    activeWindows.some((window) =>
+      availabilityRulesOverlap(rule, window, timeZone),
+    )
+  ) {
     throw new AvailabilityWindowConflictError();
   }
 }

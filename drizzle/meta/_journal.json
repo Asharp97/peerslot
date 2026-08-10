@@ -57,6 +57,13 @@
       "when": 1786385972626,
       "tag": "0007_majestic_vivisector",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1786388325003,
+      "tag": "0008_worried_talkback",
+      "breakpoints": true
     }
   ]
 }

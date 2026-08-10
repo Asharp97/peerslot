@@ -49,6 +49,7 @@ script:post-response {
 tests {
   test("calculation fixture derives five source slots", function () {
     expect(res.getStatus()).to.equal(201);
+    expect(res.getBody().window.recurrence).to.equal("weekly");
     expect(res.getBody().slots).to.have.length(5);
   });
 }

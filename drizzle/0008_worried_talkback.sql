@@ -1,0 +1,2 @@
+CREATE TYPE "public"."availability_recurrence" AS ENUM('none', 'weekly');--> statement-breakpoint
+ALTER TABLE "availability_windows" ADD COLUMN "recurrence" "availability_recurrence" DEFAULT 'none' NOT NULL;

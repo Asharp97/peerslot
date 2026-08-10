@@ -40,6 +40,12 @@ describe("availability windows", () => {
       }).success,
     ).toBe(true);
     expect(
+      availabilityWindowCreateSchema.parse({
+        startsAt: "2030-01-15T13:00:00+03:00",
+        endsAt: "2030-01-15T16:00:00+03:00",
+      }).recurrence,
+    ).toBe("weekly");
+    expect(
       availabilityWindowCreateSchema.safeParse({
         startsAt: "2030-01-15T13:00:00",
         endsAt: "2030-01-15T16:00:00",
@@ -60,7 +66,10 @@ describe("availability windows", () => {
       }).success,
     ).toBe(false);
     expect(
-      availabilityWindowUpdateSchema.safeParse({ isActive: false }).success,
+      availabilityWindowUpdateSchema.safeParse({
+        isActive: false,
+        recurrence: "none",
+      }).success,
     ).toBe(true);
   });
 

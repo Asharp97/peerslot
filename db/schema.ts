@@ -19,6 +19,11 @@ export const appointmentStatus = pgEnum("appointment_status", [
   "cancelled",
 ]);
 
+export const availabilityRecurrence = pgEnum("availability_recurrence", [
+  "none",
+  "weekly",
+]);
+
 export const profiles = pgTable("profiles", {
   userId: text("user_id")
     .primaryKey()
@@ -153,6 +158,7 @@ export const availabilityWindows = pgTable(
       mode: "date",
     }).notNull(),
     isActive: boolean("is_active").default(true).notNull(),
+    recurrence: availabilityRecurrence("recurrence").default("none").notNull(),
     createdAt: timestamp("created_at", {
       withTimezone: true,
       mode: "date",

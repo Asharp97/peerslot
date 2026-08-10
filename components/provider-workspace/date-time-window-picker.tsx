@@ -21,6 +21,7 @@ export function DateTimeWindowPicker({
   endsAt,
   locale,
   minimumDate,
+  minimumStartsAt,
   onDateChange,
   onEndsAtChange,
   onStartsAtChange,
@@ -31,6 +32,7 @@ export function DateTimeWindowPicker({
   endsAt: string;
   locale: "en" | "tr";
   minimumDate: string;
+  minimumStartsAt: string;
   onDateChange: (value: string) => void;
   onEndsAtChange: (value: string) => void;
   onStartsAtChange: (value: string) => void;
@@ -73,6 +75,7 @@ export function DateTimeWindowPicker({
       <div className="grid grid-cols-2 gap-3">
         <TimeInput
           label={copy.startsAt}
+          minimum={date === minimumDate ? minimumStartsAt : undefined}
           onChange={onStartsAtChange}
           value={startsAt}
         />
@@ -88,10 +91,12 @@ export function DateTimeWindowPicker({
 
 function TimeInput({
   label,
+  minimum,
   onChange,
   value,
 }: {
   label: string;
+  minimum?: string;
   onChange: (value: string) => void;
   value: string;
 }) {
@@ -101,6 +106,7 @@ function TimeInput({
       <Input
         className="mt-2 min-h-12 rounded-xl border-white/15 bg-white/8 px-4 text-white scheme-dark"
         onChange={(event) => onChange(event.target.value)}
+        min={minimum}
         required
         type="time"
         value={value}

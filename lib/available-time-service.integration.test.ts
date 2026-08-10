@@ -49,6 +49,7 @@ describe("available-time service integration", () => {
     expect(repository.loadActiveWindows).toHaveBeenCalledWith(
       "booking-page-id",
       range,
+      "Europe/Istanbul",
     );
     expect(repository.loadAppointments).toHaveBeenCalledWith(
       "booking-page-id",

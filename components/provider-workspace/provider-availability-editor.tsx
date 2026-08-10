@@ -9,6 +9,7 @@ import {
   LoaderCircle,
   Pencil,
   Plus,
+  Repeat2,
   Trash2,
   X,
 } from "lucide-react";
@@ -16,6 +17,14 @@ import { useLocale } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  earliestAvailabilityLocal,
   getProviderWindowStatus,
   previewAvailabilityWindow,
   type ProviderWindowStatus,
@@ -32,6 +41,7 @@ type AvailabilityWindow = {
   localStartsAt: string;
   localEndsAt: string;
   timeZone: string;
+  recurrence: "none" | "weekly";
 };
 
 export type ProviderAvailabilityCopy = {
@@ -57,6 +67,10 @@ export type ProviderAvailabilityCopy = {
   timezoneNote: string;
   invalidWindow: string;
   saveError: string;
+  repeats: string;
+  doesNotRepeat: string;
+  weekly: string;
+  weeklyHelp: string;
   status: Record<ProviderWindowStatus, string>;
 };
 
@@ -67,19 +81,32 @@ export function ProviderAvailabilityEditor({
 }) {
   const locale = useLocale() as "en" | "tr";
   const { accessToken, data, refresh } = useProviderWorkspace();
+  const earliestAvailability = useMemo(
+    () =>
+      earliestAvailabilityLocal({
+        now: new Date(),
+        minimumNoticeHours: data.bookingPage.minimumNoticeHours,
+        timeZone: data.bookingPage.timeZone,
+      }),
+    [data.bookingPage.minimumNoticeHours, data.bookingPage.timeZone],
+  );
+  const initialAvailability = useMemo(
+    () =>
+      getInitialAvailabilityFields(
+        earliestAvailability,
+        data.bookingPage.appointmentDurationMinutes,
+      ),
+    [data.bookingPage.appointmentDurationMinutes, earliestAvailability],
+  );
   const [windows, setWindows] = useState<AvailabilityWindow[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [date, setDate] = useState(() =>
-    providerLocalDate(
-      new Date(Date.now() + 24 * 60 * 60 * 1000),
-      data.bookingPage.timeZone,
-    ),
-  );
-  const [startsAt, setStartsAt] = useState("09:00");
-  const [endsAt, setEndsAt] = useState("12:00");
+  const [date, setDate] = useState(initialAvailability.date);
+  const [startsAt, setStartsAt] = useState(initialAvailability.startsAt);
+  const [endsAt, setEndsAt] = useState(initialAvailability.endsAt);
+  const [recurrence, setRecurrence] = useState<"none" | "weekly">("weekly");
 
   const loadWindows = useCallback(async () => {
     const response = await fetch("/api/availability-windows", {
@@ -107,6 +134,13 @@ export function ProviderAvailabilityEditor({
 
   const preview = useMemo(() => {
     try {
+      if (
+        `${date}T${startsAt}` <
+        `${earliestAvailability.date}T${earliestAvailability.time}`
+      ) {
+        return null;
+      }
+
       return previewAvailabilityWindow({
         date,
         startsAt,
@@ -118,7 +152,7 @@ export function ProviderAvailabilityEditor({
     } catch {
       return null;
     }
-  }, [data.bookingPage, date, endsAt, startsAt]);
+  }, [data.bookingPage, date, earliestAvailability, endsAt, startsAt]);
 
   const bookedWindowIds = useMemo(
     () =>
@@ -153,6 +187,7 @@ export function ProviderAvailabilityEditor({
           body: JSON.stringify({
             startsAt: preview.startsAt.toISOString(),
             endsAt: preview.endsAt.toISOString(),
+            recurrence,
           }),
         },
       );
@@ -169,12 +204,24 @@ export function ProviderAvailabilityEditor({
   }
 
   function editWindow(window: AvailabilityWindow) {
-    const [localDate, localStart] = window.localStartsAt.split("T");
+    const [initialLocalDate, localStart] = window.localStartsAt.split("T");
     const [, localEnd] = window.localEndsAt.split("T");
+    let localDate = initialLocalDate;
+
+    if (window.recurrence === "weekly") {
+      while (
+        `${localDate}T${localStart.slice(0, 5)}` <
+        `${earliestAvailability.date}T${earliestAvailability.time}`
+      ) {
+        localDate = addLocalDays(localDate, 7);
+      }
+    }
+
     setEditingId(window.id);
     setDate(localDate);
     setStartsAt(localStart.slice(0, 5));
     setEndsAt(localEnd.slice(0, 5));
+    setRecurrence(window.recurrence);
     setError("");
     windowScrollToEditor();
   }
@@ -212,14 +259,18 @@ export function ProviderAvailabilityEditor({
 
   function resetForm() {
     setEditingId(null);
-    setDate(
-      providerLocalDate(
-        new Date(Date.now() + 24 * 60 * 60 * 1000),
-        data.bookingPage.timeZone,
-      ),
+    const nextInitial = getInitialAvailabilityFields(
+      earliestAvailabilityLocal({
+        now: new Date(),
+        minimumNoticeHours: data.bookingPage.minimumNoticeHours,
+        timeZone: data.bookingPage.timeZone,
+      }),
+      data.bookingPage.appointmentDurationMinutes,
     );
-    setStartsAt("09:00");
-    setEndsAt("12:00");
+    setDate(nextInitial.date);
+    setStartsAt(nextInitial.startsAt);
+    setEndsAt(nextInitial.endsAt);
+    setRecurrence("weekly");
   }
 
   return (
@@ -268,15 +319,33 @@ export function ProviderAvailabilityEditor({
             date={date}
             endsAt={endsAt}
             locale={locale}
-            minimumDate={providerLocalDate(
-              new Date(),
-              data.bookingPage.timeZone,
-            )}
+            minimumDate={earliestAvailability.date}
+            minimumStartsAt={earliestAvailability.time}
             onDateChange={setDate}
             onEndsAtChange={setEndsAt}
             onStartsAtChange={setStartsAt}
             startsAt={startsAt}
           />
+          <div className="mt-4">
+            <p className="text-xs font-bold text-white/60">{copy.repeats}</p>
+            <Select
+              onValueChange={(value) =>
+                setRecurrence(value as "none" | "weekly")
+              }
+              value={recurrence}
+            >
+              <SelectTrigger className="mt-2 min-h-12 w-full rounded-xl border-white/15 bg-white/8 px-4 text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="weekly">{copy.weekly}</SelectItem>
+                <SelectItem value="none">{copy.doesNotRepeat}</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="mt-2 text-xs leading-5 text-white/45">
+              {copy.weeklyHelp}
+            </p>
+          </div>
           <p className="mt-4 text-xs leading-5 text-white/45">
             {copy.timezoneNote.replace("{timeZone}", data.bookingPage.timeZone)}
           </p>
@@ -349,6 +418,7 @@ export function ProviderAvailabilityEditor({
                   endsAt: new Date(window.endsAt),
                   isActive: window.isActive,
                   isPagePublished: data.bookingPage.isPublished,
+                  recurrence: window.recurrence,
                   bookedWindowIds,
                   now: new Date(),
                 });
@@ -395,6 +465,11 @@ export function ProviderAvailabilityEditor({
                             data.bookingPage.timeZone,
                           )}
                         </p>
+                        {window.recurrence === "weekly" ? (
+                          <p className="mt-2 flex items-center gap-1.5 text-[10px] font-bold text-[#5132aa]">
+                            <Repeat2 size={12} /> {copy.weekly}
+                          </p>
+                        ) : null}
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <SmallAction
@@ -516,25 +591,49 @@ const statusPill: Record<ProviderWindowStatus, string> = {
   unpublished: "bg-[#fff0cf] text-[#7a4b00]",
 };
 
-function providerLocalDate(date: Date, timeZone: string) {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
-  const values = Object.fromEntries(
-    parts.map(({ type, value }) => [type, value]),
-  );
-  return `${values.year}-${values.month}-${values.day}`;
-}
-
 function formatTime(date: Date, locale: string, timeZone: string) {
   return new Intl.DateTimeFormat(locale, {
     timeZone,
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
+}
+
+function getInitialAvailabilityFields(
+  earliest: { date: string; time: string },
+  appointmentDurationMinutes: number,
+) {
+  const [hour, minute] = earliest.time.split(":").map(Number);
+  const earliestMinutes = hour * 60 + minute;
+  let startsAtMinutes = Math.max(9 * 60, Math.ceil(earliestMinutes / 15) * 15);
+  const windowMinutes = Math.max(3 * 60, appointmentDurationMinutes);
+  let date = earliest.date;
+
+  if (startsAtMinutes + windowMinutes >= 24 * 60) {
+    date = addLocalDays(date, 1);
+    startsAtMinutes = 9 * 60;
+  }
+
+  return {
+    date,
+    startsAt: formatMinutes(startsAtMinutes),
+    endsAt: formatMinutes(startsAtMinutes + windowMinutes),
+  };
+}
+
+function formatMinutes(minutes: number) {
+  return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(
+    minutes % 60,
+  ).padStart(2, "0")}`;
+}
+
+function addLocalDays(value: string, days: number) {
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day + days));
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(
+    2,
+    "0",
+  )}-${String(date.getUTCDate()).padStart(2, "0")}`;
 }
 
 function formatDay(value: string, locale: string, timeZone: string) {

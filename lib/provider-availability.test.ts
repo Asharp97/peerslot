@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  earliestAvailabilityLocal,
   getProviderWindowStatus,
   previewAvailabilityWindow,
   zonedLocalDateTimeToUtc,
@@ -79,5 +80,22 @@ describe("provider availability editor", () => {
         now: new Date("2030-01-15T12:00:00.000Z"),
       }),
     ).toBe("past");
+    expect(
+      getProviderWindowStatus({
+        ...common,
+        recurrence: "weekly",
+        now: new Date("2030-01-15T12:00:00.000Z"),
+      }),
+    ).toBe("available");
+  });
+
+  it("derives the earliest local date and time from minimum notice", () => {
+    expect(
+      earliestAvailabilityLocal({
+        now: new Date("2030-01-15T10:00:30.000Z"),
+        minimumNoticeHours: 24,
+        timeZone: "Europe/Istanbul",
+      }),
+    ).toEqual({ date: "2030-01-16", time: "13:01" });
   });
 });

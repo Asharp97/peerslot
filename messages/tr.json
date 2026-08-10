@@ -256,6 +256,10 @@
       "timezoneNote": "{timeZone} saat diliminde girilir ve gösterilir.",
       "invalidWindow": "En az bir randevuya uyan geçerli bir gelecek zaman aralığı seçin.",
       "saveError": "Uygunluk kaydedilemedi. Lütfen tekrar deneyin.",
+      "repeats": "Tekrar",
+      "doesNotRepeat": "Tekrarlanmaz",
+      "weekly": "Her hafta",
+      "weeklyHelp": "Çalışma saatlerinin çoğu haftalık bir düzene uyduğu için varsayılan haftalıktır. İstisnalar için tek seferi seçin.",
       "status": {
         "available": "Uygun",
         "booked": "Rezerve edildi",

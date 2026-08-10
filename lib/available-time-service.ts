@@ -10,6 +10,7 @@ export type AvailableTimeRepository = {
   loadActiveWindows: (
     bookingPageId: string,
     range: AvailableTimeRange,
+    timeZone: string,
   ) => Promise<AvailabilityWindowForCalculation[]>;
   loadAppointments: (
     bookingPageId: string,
@@ -28,7 +29,11 @@ export function createAvailableTimeService(
       range: AvailableTimeRange,
     ) {
       const [windows, appointments] = await Promise.all([
-        repository.loadActiveWindows(bookingPage.id, range),
+        repository.loadActiveWindows(
+          bookingPage.id,
+          range,
+          bookingPage.timeZone,
+        ),
         repository.loadAppointments(
           bookingPage.id,
           range,

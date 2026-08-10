@@ -1,16 +1,19 @@
 import { z } from "zod";
 
 const timestampWithOffsetSchema = z.string().datetime({ offset: true });
+export const availabilityRecurrenceSchema = z.enum(["none", "weekly"]);
 
 export const availabilityWindowCreateSchema = z
   .object({
     startsAt: timestampWithOffsetSchema,
     endsAt: timestampWithOffsetSchema,
+    recurrence: availabilityRecurrenceSchema.default("weekly"),
   })
   .strict()
-  .transform(({ startsAt, endsAt }) => ({
+  .transform(({ startsAt, endsAt, recurrence }) => ({
     startsAt: new Date(startsAt),
     endsAt: new Date(endsAt),
+    recurrence,
   }))
   .refine(({ startsAt, endsAt }) => endsAt > startsAt, {
     message: "endsAt must be after startsAt",
@@ -22,6 +25,7 @@ export const availabilityWindowUpdateSchema = z
     startsAt: timestampWithOffsetSchema.optional(),
     endsAt: timestampWithOffsetSchema.optional(),
     isActive: z.boolean().optional(),
+    recurrence: availabilityRecurrenceSchema.optional(),
   })
   .strict()
   .refine((input) => Object.keys(input).length > 0, {
@@ -36,10 +40,11 @@ export const availabilityWindowUpdateSchema = z
       path: ["endsAt"],
     },
   )
-  .transform(({ startsAt, endsAt, isActive }) => ({
+  .transform(({ startsAt, endsAt, isActive, recurrence }) => ({
     startsAt: startsAt ? new Date(startsAt) : undefined,
     endsAt: endsAt ? new Date(endsAt) : undefined,
     isActive,
+    recurrence,
   }))
   .refine(({ startsAt, endsAt }) => !startsAt || !endsAt || endsAt > startsAt, {
     message: "endsAt must be after startsAt",
@@ -49,6 +54,14 @@ export const availabilityWindowUpdateSchema = z
 export type AvailabilityWindowRange = {
   startsAt: Date;
   endsAt: Date;
+};
+
+export type AvailabilityRecurrence = z.infer<
+  typeof availabilityRecurrenceSchema
+>;
+
+export type AvailabilityWindowRule = AvailabilityWindowRange & {
+  recurrence: AvailabilityRecurrence;
 };
 
 export type DerivedAvailabilitySlot = AvailabilityWindowRange & {

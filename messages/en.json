@@ -256,6 +256,10 @@
       "timezoneNote": "Entered and displayed in {timeZone}.",
       "invalidWindow": "Choose a valid future window that fits at least one appointment.",
       "saveError": "Availability could not be saved. Please try again.",
+      "repeats": "Repeats",
+      "doesNotRepeat": "Does not repeat",
+      "weekly": "Every week",
+      "weeklyHelp": "Weekly is the default because most working hours follow a weekly rhythm. Choose one-time for exceptions.",
       "status": {
         "available": "Available",
         "booked": "Booked",

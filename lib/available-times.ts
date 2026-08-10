@@ -9,29 +9,37 @@ import {
   providerProfiles,
 } from "@/db/schema";
 import { createAvailableTimeService } from "@/lib/available-time-service";
+import { expandAvailabilityRule } from "@/lib/availability-recurrence";
 import type {
   AvailabilityBookingPage,
   AvailableTimeRange,
 } from "@/lib/available-time";
 
 const postgresAvailableTimeRepository = {
-  async loadActiveWindows(bookingPageId: string, range: AvailableTimeRange) {
-    return db
+  async loadActiveWindows(
+    bookingPageId: string,
+    range: AvailableTimeRange,
+    timeZone: string,
+  ) {
+    const windows = await db
       .select({
         id: availabilityWindows.id,
         startsAt: availabilityWindows.startsAt,
         endsAt: availabilityWindows.endsAt,
         isActive: availabilityWindows.isActive,
+        recurrence: availabilityWindows.recurrence,
       })
       .from(availabilityWindows)
       .where(
         and(
           eq(availabilityWindows.bookingPageId, bookingPageId),
           eq(availabilityWindows.isActive, true),
-          lt(availabilityWindows.startsAt, range.endsAt),
-          gt(availabilityWindows.endsAt, range.startsAt),
         ),
       );
+
+    return windows.flatMap((window) =>
+      expandAvailabilityRule(window, range, timeZone),
+    );
   },
 
   async loadAppointments(

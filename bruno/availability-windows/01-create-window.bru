@@ -59,6 +59,7 @@ tests {
     expect(body.window.startsAt).to.equal(bru.getVar("windowStartsAt"));
     expect(body.window.endsAt).to.equal(bru.getVar("windowEndsAt"));
     expect(body.window.timeZone).to.equal("Europe/Istanbul");
+    expect(body.window.recurrence).to.equal("weekly");
     expect(body.window.localStartsAt).to.be.a("string");
     expect(body.slots).to.have.length(5);
     expect(

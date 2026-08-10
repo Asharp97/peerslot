@@ -9,11 +9,31 @@ export function getProviderWindowStatus(input: {
   isPagePublished: boolean;
   bookedWindowIds: Set<string>;
   now: Date;
+  recurrence?: "none" | "weekly";
 }): ProviderWindowStatus {
-  if (input.endsAt <= input.now) return "past";
+  if (input.recurrence !== "weekly" && input.endsAt <= input.now) return "past";
   if (input.bookedWindowIds.has(input.windowId)) return "booked";
   if (!input.isActive || !input.isPagePublished) return "unpublished";
   return "available";
+}
+
+export function earliestAvailabilityLocal(input: {
+  now: Date;
+  minimumNoticeHours: number;
+  timeZone: string;
+}) {
+  const cutoff = new Date(
+    Math.ceil(
+      (input.now.getTime() + input.minimumNoticeHours * 60 * 60 * 1000) /
+        60_000,
+    ) * 60_000,
+  );
+  const local = localDateTimeParts(cutoff, input.timeZone);
+
+  return {
+    date: `${local.year}-${pad(local.month)}-${pad(local.day)}`,
+    time: `${pad(local.hour)}:${pad(local.minute)}`,
+  };
 }
 
 export function previewAvailabilityWindow(input: {
@@ -129,4 +149,8 @@ function localDateTimeParts(date: Date, timeZone: string) {
     hour: values.hour,
     minute: values.minute,
   };
+}
+
+function pad(value: number) {
+  return String(value).padStart(2, "0");
 }
