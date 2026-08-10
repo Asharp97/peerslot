@@ -12,6 +12,7 @@ const bookingPage: AvailabilityBookingPage = {
   timeZone: "Europe/Istanbul",
   appointmentDurationMinutes: 30,
   bookingIntervalMinutes: 30,
+  restBetweenSessionsMinutes: 0,
   minimumNoticeHours: 1,
 };
 
@@ -93,7 +94,7 @@ describe("available-time calculation", () => {
     expect(localized.tr).toContain("13:00");
   });
 
-  it("requires duration to equal interval for non-overlapping MVP times", () => {
+  it("requires the interval to equal the duration plus rest", () => {
     expect(() =>
       calculateAvailableTimes({
         bookingPage: { ...bookingPage, bookingIntervalMinutes: 15 },
@@ -103,6 +104,43 @@ describe("available-time calculation", () => {
         now: new Date("2030-01-15T08:00:00.000Z"),
       }),
     ).toThrow(AvailableTimeConfigurationError);
+  });
+
+  it("hides rest buffers while preserving the real appointment end", () => {
+    const availableTimes = calculateAvailableTimes({
+      bookingPage: {
+        ...bookingPage,
+        appointmentDurationMinutes: 45,
+        bookingIntervalMinutes: 55,
+        restBetweenSessionsMinutes: 10,
+        minimumNoticeHours: 0,
+      },
+      range: range("2030-01-15T09:00:00.000Z", "2030-01-15T12:00:00.000Z"),
+      windows: [
+        {
+          id: "window",
+          isActive: true,
+          ...range("2030-01-15T09:00:00.000Z", "2030-01-15T12:00:00.000Z"),
+        },
+      ],
+      appointments: [
+        {
+          status: "scheduled",
+          ...range("2030-01-15T09:00:00.000Z", "2030-01-15T09:45:00.000Z"),
+        },
+      ],
+      now: new Date("2030-01-15T08:00:00.000Z"),
+    });
+
+    expect(
+      availableTimes.map(({ startsAt, endsAt }) => [
+        startsAt.toISOString(),
+        endsAt.toISOString(),
+      ]),
+    ).toEqual([
+      ["2030-01-15T09:55:00.000Z", "2030-01-15T10:40:00.000Z"],
+      ["2030-01-15T10:50:00.000Z", "2030-01-15T11:35:00.000Z"],
+    ]);
   });
 });
 

@@ -47,8 +47,8 @@ script:post-response {
 }
 
 tests {
-  test("calculation fixture derives six source slots", function () {
+  test("calculation fixture derives five source slots", function () {
     expect(res.getStatus()).to.equal(201);
-    expect(res.getBody().slots).to.have.length(6);
+    expect(res.getBody().slots).to.have.length(5);
   });
 }

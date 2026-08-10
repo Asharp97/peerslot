@@ -161,7 +161,10 @@ function AppointmentRow({
               timeZone,
               dateStyle: compact ? "medium" : "full",
               timeStyle: "short",
-            }).format(new Date(appointment.startsAt))}
+            }).formatRange(
+              new Date(appointment.startsAt),
+              new Date(appointment.endsAt),
+            )}
           </p>
         </div>
       </div>

@@ -14,6 +14,7 @@ export type AvailableTimeRepository = {
   loadAppointments: (
     bookingPageId: string,
     range: AvailableTimeRange,
+    restBetweenSessionsMinutes: number,
   ) => Promise<AppointmentForCalculation[]>;
 };
 
@@ -28,7 +29,11 @@ export function createAvailableTimeService(
     ) {
       const [windows, appointments] = await Promise.all([
         repository.loadActiveWindows(bookingPage.id, range),
-        repository.loadAppointments(bookingPage.id, range),
+        repository.loadAppointments(
+          bookingPage.id,
+          range,
+          bookingPage.restBetweenSessionsMinutes,
+        ),
       ]);
 
       return calculateAvailableTimes({

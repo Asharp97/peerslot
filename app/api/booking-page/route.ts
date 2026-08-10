@@ -77,6 +77,10 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
 
+    if (error instanceof RangeError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
     throw error;
   }
 }

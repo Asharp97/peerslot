@@ -42,9 +42,11 @@ export function previewAvailabilityWindow(input: {
   if (
     input.durationMinutes <= 0 ||
     input.intervalMinutes <= 0 ||
-    input.durationMinutes !== input.intervalMinutes
+    input.intervalMinutes < input.durationMinutes
   ) {
-    throw new RangeError("Duration and interval must be equal positive values");
+    throw new RangeError(
+      "Interval must be a positive value that covers the duration",
+    );
   }
 
   const durationMilliseconds = input.durationMinutes * 60 * 1000;

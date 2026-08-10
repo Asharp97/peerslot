@@ -16,7 +16,8 @@ export const bookingPageSettingsSchema = z
       .refine(isValidTimeZone, "Invalid time zone")
       .optional(),
     appointmentDurationMinutes: z.number().int().min(15).max(180).optional(),
-    bookingIntervalMinutes: z.number().int().min(5).max(180).optional(),
+    bookingIntervalMinutes: z.number().int().min(15).max(300).optional(),
+    restBetweenSessionsMinutes: z.number().int().min(0).max(120).optional(),
     minimumNoticeHours: z.number().int().min(0).max(720).optional(),
     isPublished: z.boolean().optional(),
   })
@@ -25,27 +26,21 @@ export const bookingPageSettingsSchema = z
     message: "At least one booking page setting is required",
   })
   .refine(
-    ({ appointmentDurationMinutes, bookingIntervalMinutes }) =>
+    ({
+      appointmentDurationMinutes,
+      bookingIntervalMinutes,
+      restBetweenSessionsMinutes,
+    }) =>
       appointmentDurationMinutes === undefined ||
       bookingIntervalMinutes === undefined ||
-      appointmentDurationMinutes === bookingIntervalMinutes,
+      restBetweenSessionsMinutes === undefined ||
+      bookingIntervalMinutes ===
+        appointmentDurationMinutes + restBetweenSessionsMinutes,
     {
-      message: "Appointment duration must equal the booking interval",
+      message: "Booking interval must equal appointment duration plus rest",
       path: ["bookingIntervalMinutes"],
     },
-  )
-  .transform((settings) => {
-    const schedulingInterval =
-      settings.appointmentDurationMinutes ?? settings.bookingIntervalMinutes;
-
-    if (schedulingInterval === undefined) return settings;
-
-    return {
-      ...settings,
-      appointmentDurationMinutes: schedulingInterval,
-      bookingIntervalMinutes: schedulingInterval,
-    };
-  });
+  );
 
 export const bookingSlugSchema = z
   .string()

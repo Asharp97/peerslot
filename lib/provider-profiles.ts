@@ -80,7 +80,9 @@ export async function completeProviderOnboarding(
           title: `Book with ${input.displayName}`,
           timeZone: input.timeZone,
           appointmentDurationMinutes: input.defaultAppointmentDurationMinutes,
-          bookingIntervalMinutes: input.defaultAppointmentDurationMinutes,
+          bookingIntervalMinutes:
+            input.defaultAppointmentDurationMinutes +
+            input.restBetweenSessionsMinutes,
           minimumNoticeHours: input.minimumBookingNoticeMinutes / 60,
           isPublished: true,
         })

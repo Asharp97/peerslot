@@ -10,6 +10,19 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+
+import { TimeZoneCombobox } from "./time-zone-combobox";
 import { useProviderWorkspace } from "./provider-shell";
 
 export type ProviderSettingsCopy = {
@@ -19,8 +32,12 @@ export type ProviderSettingsCopy = {
   bookingPage: string;
   pageTitle: string;
   duration: string;
+  rest: string;
+  restHelp: string;
   notice: string;
   timeZone: string;
+  timeZoneSearch: string;
+  timeZoneEmpty: string;
   published: string;
   publishHelp: string;
   save: string;
@@ -40,6 +57,7 @@ export function ProviderSettings({ copy }: { copy: ProviderSettingsCopy }) {
     data.bookingPage.appointmentDurationMinutes,
   );
   const [notice, setNotice] = useState(data.bookingPage.minimumNoticeHours);
+  const [rest, setRest] = useState(data.profile.restBetweenSessionsMinutes);
   const [timeZone, setTimeZone] = useState(data.bookingPage.timeZone);
   const [published, setPublished] = useState(data.bookingPage.isPublished);
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">(
@@ -60,7 +78,8 @@ export function ProviderSettings({ copy }: { copy: ProviderSettingsCopy }) {
         title,
         timeZone,
         appointmentDurationMinutes: duration,
-        bookingIntervalMinutes: duration,
+        bookingIntervalMinutes: duration + rest,
+        restBetweenSessionsMinutes: rest,
         minimumNoticeHours: notice,
         isPublished: published,
       }),
@@ -115,42 +134,45 @@ export function ProviderSettings({ copy }: { copy: ProviderSettingsCopy }) {
               onChange={setTitle}
               value={title}
             />
-            <SettingsInput
-              label={copy.timeZone}
-              onChange={setTimeZone}
-              value={timeZone}
+            <div>
+              <Label className="text-xs font-bold text-black/55">
+                {copy.timeZone}
+              </Label>
+              <TimeZoneCombobox
+                emptyLabel={copy.timeZoneEmpty}
+                label={copy.timeZone}
+                onChange={setTimeZone}
+                searchLabel={copy.timeZoneSearch}
+                value={timeZone}
+              />
+            </div>
+            <NumberSelect
+              label={copy.duration}
+              onChange={setDuration}
+              options={[15, 30, 45, 60, 90]}
+              suffix={copy.minutes}
+              value={duration}
             />
-            <label className="text-xs font-bold text-black/55">
-              {copy.duration}
-              <select
-                className="mt-2 min-h-12 w-full rounded-xl border border-black/10 bg-white px-4 text-sm text-vast-ink"
-                onChange={(event) => setDuration(Number(event.target.value))}
-                value={duration}
-              >
-                {[15, 30, 45, 60, 90].map((value) => (
-                  <option key={value} value={value}>
-                    {value} {copy.minutes}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="text-xs font-bold text-black/55">
-              {copy.notice}
-              <select
-                className="mt-2 min-h-12 w-full rounded-xl border border-black/10 bg-white px-4 text-sm text-vast-ink"
-                onChange={(event) => setNotice(Number(event.target.value))}
-                value={notice}
-              >
-                {[0, 1, 4, 12, 24, 48].map((value) => (
-                  <option key={value} value={value}>
-                    {value} {copy.hours}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <NumberSelect
+              label={copy.rest}
+              onChange={setRest}
+              options={[0, 5, 10, 15, 20, 30]}
+              suffix={copy.minutes}
+              value={rest}
+            />
+            <NumberSelect
+              label={copy.notice}
+              onChange={setNotice}
+              options={[0, 1, 4, 12, 24, 48]}
+              suffix={copy.hours}
+              value={notice}
+            />
           </div>
+          <p className="mt-3 text-xs leading-5 text-black/45">
+            {copy.restHelp}
+          </p>
 
-          <label className="mt-6 flex cursor-pointer items-center gap-4 rounded-2xl border border-black/10 bg-white p-4">
+          <div className="mt-6 flex items-center gap-4 rounded-2xl border border-black/10 bg-white p-4">
             <span
               className={`grid size-10 place-items-center rounded-full ${published ? "bg-flow-lime" : "bg-black/5 text-black/35"}`}
             >
@@ -162,20 +184,20 @@ export function ProviderSettings({ copy }: { copy: ProviderSettingsCopy }) {
                 {copy.publishHelp}
               </span>
             </span>
-            <input
+            <Switch
+              aria-label={copy.published}
               checked={published}
-              className="size-5 accent-[#1a1a1a]"
-              onChange={(event) => setPublished(event.target.checked)}
-              type="checkbox"
+              className="data-checked:bg-vast-ink"
+              onCheckedChange={setPublished}
             />
-          </label>
+          </div>
 
           {state === "error" ? (
             <p className="mt-4 text-xs font-semibold text-red-700">
               {copy.saveError}
             </p>
           ) : null}
-          <button
+          <Button
             className="mt-6 inline-flex min-h-12 items-center gap-2 rounded-full bg-vast-ink px-6 text-sm font-bold text-white disabled:opacity-50"
             disabled={state === "saving"}
             type="submit"
@@ -186,7 +208,7 @@ export function ProviderSettings({ copy }: { copy: ProviderSettingsCopy }) {
               <Check className="text-flow-lime" size={16} />
             )}
             {state === "saved" ? copy.saved : copy.save}
-          </button>
+          </Button>
         </form>
 
         <article className="h-fit rounded-[28px] bg-vast-ink p-6 text-white sm:p-8">
@@ -200,15 +222,16 @@ export function ProviderSettings({ copy }: { copy: ProviderSettingsCopy }) {
           <p className="mt-6 rounded-xl bg-white/8 px-4 py-3 font-mono text-sm text-flow-lime">
             {data.bookingPage.slug}
           </p>
-          <button
-            className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full border border-white/20 px-5 text-sm font-bold hover:bg-white/10 disabled:opacity-50"
+          <Button
+            className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full border border-white/20 bg-transparent px-5 text-sm font-bold text-white hover:bg-white/10 hover:text-white disabled:opacity-50"
             disabled={rotating}
             onClick={regenerateLink}
             type="button"
+            variant="outline"
           >
             <RefreshCw className={rotating ? "animate-spin" : ""} size={15} />
             {copy.regenerate}
-          </button>
+          </Button>
         </article>
       </section>
     </div>
@@ -225,14 +248,49 @@ function SettingsInput({
   value: string;
 }) {
   return (
-    <label className="text-xs font-bold text-black/55">
-      {label}
-      <input
+    <div>
+      <Label className="text-xs font-bold text-black/55">{label}</Label>
+      <Input
         className="mt-2 min-h-12 w-full rounded-xl border border-black/10 bg-white px-4 text-sm text-vast-ink"
         onChange={(event) => onChange(event.target.value)}
         required
         value={value}
       />
-    </label>
+    </div>
+  );
+}
+
+function NumberSelect({
+  label,
+  onChange,
+  options,
+  suffix,
+  value,
+}: {
+  label: string;
+  onChange: (value: number) => void;
+  options: number[];
+  suffix: string;
+  value: number;
+}) {
+  return (
+    <div>
+      <Label className="text-xs font-bold text-black/55">{label}</Label>
+      <Select
+        onValueChange={(nextValue) => onChange(Number(nextValue))}
+        value={String(value)}
+      >
+        <SelectTrigger className="mt-2 min-h-12 w-full rounded-xl border-black/10 bg-white px-4 text-vast-ink">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem key={option} value={String(option)}>
+              {option} {suffix}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }

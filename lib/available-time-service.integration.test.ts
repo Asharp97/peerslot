@@ -40,6 +40,7 @@ describe("available-time service integration", () => {
       timeZone: "Europe/Istanbul",
       appointmentDurationMinutes: 30,
       bookingIntervalMinutes: 30,
+      restBetweenSessionsMinutes: 0,
       minimumNoticeHours: 1,
     };
 
@@ -52,6 +53,7 @@ describe("available-time service integration", () => {
     expect(repository.loadAppointments).toHaveBeenCalledWith(
       "booking-page-id",
       range,
+      0,
     );
     expect(result.map(({ startsAt }) => startsAt.toISOString())).toEqual([
       "2030-01-15T09:30:00.000Z",

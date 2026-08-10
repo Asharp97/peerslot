@@ -46,7 +46,7 @@ tests {
     expect(res.getBody().bookingPage.title).to.equal("Book with Ceyda");
     expect(res.getBody().bookingPage.timeZone).to.equal("Europe/Istanbul");
     expect(res.getBody().bookingPage.appointmentDurationMinutes).to.equal(30);
-    expect(res.getBody().bookingPage.bookingIntervalMinutes).to.equal(30);
+    expect(res.getBody().bookingPage.bookingIntervalMinutes).to.equal(40);
     expect(res.getBody().bookingPage.minimumNoticeHours).to.equal(24);
     expect(res.getBody().bookingPage.isPublished).to.equal(true);
     expect(res.getBody().capabilities.canProvide).to.equal(true);

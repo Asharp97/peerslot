@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { ArrowRight, CalendarClock, LoaderCircle } from "lucide-react";
 
 import { useRouter } from "@/i18n/navigation";
+import { getTimeZones } from "@/lib/time-zones";
 
 type ProviderAuthCopy = {
   checking: string;
@@ -606,29 +607,6 @@ function ErrorMessage({ message }: { message: string }) {
       {message}
     </p>
   );
-}
-
-function getTimeZones(current: string) {
-  const fallback = [
-    "Europe/Istanbul",
-    "Europe/London",
-    "Europe/Berlin",
-    "America/New_York",
-    "America/Chicago",
-    "America/Los_Angeles",
-    "Asia/Dubai",
-    "Asia/Kolkata",
-    "Asia/Singapore",
-    "Asia/Tokyo",
-    "Australia/Sydney",
-    "UTC",
-  ];
-  const timeZoneIntl = Intl as typeof Intl & {
-    supportedValuesOf?: (key: "timeZone") => string[];
-  };
-  const supported = timeZoneIntl.supportedValuesOf?.("timeZone") ?? fallback;
-
-  return Array.from(new Set([current, ...supported, "UTC"])).filter(Boolean);
 }
 
 async function mintAccessToken() {

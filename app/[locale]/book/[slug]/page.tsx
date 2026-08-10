@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { CalendarDays, Clock3, Globe2 } from "lucide-react";
+import { Clock3, Globe2 } from "lucide-react";
 import { hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -29,7 +29,6 @@ export default async function BookingPage({ params }: BookingPageProps) {
       title: bookingPages.title,
       timeZone: bookingPages.timeZone,
       duration: bookingPages.appointmentDurationMinutes,
-      rest: providerProfiles.restBetweenSessionsMinutes,
     })
     .from(bookingPages)
     .innerJoin(
@@ -87,11 +86,6 @@ export default async function BookingPage({ params }: BookingPageProps) {
                 label={t("timeZone")}
                 value={provider.timeZone}
               />
-              <InfoRow
-                icon={<CalendarDays size={17} />}
-                label={t("rest")}
-                value={`${provider.rest} ${t("minutes")}`}
-              />
             </dl>
           </section>
 
@@ -111,7 +105,17 @@ export default async function BookingPage({ params }: BookingPageProps) {
                     key={slot.startsAt.toISOString()}
                     type="button"
                   >
-                    {slot.localized[availabilityLocale]}
+                    <span className="block">
+                      {slot.localized[availabilityLocale]}
+                    </span>
+                    <span className="mt-1 block text-xs font-medium text-black/45">
+                      {t("endsAt", {
+                        time: new Intl.DateTimeFormat(locale, {
+                          timeZone: provider.timeZone,
+                          timeStyle: "short",
+                        }).format(slot.endsAt),
+                      })}
+                    </span>
                   </button>
                 ))}
               </div>

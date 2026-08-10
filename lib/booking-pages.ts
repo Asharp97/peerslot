@@ -30,11 +30,80 @@ export async function updateBookingPage(
   providerId: string,
   settings: BookingPageSettingsInput,
 ) {
-  const [bookingPage] = await db
-    .update(bookingPages)
-    .set({ ...settings, updatedAt: new Date() })
+  const [current] = await db
+    .select({
+      bookingPage: bookingPages,
+      restBetweenSessionsMinutes: providerProfiles.restBetweenSessionsMinutes,
+    })
+    .from(bookingPages)
+    .innerJoin(
+      providerProfiles,
+      eq(providerProfiles.userId, bookingPages.providerId),
+    )
     .where(eq(bookingPages.providerId, providerId))
-    .returning();
+    .limit(1);
+
+  if (!current) {
+    throw new BookingPageNotFoundError();
+  }
+
+  const {
+    bookingIntervalMinutes: requestedInterval,
+    restBetweenSessionsMinutes,
+    ...bookingPageSettings
+  } = settings;
+  const duration =
+    settings.appointmentDurationMinutes ??
+    current.bookingPage.appointmentDurationMinutes;
+  const rest = restBetweenSessionsMinutes ?? current.restBetweenSessionsMinutes;
+  const bookingIntervalMinutes = duration + rest;
+
+  if (
+    requestedInterval !== undefined &&
+    requestedInterval !== bookingIntervalMinutes
+  ) {
+    throw new RangeError(
+      "Booking interval must equal appointment duration plus rest",
+    );
+  }
+
+  const now = new Date();
+  const [, updatedPages] = await db.batch([
+    db
+      .update(providerProfiles)
+      .set({
+        ...(bookingPageSettings.timeZone !== undefined
+          ? { timeZone: bookingPageSettings.timeZone }
+          : {}),
+        ...(bookingPageSettings.appointmentDurationMinutes !== undefined
+          ? {
+              defaultAppointmentDurationMinutes:
+                bookingPageSettings.appointmentDurationMinutes,
+            }
+          : {}),
+        ...(bookingPageSettings.minimumNoticeHours !== undefined
+          ? {
+              minimumBookingNoticeMinutes:
+                bookingPageSettings.minimumNoticeHours * 60,
+            }
+          : {}),
+        ...(restBetweenSessionsMinutes !== undefined
+          ? { restBetweenSessionsMinutes }
+          : {}),
+        updatedAt: now,
+      })
+      .where(eq(providerProfiles.userId, providerId)),
+    db
+      .update(bookingPages)
+      .set({
+        ...bookingPageSettings,
+        bookingIntervalMinutes,
+        updatedAt: now,
+      })
+      .where(eq(bookingPages.providerId, providerId))
+      .returning(),
+  ]);
+  const [bookingPage] = updatedPages;
 
   if (!bookingPage) {
     throw new BookingPageNotFoundError();

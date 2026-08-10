@@ -53,13 +53,21 @@ script:post-response {
 }
 
 tests {
-  test("three-hour window derives six 30-minute slots", function () {
+  test("three-hour window derives five sessions with hidden rest", function () {
     const body = res.getBody();
     expect(res.getStatus()).to.equal(201);
     expect(body.window.startsAt).to.equal(bru.getVar("windowStartsAt"));
     expect(body.window.endsAt).to.equal(bru.getVar("windowEndsAt"));
     expect(body.window.timeZone).to.equal("Europe/Istanbul");
     expect(body.window.localStartsAt).to.be.a("string");
-    expect(body.slots).to.have.length(6);
+    expect(body.slots).to.have.length(5);
+    expect(
+      new Date(body.slots[0].endsAt).getTime() -
+        new Date(body.slots[0].startsAt).getTime()
+    ).to.equal(30 * 60 * 1000);
+    expect(
+      new Date(body.slots[1].startsAt).getTime() -
+        new Date(body.slots[0].startsAt).getTime()
+    ).to.equal(40 * 60 * 1000);
   });
 }

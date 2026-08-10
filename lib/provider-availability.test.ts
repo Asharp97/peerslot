@@ -33,6 +33,25 @@ describe("provider availability editor", () => {
     );
   });
 
+  it("previews rest as spacing without extending the appointment end", () => {
+    const preview = previewAvailabilityWindow({
+      date: "2030-01-15",
+      startsAt: "13:00",
+      endsAt: "16:00",
+      timeZone: "Europe/Istanbul",
+      durationMinutes: 45,
+      intervalMinutes: 55,
+    });
+
+    expect(preview.slots).toHaveLength(3);
+    expect(preview.slots[0].endsAt.toISOString()).toBe(
+      "2030-01-15T10:45:00.000Z",
+    );
+    expect(preview.slots[1].startsAt.toISOString()).toBe(
+      "2030-01-15T10:55:00.000Z",
+    );
+  });
+
   it("distinguishes booked, past, unpublished, and available windows", () => {
     const common = {
       windowId: "window-id",

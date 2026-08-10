@@ -15,13 +15,13 @@ auth:bearer {
 }
 
 tests {
-  test("active edited window exposes eight appointment times", function () {
+  test("active edited window exposes six appointment times", function () {
     const startsAt = bru.getVar("windowStartsAt");
     const derived = res.getBody().slots.filter(
       (slot) => slot.startsAt >= startsAt &&
         slot.startsAt < bru.getVar("editedWindowEndsAt")
     );
     expect(res.getStatus()).to.equal(200);
-    expect(derived).to.have.length(8);
+    expect(derived).to.have.length(6);
   });
 }

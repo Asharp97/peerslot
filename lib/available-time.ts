@@ -7,6 +7,7 @@ export type AvailabilityBookingPage = {
   timeZone: string;
   appointmentDurationMinutes: number;
   bookingIntervalMinutes: number;
+  restBetweenSessionsMinutes: number;
   minimumNoticeHours: number;
 };
 
@@ -55,6 +56,7 @@ export function calculateAvailableTimes(input: {
   const durationMilliseconds =
     bookingPage.appointmentDurationMinutes * 60 * 1000;
   const intervalMilliseconds = bookingPage.bookingIntervalMinutes * 60 * 1000;
+  const restMilliseconds = bookingPage.restBetweenSessionsMinutes * 60 * 1000;
   const minimumNoticeCutoff = new Date(
     now.getTime() + bookingPage.minimumNoticeHours * 60 * 60 * 1000,
   );
@@ -78,7 +80,11 @@ export function calculateAvailableTimes(input: {
       if (startsAt < minimumNoticeCutoff) continue;
       if (
         scheduledAppointments.some((appointment) =>
-          rangesOverlap({ startsAt, endsAt }, appointment),
+          occupiedRangesOverlap(
+            { startsAt, endsAt },
+            appointment,
+            restMilliseconds,
+          ),
         )
       ) {
         continue;
@@ -131,16 +137,30 @@ function validateCalculationInput(
     );
   }
 
+  if (bookingPage.restBetweenSessionsMinutes < 0) {
+    throw new AvailableTimeConfigurationError(
+      "Rest between sessions cannot be negative",
+    );
+  }
+
   if (
-    bookingPage.appointmentDurationMinutes !==
-    bookingPage.bookingIntervalMinutes
+    bookingPage.bookingIntervalMinutes !==
+    bookingPage.appointmentDurationMinutes +
+      bookingPage.restBetweenSessionsMinutes
   ) {
     throw new AvailableTimeConfigurationError(
-      "Appointment duration must equal the booking interval for the MVP",
+      "Booking interval must equal appointment duration plus rest",
     );
   }
 }
 
-function rangesOverlap(first: AvailableTimeRange, second: AvailableTimeRange) {
-  return first.startsAt < second.endsAt && first.endsAt > second.startsAt;
+function occupiedRangesOverlap(
+  first: AvailableTimeRange,
+  second: AvailableTimeRange,
+  restMilliseconds: number,
+) {
+  return (
+    first.startsAt.getTime() < second.endsAt.getTime() + restMilliseconds &&
+    first.endsAt.getTime() + restMilliseconds > second.startsAt.getTime()
+  );
 }

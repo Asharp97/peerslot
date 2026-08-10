@@ -17,7 +17,7 @@ tests {
 
     expect(res.getStatus()).to.equal(200);
     expect(body.timeZone).to.equal("Europe/Istanbul");
-    expect(body.availableTimes).to.have.length(6);
+    expect(body.availableTimes).to.have.length(5);
     expect(starts).to.deep.equal([...starts].sort());
     expect(body.availableTimes[0].localized.en).to.be.a("string");
     expect(body.availableTimes[0].localized.tr).to.be.a("string");

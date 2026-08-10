@@ -54,10 +54,16 @@ export async function loadProviderWorkspace(providerId: string) {
         .where(eq(availabilitySlots.teacherId, providerId))
         .orderBy(desc(appointments.createdAt))
         .limit(8),
-      getAvailableTimesForBookingPage(setup.bookingPage, {
-        startsAt: now,
-        endsAt: weekEndsAt,
-      }),
+      getAvailableTimesForBookingPage(
+        {
+          ...setup.bookingPage,
+          restBetweenSessionsMinutes: setup.profile.restBetweenSessionsMinutes,
+        },
+        {
+          startsAt: now,
+          endsAt: weekEndsAt,
+        },
+      ),
     ]);
 
   return {

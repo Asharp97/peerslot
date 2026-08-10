@@ -6,6 +6,7 @@ import {
   availabilitySlots,
   availabilityWindows,
   bookingPages,
+  providerProfiles,
 } from "@/db/schema";
 import { createAvailableTimeService } from "@/lib/available-time-service";
 import type {
@@ -33,7 +34,13 @@ const postgresAvailableTimeRepository = {
       );
   },
 
-  async loadAppointments(bookingPageId: string, range: AvailableTimeRange) {
+  async loadAppointments(
+    bookingPageId: string,
+    range: AvailableTimeRange,
+    restBetweenSessionsMinutes: number,
+  ) {
+    const restMilliseconds = restBetweenSessionsMinutes * 60 * 1000;
+
     return db
       .select({
         startsAt: availabilitySlots.startsAt,
@@ -52,8 +59,14 @@ const postgresAvailableTimeRepository = {
       .where(
         and(
           eq(availabilityWindows.bookingPageId, bookingPageId),
-          lt(availabilitySlots.startsAt, range.endsAt),
-          gt(availabilitySlots.endsAt, range.startsAt),
+          lt(
+            availabilitySlots.startsAt,
+            new Date(range.endsAt.getTime() + restMilliseconds),
+          ),
+          gt(
+            availabilitySlots.endsAt,
+            new Date(range.startsAt.getTime() - restMilliseconds),
+          ),
         ),
       );
   },
@@ -77,9 +90,14 @@ export async function findPublishedAvailabilityBookingPage(slug: string) {
       timeZone: bookingPages.timeZone,
       appointmentDurationMinutes: bookingPages.appointmentDurationMinutes,
       bookingIntervalMinutes: bookingPages.bookingIntervalMinutes,
+      restBetweenSessionsMinutes: providerProfiles.restBetweenSessionsMinutes,
       minimumNoticeHours: bookingPages.minimumNoticeHours,
     })
     .from(bookingPages)
+    .innerJoin(
+      providerProfiles,
+      eq(providerProfiles.userId, bookingPages.providerId),
+    )
     .where(and(eq(bookingPages.slug, slug), eq(bookingPages.isPublished, true)))
     .limit(1);
 

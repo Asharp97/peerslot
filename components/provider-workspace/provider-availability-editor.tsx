@@ -21,6 +21,7 @@ import {
   type ProviderWindowStatus,
 } from "@/lib/provider-availability";
 
+import { DateTimeWindowPicker } from "./date-time-window-picker";
 import { useProviderWorkspace } from "./provider-shell";
 
 type AvailabilityWindow = {
@@ -262,29 +263,20 @@ export function ProviderAvailabilityEditor({
             ) : null}
           </div>
 
-          <label className="mt-7 block text-xs font-bold text-white/60">
-            {copy.date}
-            <input
-              className="mt-2 min-h-12 w-full rounded-xl border border-white/15 bg-white/8 px-4 text-sm text-white scheme-dark"
-              min={providerLocalDate(new Date(), data.bookingPage.timeZone)}
-              onChange={(event) => setDate(event.target.value)}
-              required
-              type="date"
-              value={date}
-            />
-          </label>
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <TimeInput
-              label={copy.startsAt}
-              onChange={setStartsAt}
-              value={startsAt}
-            />
-            <TimeInput
-              label={copy.endsAt}
-              onChange={setEndsAt}
-              value={endsAt}
-            />
-          </div>
+          <DateTimeWindowPicker
+            copy={copy}
+            date={date}
+            endsAt={endsAt}
+            locale={locale}
+            minimumDate={providerLocalDate(
+              new Date(),
+              data.bookingPage.timeZone,
+            )}
+            onDateChange={setDate}
+            onEndsAtChange={setEndsAt}
+            onStartsAtChange={setStartsAt}
+            startsAt={startsAt}
+          />
           <p className="mt-4 text-xs leading-5 text-white/45">
             {copy.timezoneNote.replace("{timeZone}", data.bookingPage.timeZone)}
           </p>
@@ -448,29 +440,6 @@ export function ProviderAvailabilityEditor({
         </div>
       </section>
     </div>
-  );
-}
-
-function TimeInput({
-  label,
-  onChange,
-  value,
-}: {
-  label: string;
-  onChange: (value: string) => void;
-  value: string;
-}) {
-  return (
-    <label className="block text-xs font-bold text-white/60">
-      {label}
-      <input
-        className="mt-2 min-h-12 w-full rounded-xl border border-white/15 bg-white/8 px-4 text-sm text-white scheme-dark"
-        onChange={(event) => onChange(event.target.value)}
-        required
-        type="time"
-        value={value}
-      />
-    </label>
   );
 }
 

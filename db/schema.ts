@@ -124,11 +124,11 @@ export const bookingPages = pgTable(
     ),
     check(
       "booking_page_interval_valid",
-      sql`${table.bookingIntervalMinutes} between 5 and 180`,
+      sql`${table.bookingIntervalMinutes} between 15 and 300`,
     ),
     check(
-      "booking_page_duration_matches_interval",
-      sql`${table.appointmentDurationMinutes} = ${table.bookingIntervalMinutes}`,
+      "booking_page_interval_covers_duration",
+      sql`${table.bookingIntervalMinutes} >= ${table.appointmentDurationMinutes}`,
     ),
     check(
       "booking_page_notice_valid",

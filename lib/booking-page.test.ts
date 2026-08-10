@@ -26,24 +26,31 @@ describe("booking pages", () => {
         title: "Book with Ceyda",
         timeZone: "Europe/Istanbul",
         appointmentDurationMinutes: 30,
-        bookingIntervalMinutes: 30,
+        bookingIntervalMinutes: 40,
+        restBetweenSessionsMinutes: 10,
         minimumNoticeHours: 24,
         isPublished: false,
       }),
-    ).toMatchObject({ isPublished: false, bookingIntervalMinutes: 30 });
+    ).toMatchObject({ isPublished: false, bookingIntervalMinutes: 40 });
   });
 
-  it("keeps appointment duration equal to the interval for the MVP", () => {
+  it("accepts rest and requires it to be reflected in the interval", () => {
     expect(
-      bookingPageSettingsSchema.parse({ appointmentDurationMinutes: 45 }),
+      bookingPageSettingsSchema.parse({
+        appointmentDurationMinutes: 45,
+        bookingIntervalMinutes: 55,
+        restBetweenSessionsMinutes: 10,
+      }),
     ).toMatchObject({
       appointmentDurationMinutes: 45,
-      bookingIntervalMinutes: 45,
+      bookingIntervalMinutes: 55,
+      restBetweenSessionsMinutes: 10,
     });
     expect(
       bookingPageSettingsSchema.safeParse({
         appointmentDurationMinutes: 30,
-        bookingIntervalMinutes: 15,
+        bookingIntervalMinutes: 30,
+        restBetweenSessionsMinutes: 10,
       }).success,
     ).toBe(false);
   });
