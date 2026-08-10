@@ -16,10 +16,10 @@ rules. The first version focuses on a deliberately narrow workflow:
 - Two students can never claim the same slot.
 
 > [!NOTE]
-> PeerSlot is in the initial development stage. Provider authentication,
-> onboarding, booking-page creation, and initial slot APIs are in place.
-> Availability management and the complete appointment workflow are still
-> being implemented.
+> PeerSlot is in active development. Provider authentication, onboarding,
+> booking pages, availability calculation, and the localized provider workspace
+> are in place. The student appointment and rescheduling workflow is still being
+> implemented.
 
 ## The problem
 
@@ -33,7 +33,7 @@ policy in control.
 
 ## Core workflow
 
-1. A teacher creates available meeting slots.
+1. A teacher creates free-time windows that derive meeting slots.
 2. A student signs in and sees their upcoming appointment.
 3. PeerSlot determines whether that appointment may be changed.
 4. The student chooses from valid, unoccupied alternatives.
@@ -53,10 +53,10 @@ policy in control.
 
 ### Teacher experience
 
-- Create and remove availability slots
+- Create, preview, edit, publish, and remove availability windows
 - Review upcoming appointments
-- View a weekly, color-coded schedule
-- See whether an appointment has already been rescheduled
+- View open times and recent booking notifications
+- Manage booking-page publication and scheduling defaults
 
 ### Scheduling guarantees
 
@@ -298,8 +298,8 @@ For endpoint examples and the included Bruno collection, see
   not security.
 - **Let PostgreSQL protect shared state.** Constraints are the final defense
   against scheduling races.
-- **Start with explicit slots.** Recurring availability can be added after the
-  fundamental workflow is reliable.
+- **Derive slots from explicit windows.** Recurring availability can be added
+  after the fundamental workflow is reliable.
 - **Use color accessibly.** Calendar states also need text labels or icons.
 - **Avoid speculative infrastructure.** The application remains a monolith
   until real requirements justify another service.
@@ -322,10 +322,10 @@ For endpoint examples and the included Bruno collection, see
 - [x] Add user profiles and provider capabilities
 - [x] Add provider registration, onboarding, and booking-page creation
 - [x] Add initial teacher availability APIs
-- [ ] Build teacher availability management
+- [x] Build teacher availability management
 - [ ] Build the student appointment view
 - [ ] Implement atomic one-time rescheduling
-- [ ] Add the teacher calendar
+- [x] Add the provider dashboard and appointments overview
 - [ ] Add scheduling-rule unit tests
 - [ ] Add end-to-end tests for the primary workflows
 - [ ] Deploy the application

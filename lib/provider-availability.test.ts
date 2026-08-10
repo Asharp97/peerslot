@@ -1,0 +1,64 @@
+import { describe, expect, it } from "vitest";
+
+import {
+  getProviderWindowStatus,
+  previewAvailabilityWindow,
+  zonedLocalDateTimeToUtc,
+} from "./provider-availability";
+
+describe("provider availability editor", () => {
+  it("converts provider-local Istanbul time to UTC", () => {
+    expect(
+      zonedLocalDateTimeToUtc(
+        "2030-01-15",
+        "13:00",
+        "Europe/Istanbul",
+      ).toISOString(),
+    ).toBe("2030-01-15T10:00:00.000Z");
+  });
+
+  it("previews generated appointment times that fit the window", () => {
+    const preview = previewAvailabilityWindow({
+      date: "2030-01-15",
+      startsAt: "13:00",
+      endsAt: "16:00",
+      timeZone: "Europe/Istanbul",
+      durationMinutes: 30,
+      intervalMinutes: 30,
+    });
+
+    expect(preview.slots).toHaveLength(6);
+    expect(preview.slots[5].startsAt.toISOString()).toBe(
+      "2030-01-15T12:30:00.000Z",
+    );
+  });
+
+  it("distinguishes booked, past, unpublished, and available windows", () => {
+    const common = {
+      windowId: "window-id",
+      startsAt: new Date("2030-01-15T10:00:00.000Z"),
+      endsAt: new Date("2030-01-15T11:00:00.000Z"),
+      isActive: true,
+      isPagePublished: true,
+      bookedWindowIds: new Set<string>(),
+      now: new Date("2030-01-15T09:00:00.000Z"),
+    };
+
+    expect(getProviderWindowStatus(common)).toBe("available");
+    expect(
+      getProviderWindowStatus({
+        ...common,
+        bookedWindowIds: new Set(["window-id"]),
+      }),
+    ).toBe("booked");
+    expect(getProviderWindowStatus({ ...common, isPagePublished: false })).toBe(
+      "unpublished",
+    );
+    expect(
+      getProviderWindowStatus({
+        ...common,
+        now: new Date("2030-01-15T12:00:00.000Z"),
+      }),
+    ).toBe("past");
+  });
+});

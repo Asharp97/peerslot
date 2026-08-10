@@ -1,0 +1,238 @@
+"use client";
+
+import {
+  Check,
+  Eye,
+  EyeOff,
+  Link2,
+  LoaderCircle,
+  RefreshCw,
+} from "lucide-react";
+import { useState } from "react";
+
+import { useProviderWorkspace } from "./provider-shell";
+
+export type ProviderSettingsCopy = {
+  eyebrow: string;
+  title: string;
+  intro: string;
+  bookingPage: string;
+  pageTitle: string;
+  duration: string;
+  notice: string;
+  timeZone: string;
+  published: string;
+  publishHelp: string;
+  save: string;
+  saved: string;
+  saveError: string;
+  linkSecurity: string;
+  linkDescription: string;
+  regenerate: string;
+  minutes: string;
+  hours: string;
+};
+
+export function ProviderSettings({ copy }: { copy: ProviderSettingsCopy }) {
+  const { accessToken, data, refresh } = useProviderWorkspace();
+  const [title, setTitle] = useState(data.bookingPage.title);
+  const [duration, setDuration] = useState(
+    data.bookingPage.appointmentDurationMinutes,
+  );
+  const [notice, setNotice] = useState(data.bookingPage.minimumNoticeHours);
+  const [timeZone, setTimeZone] = useState(data.bookingPage.timeZone);
+  const [published, setPublished] = useState(data.bookingPage.isPublished);
+  const [state, setState] = useState<"idle" | "saving" | "saved" | "error">(
+    "idle",
+  );
+  const [rotating, setRotating] = useState(false);
+
+  async function save(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setState("saving");
+    const response = await fetch("/api/booking-page", {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title,
+        timeZone,
+        appointmentDurationMinutes: duration,
+        bookingIntervalMinutes: duration,
+        minimumNoticeHours: notice,
+        isPublished: published,
+      }),
+    });
+
+    if (!response.ok) {
+      setState("error");
+      return;
+    }
+
+    await refresh();
+    setState("saved");
+    window.setTimeout(() => setState("idle"), 1800);
+  }
+
+  async function regenerateLink() {
+    setRotating(true);
+    try {
+      const response = await fetch("/api/booking-page/regenerate-link", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (response.ok) await refresh();
+    } finally {
+      setRotating(false);
+    }
+  }
+
+  return (
+    <div>
+      <section>
+        <p className="text-[11px] font-bold tracking-[0.16em] text-black/45 uppercase">
+          {copy.eyebrow}
+        </p>
+        <h1 className="mt-3 font-display text-5xl leading-none tracking-[-0.04em] sm:text-6xl">
+          {copy.title}
+        </h1>
+        <p className="mt-4 max-w-2xl text-sm leading-6 text-black/55 sm:text-base">
+          {copy.intro}
+        </p>
+      </section>
+
+      <section className="mt-8 grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
+        <form
+          className="rounded-[28px] border border-black/10 bg-[#fbfaf4] p-6 sm:p-8"
+          onSubmit={save}
+        >
+          <h2 className="text-lg font-bold">{copy.bookingPage}</h2>
+          <div className="mt-6 grid gap-5 sm:grid-cols-2">
+            <SettingsInput
+              label={copy.pageTitle}
+              onChange={setTitle}
+              value={title}
+            />
+            <SettingsInput
+              label={copy.timeZone}
+              onChange={setTimeZone}
+              value={timeZone}
+            />
+            <label className="text-xs font-bold text-black/55">
+              {copy.duration}
+              <select
+                className="mt-2 min-h-12 w-full rounded-xl border border-black/10 bg-white px-4 text-sm text-vast-ink"
+                onChange={(event) => setDuration(Number(event.target.value))}
+                value={duration}
+              >
+                {[15, 30, 45, 60, 90].map((value) => (
+                  <option key={value} value={value}>
+                    {value} {copy.minutes}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs font-bold text-black/55">
+              {copy.notice}
+              <select
+                className="mt-2 min-h-12 w-full rounded-xl border border-black/10 bg-white px-4 text-sm text-vast-ink"
+                onChange={(event) => setNotice(Number(event.target.value))}
+                value={notice}
+              >
+                {[0, 1, 4, 12, 24, 48].map((value) => (
+                  <option key={value} value={value}>
+                    {value} {copy.hours}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <label className="mt-6 flex cursor-pointer items-center gap-4 rounded-2xl border border-black/10 bg-white p-4">
+            <span
+              className={`grid size-10 place-items-center rounded-full ${published ? "bg-flow-lime" : "bg-black/5 text-black/35"}`}
+            >
+              {published ? <Eye size={18} /> : <EyeOff size={18} />}
+            </span>
+            <span className="flex-1">
+              <span className="block text-sm font-bold">{copy.published}</span>
+              <span className="mt-1 block text-xs text-black/45">
+                {copy.publishHelp}
+              </span>
+            </span>
+            <input
+              checked={published}
+              className="size-5 accent-[#1a1a1a]"
+              onChange={(event) => setPublished(event.target.checked)}
+              type="checkbox"
+            />
+          </label>
+
+          {state === "error" ? (
+            <p className="mt-4 text-xs font-semibold text-red-700">
+              {copy.saveError}
+            </p>
+          ) : null}
+          <button
+            className="mt-6 inline-flex min-h-12 items-center gap-2 rounded-full bg-vast-ink px-6 text-sm font-bold text-white disabled:opacity-50"
+            disabled={state === "saving"}
+            type="submit"
+          >
+            {state === "saving" ? (
+              <LoaderCircle className="animate-spin" size={16} />
+            ) : (
+              <Check className="text-flow-lime" size={16} />
+            )}
+            {state === "saved" ? copy.saved : copy.save}
+          </button>
+        </form>
+
+        <article className="h-fit rounded-[28px] bg-vast-ink p-6 text-white sm:p-8">
+          <span className="grid size-11 place-items-center rounded-full bg-flow-lime text-vast-ink">
+            <Link2 size={19} />
+          </span>
+          <h2 className="mt-8 font-display text-3xl">{copy.linkSecurity}</h2>
+          <p className="mt-3 text-sm leading-6 text-white/55">
+            {copy.linkDescription}
+          </p>
+          <p className="mt-6 rounded-xl bg-white/8 px-4 py-3 font-mono text-sm text-flow-lime">
+            {data.bookingPage.slug}
+          </p>
+          <button
+            className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full border border-white/20 px-5 text-sm font-bold hover:bg-white/10 disabled:opacity-50"
+            disabled={rotating}
+            onClick={regenerateLink}
+            type="button"
+          >
+            <RefreshCw className={rotating ? "animate-spin" : ""} size={15} />
+            {copy.regenerate}
+          </button>
+        </article>
+      </section>
+    </div>
+  );
+}
+
+function SettingsInput({
+  label,
+  onChange,
+  value,
+}: {
+  label: string;
+  onChange: (value: string) => void;
+  value: string;
+}) {
+  return (
+    <label className="text-xs font-bold text-black/55">
+      {label}
+      <input
+        className="mt-2 min-h-12 w-full rounded-xl border border-black/10 bg-white px-4 text-sm text-vast-ink"
+        onChange={(event) => onChange(event.target.value)}
+        required
+        value={value}
+      />
+    </label>
+  );
+}

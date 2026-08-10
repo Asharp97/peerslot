@@ -63,6 +63,13 @@ const availableTimeService = createAvailableTimeService(
   postgresAvailableTimeRepository,
 );
 
+export function getAvailableTimesForBookingPage(
+  bookingPage: AvailabilityBookingPage,
+  range: AvailableTimeRange,
+) {
+  return availableTimeService.calculate(bookingPage, range);
+}
+
 export async function findPublishedAvailabilityBookingPage(slug: string) {
   const [bookingPage] = await db
     .select({
@@ -89,6 +96,6 @@ export async function getAvailableTimesForPublishedBookingPage(
 
   return {
     timeZone: bookingPage.timeZone,
-    availableTimes: await availableTimeService.calculate(bookingPage, range),
+    availableTimes: await getAvailableTimesForBookingPage(bookingPage, range),
   };
 }

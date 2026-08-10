@@ -1,0 +1,27 @@
+meta {
+  name: Get provider dashboard
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/provider/dashboard
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+tests {
+  test("dashboard combines booking, appointment, and open-time data", function () {
+    const body = res.getBody();
+    expect(res.getStatus()).to.equal(200);
+    expect(body.profile.displayName).to.equal("Ceyda");
+    expect(body.bookingPage.slug).to.have.length(8);
+    expect(body.upcomingAppointments).to.be.an("array");
+    expect(body.recentBookings).to.be.an("array");
+    expect(body.openTimesThisWeek).to.be.an("array");
+  });
+}

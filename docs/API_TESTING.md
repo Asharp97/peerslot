@@ -89,6 +89,7 @@ continue into the same provider setup form and dashboard.
 | `GET`    | `/api/me`                               | JWT                   | Read user and PeerSlot capabilities    |
 | `GET`    | `/api/provider`                         | JWT                   | Read provider onboarding status        |
 | `POST`   | `/api/provider`                         | JWT                   | Create/update profile and booking page |
+| `GET`    | `/api/provider/dashboard`               | Provider JWT          | Read provider workspace summary        |
 | `GET`    | `/api/booking-page`                     | Provider JWT          | Read the provider's booking page       |
 | `PATCH`  | `/api/booking-page`                     | Provider JWT          | Update settings or publication state   |
 | `POST`   | `/api/booking-page/regenerate-link`     | Provider JWT          | Replace a compromised public slug      |
