@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   appointmentTimesChanged,
   providerAppointmentCreateSchema,
+  providerAppointmentDeleteSchema,
   providerAppointmentRangeSchema,
   providerAppointmentUpdateSchema,
   providerStudentCreateSchema,
@@ -120,6 +121,37 @@ describe("provider appointment input", () => {
 
     expect(result.occurrenceStartsAt).toEqual(new Date("2030-01-15T09:00:00Z"));
     expect(result.editScope).toBe("exception");
+  });
+
+  it("requires an occurrence when editing this and future sessions", () => {
+    expect(
+      providerAppointmentUpdateSchema.safeParse({
+        color: "#ffa946",
+        editScope: "future",
+      }).success,
+    ).toBe(false);
+    expect(
+      providerAppointmentUpdateSchema.parse({
+        color: "#ffa946",
+        editScope: "future",
+        occurrenceStartsAt: "2030-01-22T09:00:00Z",
+      }),
+    ).toMatchObject({
+      editScope: "future",
+      occurrenceStartsAt: new Date("2030-01-22T09:00:00Z"),
+    });
+  });
+
+  it("parses deletion scope and the selected occurrence", () => {
+    expect(
+      providerAppointmentDeleteSchema.parse({
+        deleteScope: "future",
+        occurrenceStartsAt: "2030-01-22T09:00:00Z",
+      }),
+    ).toEqual({
+      deleteScope: "future",
+      occurrenceStartsAt: new Date("2030-01-22T09:00:00Z"),
+    });
   });
 
   it("rejects a partial date change", () => {

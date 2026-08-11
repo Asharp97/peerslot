@@ -271,12 +271,20 @@ export const appointments = pgTable(
     examName: text("exam_name"),
     schoolYear: text("school_year"),
     recurrence: availabilityRecurrence("recurrence").default("none").notNull(),
+    recurrenceEndsAt: timestamp("recurrence_ends_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
     exceptionForAppointmentId: uuid("exception_for_appointment_id"),
     exceptionOriginalStartsAt: timestamp("exception_original_starts_at", {
       withTimezone: true,
       mode: "date",
     }),
     color: text("color").default("#f0d7ff").notNull(),
+    deletedAt: timestamp("deleted_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
     createdByProvider: boolean("created_by_provider").default(false).notNull(),
     createdAt: timestamp("created_at", {
       withTimezone: true,
@@ -324,6 +332,10 @@ export const appointments = pgTable(
     check(
       "appointment_exception_not_recurring",
       sql`${table.exceptionForAppointmentId} is null or ${table.recurrence} = 'none'`,
+    ),
+    check(
+      "appointment_recurrence_end_only_on_series",
+      sql`${table.recurrenceEndsAt} is null or (${table.recurrence} = 'weekly' and ${table.exceptionForAppointmentId} is null)`,
     ),
     check("appointment_color_hex", sql`${table.color} ~ '^#[0-9A-Fa-f]{6}$'`),
   ],

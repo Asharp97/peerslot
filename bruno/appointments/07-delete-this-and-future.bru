@@ -1,0 +1,42 @@
+meta {
+  name: Delete this and future recurring sessions
+  type: http
+  seq: 7
+}
+
+delete {
+  url: {{baseUrl}}/api/provider/appointments/{{futureSeriesId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  content-type: application/json
+  origin: {{baseUrl}}
+}
+
+body:json {
+  {
+    "deleteScope": "future",
+    "occurrenceStartsAt": "{{deletedFutureStartsAt}}"
+  }
+}
+
+script:pre-request {
+  const startsAt = new Date(bru.getVar("futureSeriesStartsAt"));
+  startsAt.setUTCDate(startsAt.getUTCDate() + 14);
+  bru.setVar("deletedFutureStartsAt", startsAt.toISOString());
+}
+
+tests {
+  test("deleting future occurrences preserves earlier session history", function () {
+    const body = res.getBody();
+    expect(res.getStatus()).to.equal(200);
+    expect(body.deleted).to.equal(true);
+    expect(body.scope).to.equal("future");
+  });
+}

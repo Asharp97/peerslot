@@ -89,7 +89,7 @@ type SessionDraft = {
   comment: string;
   status: "scheduled" | "cancelled";
   recurrence: "none" | "weekly";
-  editScope: "exception" | "series";
+  editScope: "exception" | "future";
   occurrenceStartsAt: string | null;
   color: string;
 };
@@ -127,7 +127,11 @@ export type ProviderAppointmentsCopy = {
   everyWeek: string;
   editScope: string;
   thisSessionOnly: string;
-  entireSeries: string;
+  thisAndFutureSessions: string;
+  deleteThisSession: string;
+  deleteThisAndFutureSessions: string;
+  deleteThisSessionConfirm: string;
+  deleteThisAndFutureConfirm: string;
   sessionColor: string;
   editStudent: string;
   deleteStudent: string;
@@ -292,7 +296,7 @@ export function ProviderAppointments({
         comment: appointment.comment ?? "",
         status: appointment.status,
         recurrence: appointment.recurrence,
-        editScope: appointment.recurrence === "weekly" ? "exception" : "series",
+        editScope: "exception",
         occurrenceStartsAt: appointment.occurrenceStartsAt,
         color: appointment.color,
       });
@@ -404,6 +408,46 @@ export function ProviderAppointments({
       ...draft,
       status: draft.status === "scheduled" ? "cancelled" : "scheduled",
     });
+  }
+
+  async function deleteSession() {
+    if (!draft?.appointmentId || !draft.occurrenceStartsAt) return;
+    const deleteFuture =
+      draft.recurrence === "weekly" && draft.editScope === "future";
+    if (
+      !window.confirm(
+        deleteFuture
+          ? copy.deleteThisAndFutureConfirm
+          : copy.deleteThisSessionConfirm,
+      )
+    ) {
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+    try {
+      const response = await fetch(
+        `/api/provider/appointments/${draft.appointmentId}`,
+        {
+          method: "DELETE",
+          headers: authenticatedJsonHeaders(accessToken),
+          body: JSON.stringify({
+            deleteScope: deleteFuture ? "future" : "occurrence",
+            occurrenceStartsAt: draft.occurrenceStartsAt,
+          }),
+        },
+      );
+      if (!response.ok) throw new Error(await responseError(response));
+
+      calendarRef.current?.getApi().refetchEvents();
+      await refresh();
+      setDialogOpen(false);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : copy.saveError);
+    } finally {
+      setSaving(false);
+    }
   }
 
   function beginStudentEdit(student: ProviderStudent) {
@@ -661,7 +705,7 @@ export function ProviderAppointments({
                       onValueChange={(editScope) =>
                         setDraft({
                           ...draft,
-                          editScope: editScope as "exception" | "series",
+                          editScope: editScope as "exception" | "future",
                         })
                       }
                       value={draft.editScope}
@@ -673,8 +717,8 @@ export function ProviderAppointments({
                         <SelectItem value="exception">
                           {copy.thisSessionOnly}
                         </SelectItem>
-                        <SelectItem value="series">
-                          {copy.entireSeries}
+                        <SelectItem value="future">
+                          {copy.thisAndFutureSessions}
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -742,7 +786,7 @@ export function ProviderAppointments({
 
               {draft.appointmentId ? (
                 <p className="mt-4 rounded-xl bg-lavender-whisper px-4 py-3 text-xs leading-5">
-                  {draft.editScope === "series"
+                  {draft.editScope === "future"
                     ? copy.seriesHelp
                     : copy.exceptionHelp}
                 </p>
@@ -755,19 +799,34 @@ export function ProviderAppointments({
 
               <DialogFooter className="mt-6 -mx-4 -mb-4">
                 {draft.appointmentId ? (
-                  <Button
-                    onClick={toggleCancellation}
-                    type="button"
-                    variant="outline"
-                  >
-                    {draft.status === "scheduled" ? (
-                      copy.cancelSession
-                    ) : (
-                      <>
-                        <RotateCcw size={15} /> {copy.restoreSession}
-                      </>
-                    )}
-                  </Button>
+                  <div className="mr-auto flex flex-wrap gap-2">
+                    <Button
+                      disabled={saving}
+                      onClick={() => void deleteSession()}
+                      type="button"
+                      variant="destructive"
+                    >
+                      <Trash2 size={15} />
+                      {draft.recurrence === "weekly" &&
+                      draft.editScope === "future"
+                        ? copy.deleteThisAndFutureSessions
+                        : copy.deleteThisSession}
+                    </Button>
+                    <Button
+                      disabled={saving}
+                      onClick={toggleCancellation}
+                      type="button"
+                      variant="outline"
+                    >
+                      {draft.status === "scheduled" ? (
+                        copy.cancelSession
+                      ) : (
+                        <>
+                          <RotateCcw size={15} /> {copy.restoreSession}
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 ) : null}
                 <Button disabled={saving} type="submit">
                   {saving ? (

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -110,6 +110,63 @@ describe("provider appointments calendar", () => {
       borderColor: "#ffffff",
       textColor: "#ffffff",
       extendedProps: { recurrenceLabel: "everyWeek" },
+    });
+  });
+
+  it("deletes only the selected recurring occurrence from its edit dialog", async () => {
+    const appointment = {
+      id: "occurrence-id",
+      appointmentId: "appointment-id",
+      seriesId: "appointment-id",
+      occurrenceStartsAt: "2030-01-15T09:00:00Z",
+      recurrence: "weekly" as const,
+      isException: false,
+      providerStudentId: "student-id",
+      studentName: "Ada",
+      studentEmail: null,
+      startsAt: "2030-01-15T09:00:00Z",
+      endsAt: "2030-01-15T09:45:00Z",
+      status: "scheduled" as const,
+      comment: null,
+      examName: "LGS",
+      schoolYear: null,
+      color: "#034f46",
+      createdByProvider: true,
+      rescheduleCount: 0,
+    };
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/provider/students")) {
+        return Response.json({ students: [] });
+      }
+      if (url.includes("/api/provider/appointments/appointment-id")) {
+        return Response.json({ deleted: true, scope: "occurrence" });
+      }
+      return Response.json({ appointments: [] });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("confirm", vi.fn(() => true));
+    render(<ProviderAppointments copy={copy} />);
+
+    await act(async () => {
+      const clickEvent = calendar.props?.eventClick as (input: unknown) => void;
+      clickEvent({ event: { extendedProps: { appointment } } });
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "deleteThisSession" }),
+    );
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/provider/appointments/appointment-id",
+        expect.objectContaining({
+          method: "DELETE",
+          body: JSON.stringify({
+            deleteScope: "occurrence",
+            occurrenceStartsAt: "2030-01-15T09:00:00Z",
+          }),
+        }),
+      );
     });
   });
 });

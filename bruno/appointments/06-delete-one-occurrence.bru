@@ -1,0 +1,42 @@
+meta {
+  name: Delete one recurring occurrence
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/api/provider/appointments/{{futureSeriesId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  content-type: application/json
+  origin: {{baseUrl}}
+}
+
+body:json {
+  {
+    "deleteScope": "occurrence",
+    "occurrenceStartsAt": "{{deletedOccurrenceStartsAt}}"
+  }
+}
+
+script:pre-request {
+  const startsAt = new Date(bru.getVar("futureSeriesStartsAt"));
+  startsAt.setUTCDate(startsAt.getUTCDate() + 7);
+  bru.setVar("deletedOccurrenceStartsAt", startsAt.toISOString());
+}
+
+tests {
+  test("deleting one occurrence leaves the weekly series active", function () {
+    const body = res.getBody();
+    expect(res.getStatus()).to.equal(200);
+    expect(body.deleted).to.equal(true);
+    expect(body.scope).to.equal("occurrence");
+  });
+}

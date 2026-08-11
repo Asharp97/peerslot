@@ -84,7 +84,7 @@ export const providerAppointmentUpdateSchema = z
     schoolYear: nullableText(80),
     status: z.enum(["scheduled", "cancelled"]).optional(),
     color: sessionColorSchema.optional(),
-    editScope: z.enum(["exception", "series"]).optional(),
+    editScope: z.enum(["exception", "future"]).optional(),
     occurrenceStartsAt: timestampWithOffsetSchema.optional(),
   })
   .strict()
@@ -98,6 +98,14 @@ export const providerAppointmentUpdateSchema = z
     {
       message: "startsAt and endsAt must be updated together",
       path: ["endsAt"],
+    },
+  )
+  .refine(
+    ({ editScope, occurrenceStartsAt }) =>
+      editScope !== "future" || occurrenceStartsAt !== undefined,
+    {
+      message: "The selected recurring occurrence is required",
+      path: ["occurrenceStartsAt"],
     },
   )
   .refine(
@@ -130,6 +138,17 @@ export const providerAppointmentUpdateSchema = z
     }),
   );
 
+export const providerAppointmentDeleteSchema = z
+  .object({
+    deleteScope: z.enum(["occurrence", "future"]),
+    occurrenceStartsAt: timestampWithOffsetSchema,
+  })
+  .strict()
+  .transform(({ occurrenceStartsAt, ...input }) => ({
+    ...input,
+    occurrenceStartsAt: new Date(occurrenceStartsAt),
+  }));
+
 export const providerAppointmentRangeSchema = z
   .object({
     startsAt: timestampWithOffsetSchema,
@@ -155,6 +174,9 @@ export type ProviderAppointmentCreateInput = z.infer<
 >;
 export type ProviderAppointmentUpdateInput = z.infer<
   typeof providerAppointmentUpdateSchema
+>;
+export type ProviderAppointmentDeleteInput = z.infer<
+  typeof providerAppointmentDeleteSchema
 >;
 export type ProviderStudentCreateInput = z.infer<
   typeof providerStudentCreateSchema

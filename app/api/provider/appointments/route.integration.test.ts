@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { GET, POST } from "./route";
-import { PATCH } from "./[id]/route";
+import { DELETE, PATCH } from "./[id]/route";
 
 import {
   createProviderAppointment,
+  deleteProviderAppointment,
   listProviderAppointments,
   updateProviderAppointment,
 } from "@/lib/provider-appointments";
@@ -17,6 +18,7 @@ vi.mock("@/lib/provider-appointments", () => ({
   ProviderAppointmentValidationError: class extends Error {},
   ProviderStudentNotFoundError: class extends Error {},
   createProviderAppointment: vi.fn(),
+  deleteProviderAppointment: vi.fn(),
   listProviderAppointments: vi.fn(),
   updateProviderAppointment: vi.fn(),
 }));
@@ -104,6 +106,71 @@ describe("provider appointments API integration", () => {
       },
     );
   });
+
+  it("edits the selected and future recurring sessions", async () => {
+    vi.mocked(updateProviderAppointment).mockResolvedValue({
+      id: appointmentId,
+    } as Awaited<ReturnType<typeof updateProviderAppointment>>);
+    const response = await PATCH(
+      jsonRequest(
+        `http://localhost/api/provider/appointments/${appointmentId}`,
+        "PATCH",
+        {
+          startsAt: "2030-01-22T10:00:00Z",
+          endsAt: "2030-01-22T10:45:00Z",
+          editScope: "future",
+          occurrenceStartsAt: "2030-01-22T09:00:00Z",
+        },
+      ),
+      { params: Promise.resolve({ id: appointmentId }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(updateProviderAppointment).toHaveBeenCalledWith(
+      providerId,
+      appointmentId,
+      expect.objectContaining({
+        editScope: "future",
+        startsAt: new Date("2030-01-22T10:00:00Z"),
+        occurrenceStartsAt: new Date("2030-01-22T09:00:00Z"),
+      }),
+    );
+  });
+
+  it.each(["occurrence", "future"] as const)(
+    "deletes the requested recurring %s scope",
+    async (deleteScope) => {
+      vi.mocked(deleteProviderAppointment).mockResolvedValue({
+        deleted: true,
+        scope: deleteScope,
+      });
+      const response = await DELETE(
+        jsonRequest(
+          `http://localhost/api/provider/appointments/${appointmentId}`,
+          "DELETE",
+          {
+            deleteScope,
+            occurrenceStartsAt: "2030-01-22T09:00:00Z",
+          },
+        ),
+        { params: Promise.resolve({ id: appointmentId }) },
+      );
+
+      expect(response.status).toBe(200);
+      expect(deleteProviderAppointment).toHaveBeenCalledWith(
+        providerId,
+        appointmentId,
+        {
+          deleteScope,
+          occurrenceStartsAt: new Date("2030-01-22T09:00:00Z"),
+        },
+      );
+      expect(await response.json()).toEqual({
+        deleted: true,
+        scope: deleteScope,
+      });
+    },
+  );
 
   it("rejects providers that have not completed setup", async () => {
     vi.mocked(getCurrentUser).mockResolvedValue({

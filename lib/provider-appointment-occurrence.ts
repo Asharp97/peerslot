@@ -8,8 +8,10 @@ export type ProviderAppointmentScheduleRow = {
   startsAt: Date;
   endsAt: Date;
   recurrence: "none" | "weekly";
+  recurrenceEndsAt: Date | null;
   exceptionForAppointmentId: string | null;
   exceptionOriginalStartsAt: Date | null;
+  deletedAt: Date | null;
   status: "scheduled" | "cancelled";
   studentName: string;
   [key: string]: unknown;
@@ -54,6 +56,7 @@ export function expandProviderAppointmentOccurrences<
 
   for (const row of rows) {
     if (row.exceptionForAppointmentId) continue;
+    if (row.deletedAt) continue;
 
     if (row.recurrence === "none") {
       if (rangesOverlap(row, range)) {
@@ -64,9 +67,19 @@ export function expandProviderAppointmentOccurrences<
       continue;
     }
 
+    const recurrenceRange = row.recurrenceEndsAt
+      ? {
+          startsAt: range.startsAt,
+          endsAt: new Date(
+            Math.min(range.endsAt.getTime(), row.recurrenceEndsAt.getTime()),
+          ),
+        }
+      : range;
+    if (recurrenceRange.endsAt <= recurrenceRange.startsAt) continue;
+
     const occurrences = expandAvailabilityRule(
       { ...row, isActive: true },
-      range,
+      recurrenceRange,
       timeZone,
     );
 
@@ -88,6 +101,7 @@ export function expandProviderAppointmentOccurrences<
     if (!row.exceptionForAppointmentId || !row.exceptionOriginalStartsAt) {
       continue;
     }
+    if (row.deletedAt) continue;
     if (!rangesOverlap(row, range)) continue;
 
     result.push({
@@ -122,7 +136,9 @@ export function findAppointmentConflictInRows<
     excludedOccurrence?: { appointmentId: string; startsAt: Date };
   } = {},
 ) {
-  const scheduledRows = rows.filter(({ status }) => status === "scheduled");
+  const scheduledRows = rows.filter(
+    ({ deletedAt, status }) => status === "scheduled" && !deletedAt,
+  );
 
   if (candidate.recurrence === "weekly") {
     return scheduledRows.find((row) => {
@@ -132,6 +148,34 @@ export function findAppointmentConflictInRows<
         row.exceptionForAppointmentId === exclusions.excludedSeriesId
       ) {
         return false;
+      }
+      if (
+        row.recurrence === "weekly" &&
+        row.recurrenceEndsAt &&
+        row.recurrenceEndsAt <= candidate.startsAt
+      ) {
+        return false;
+      }
+      if (row.recurrence === "weekly" && row.recurrenceEndsAt) {
+        const comparisonRange = {
+          startsAt: candidate.startsAt,
+          endsAt: row.recurrenceEndsAt,
+        };
+        const candidateOccurrences = expandAvailabilityRule(
+          { ...candidate, id: "candidate", isActive: true },
+          comparisonRange,
+          timeZone,
+        );
+        const rowOccurrences = expandAvailabilityRule(
+          { ...row, id: row.id, isActive: true },
+          comparisonRange,
+          timeZone,
+        );
+        return candidateOccurrences.some((candidateOccurrence) =>
+          rowOccurrences.some((rowOccurrence) =>
+            rangesOverlap(candidateOccurrence, rowOccurrence),
+          ),
+        );
       }
       return availabilityRulesOverlap(
         candidate,

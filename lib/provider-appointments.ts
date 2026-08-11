@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { and, asc, eq, notExists, sql } from "drizzle-orm";
+import { and, asc, eq, gte, notExists, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
@@ -14,6 +14,7 @@ import {
 import { appointmentTimesChanged } from "@/lib/provider-appointment";
 import type {
   ProviderAppointmentCreateInput,
+  ProviderAppointmentDeleteInput,
   ProviderAppointmentUpdateInput,
   ProviderStudentCreateInput,
   ProviderStudentUpdateInput,
@@ -65,6 +66,7 @@ const appointmentSelection = {
   startsAt: availabilitySlots.startsAt,
   endsAt: availabilitySlots.endsAt,
   recurrence: appointments.recurrence,
+  recurrenceEndsAt: appointments.recurrenceEndsAt,
   exceptionForAppointmentId: appointments.exceptionForAppointmentId,
   exceptionOriginalStartsAt: appointments.exceptionOriginalStartsAt,
   status: appointments.status,
@@ -72,6 +74,7 @@ const appointmentSelection = {
   examName: appointments.examName,
   schoolYear: appointments.schoolYear,
   color: appointments.color,
+  deletedAt: appointments.deletedAt,
   createdByProvider: appointments.createdByProvider,
   rescheduleCount: appointments.rescheduleCount,
   createdAt: appointments.createdAt,
@@ -217,6 +220,10 @@ export async function updateProviderAppointment(
 ) {
   const current = await requireProviderAppointment(providerId, appointmentId);
 
+  if (input.editScope === "future") {
+    return updateFutureAppointmentSeries(providerId, current, input);
+  }
+
   if (
     input.editScope === "exception" &&
     current.recurrence === "weekly" &&
@@ -225,28 +232,211 @@ export async function updateProviderAppointment(
     return createAppointmentException(providerId, current, input);
   }
 
-  const seriesTarget =
-    input.editScope === "series" && current.exceptionForAppointmentId
+  return updateAppointmentRecord(providerId, current, input);
+}
+
+export async function deleteProviderAppointment(
+  providerId: string,
+  appointmentId: string,
+  input: ProviderAppointmentDeleteInput,
+) {
+  const current = await requireProviderAppointment(providerId, appointmentId);
+
+  if (input.deleteScope === "future") {
+    const series = current.exceptionForAppointmentId
       ? await requireProviderAppointment(
           providerId,
           current.exceptionForAppointmentId,
         )
       : current;
-  const updated = await updateAppointmentRecord(
-    providerId,
-    seriesTarget,
-    input,
-  );
-
-  if (
-    input.editScope === "series" &&
-    current.exceptionForAppointmentId &&
-    current.id !== seriesTarget.id
-  ) {
-    await deleteAppointmentRecord(current);
+    await validateSeriesCutoff(providerId, series, input.occurrenceStartsAt);
+    await endAppointmentSeries(series.id, input.occurrenceStartsAt);
+    return { deleted: true, scope: "future" as const };
   }
 
-  return updated;
+  if (current.recurrence !== "weekly" || current.exceptionForAppointmentId) {
+    await softDeleteAppointment(current.id);
+    return { deleted: true, scope: "occurrence" as const };
+  }
+
+  await validateSeriesCutoff(providerId, current, input.occurrenceStartsAt);
+  const duration = current.endsAt.getTime() - current.startsAt.getTime();
+  await insertAppointment(providerId, {
+    providerStudentId: current.providerStudentId!,
+    startsAt: input.occurrenceStartsAt,
+    endsAt: new Date(input.occurrenceStartsAt.getTime() + duration),
+    recurrence: "none",
+    exceptionForAppointmentId: current.id,
+    exceptionOriginalStartsAt: input.occurrenceStartsAt,
+    comment: current.comment,
+    examName: current.examName,
+    schoolYear: current.schoolYear,
+    color: current.color,
+    status: current.status,
+    deletedAt: new Date(),
+    createdByProvider: true,
+  });
+  return { deleted: true, scope: "occurrence" as const };
+}
+
+async function updateFutureAppointmentSeries(
+  providerId: string,
+  current: Awaited<ReturnType<typeof requireProviderAppointment>>,
+  input: ProviderAppointmentUpdateInput,
+) {
+  if (!input.occurrenceStartsAt) {
+    throw new ProviderAppointmentValidationError(
+      "The selected recurring occurrence is required",
+    );
+  }
+
+  const series = current.exceptionForAppointmentId
+    ? await requireProviderAppointment(
+        providerId,
+        current.exceptionForAppointmentId,
+      )
+    : current;
+  await validateSeriesCutoff(providerId, series, input.occurrenceStartsAt);
+
+  const duration = series.endsAt.getTime() - series.startsAt.getTime();
+  const range = {
+    startsAt: input.startsAt ?? input.occurrenceStartsAt,
+    endsAt:
+      input.endsAt ?? new Date(input.occurrenceStartsAt.getTime() + duration),
+  };
+  await assertNoAppointmentOverlapForSeriesSplit(
+    providerId,
+    series.id,
+    input.occurrenceStartsAt,
+    { ...range, recurrence: "weekly" },
+  );
+
+  const targetSlot = await findOpenSlot(providerId, range);
+  const targetSlotId = targetSlot?.id ?? randomUUID();
+  const appointmentId = randomUUID();
+  const appointmentValues = {
+    id: appointmentId,
+    providerStudentId: series.providerStudentId!,
+    slotId: targetSlotId,
+    recurrence: "weekly" as const,
+    comment: input.comment !== undefined ? input.comment : series.comment,
+    examName: input.examName !== undefined ? input.examName : series.examName,
+    schoolYear:
+      input.schoolYear !== undefined ? input.schoolYear : series.schoolYear,
+    color: input.color ?? series.color,
+    status: input.status ?? series.status,
+    createdByProvider: true,
+    rescheduleCount: sql`${series.rescheduleCount} + 1`,
+  };
+  const endSeries = db
+    .update(appointments)
+    .set({ recurrenceEndsAt: input.occurrenceStartsAt, updatedAt: new Date() })
+    .where(eq(appointments.id, series.id));
+  const removeFutureExceptions = db
+    .update(appointments)
+    .set({ deletedAt: new Date(), updatedAt: new Date() })
+    .where(
+      and(
+        eq(appointments.exceptionForAppointmentId, series.id),
+        gte(appointments.exceptionOriginalStartsAt, input.occurrenceStartsAt),
+      ),
+    );
+
+  try {
+    if (targetSlot) {
+      await db.batch([
+        db.insert(appointments).values(appointmentValues),
+        endSeries,
+        removeFutureExceptions,
+      ]);
+    } else {
+      await db.batch([
+        db.insert(availabilitySlots).values({
+          id: targetSlotId,
+          teacherId: providerId,
+          ...range,
+        }),
+        db.insert(appointments).values(appointmentValues),
+        endSeries,
+        removeFutureExceptions,
+      ]);
+    }
+  } catch (error) {
+    if (isPostgresError(error, "23505")) {
+      throw new ProviderAppointmentConflictError();
+    }
+    throw error;
+  }
+
+  return requireProviderAppointment(providerId, appointmentId);
+}
+
+async function validateSeriesCutoff(
+  providerId: string,
+  series: Awaited<ReturnType<typeof requireProviderAppointment>>,
+  occurrenceStartsAt: Date,
+) {
+  if (series.recurrence !== "weekly" || series.exceptionForAppointmentId) {
+    throw new ProviderAppointmentValidationError(
+      "This appointment is not a recurring series",
+    );
+  }
+  if (
+    occurrenceStartsAt < series.startsAt ||
+    (series.recurrenceEndsAt && occurrenceStartsAt >= series.recurrenceEndsAt)
+  ) {
+    throw new ProviderAppointmentValidationError(
+      "The selected occurrence is outside this recurring series",
+    );
+  }
+
+  const bookingPage = await findBookingPage(providerId);
+  const occurrences = expandProviderAppointmentOccurrences(
+    [series],
+    {
+      startsAt: new Date(occurrenceStartsAt.getTime() - 86_400_000),
+      endsAt: new Date(occurrenceStartsAt.getTime() + 86_400_000),
+    },
+    bookingPage?.timeZone ?? "UTC",
+  );
+  if (
+    !occurrences.some(
+      (occurrence) =>
+        occurrence.startsAt.getTime() === occurrenceStartsAt.getTime(),
+    )
+  ) {
+    throw new ProviderAppointmentValidationError(
+      "The selected date is not an occurrence in this recurring series",
+    );
+  }
+}
+
+async function endAppointmentSeries(
+  seriesId: string,
+  occurrenceStartsAt: Date,
+) {
+  await db.batch([
+    db
+      .update(appointments)
+      .set({ recurrenceEndsAt: occurrenceStartsAt, updatedAt: new Date() })
+      .where(eq(appointments.id, seriesId)),
+    db
+      .update(appointments)
+      .set({ deletedAt: new Date(), updatedAt: new Date() })
+      .where(
+        and(
+          eq(appointments.exceptionForAppointmentId, seriesId),
+          gte(appointments.exceptionOriginalStartsAt, occurrenceStartsAt),
+        ),
+      ),
+  ]);
+}
+
+async function softDeleteAppointment(appointmentId: string) {
+  await db
+    .update(appointments)
+    .set({ deletedAt: new Date(), updatedAt: new Date() })
+    .where(eq(appointments.id, appointmentId));
 }
 
 async function createAppointmentException(
@@ -402,6 +592,7 @@ type InsertAppointmentInput = {
   schoolYear?: string | null;
   color: string;
   status?: "scheduled" | "cancelled";
+  deletedAt?: Date;
   createdByProvider: boolean;
   rescheduleCount?: number | ReturnType<typeof sql>;
 };
@@ -424,6 +615,7 @@ async function insertAppointment(
     schoolYear: input.schoolYear,
     color: input.color,
     status: input.status,
+    deletedAt: input.deletedAt,
     createdByProvider: input.createdByProvider,
     rescheduleCount: input.rescheduleCount,
   };
@@ -450,21 +642,6 @@ async function insertAppointment(
   }
 
   return appointmentId;
-}
-
-async function deleteAppointmentRecord(
-  appointment: Awaited<ReturnType<typeof requireProviderAppointment>>,
-) {
-  await db.batch([
-    db.delete(appointments).where(eq(appointments.id, appointment.id)),
-    ...(appointment.windowId === null
-      ? [
-          db
-            .delete(availabilitySlots)
-            .where(eq(availabilitySlots.id, appointment.slotId)),
-        ]
-      : []),
-  ]);
 }
 
 async function requireProviderStudent(providerId: string, studentId: string) {
@@ -553,6 +730,45 @@ async function assertNoAppointmentOverlap(
     candidate,
     bookingPage?.timeZone ?? "UTC",
     exclusions,
+  );
+
+  if (overlap) {
+    throw new ProviderAppointmentConflictError(
+      `This time overlaps ${overlap.studentName}'s scheduled session`,
+      overlap.studentName,
+    );
+  }
+}
+
+async function assertNoAppointmentOverlapForSeriesSplit(
+  providerId: string,
+  seriesId: string,
+  cutoff: Date,
+  candidate: {
+    startsAt: Date;
+    endsAt: Date;
+    recurrence: "weekly";
+  },
+) {
+  const [rows, bookingPage] = await Promise.all([
+    loadProviderAppointmentRows(providerId),
+    findBookingPage(providerId),
+  ]);
+  const rowsAfterSplit = rows.map((row) => {
+    if (row.id === seriesId) return { ...row, recurrenceEndsAt: cutoff };
+    if (
+      row.exceptionForAppointmentId === seriesId &&
+      row.exceptionOriginalStartsAt &&
+      row.exceptionOriginalStartsAt >= cutoff
+    ) {
+      return { ...row, deletedAt: new Date() };
+    }
+    return row;
+  });
+  const overlap = findAppointmentConflictInRows(
+    rowsAfterSplit,
+    candidate,
+    bookingPage?.timeZone ?? "UTC",
   );
 
   if (overlap) {

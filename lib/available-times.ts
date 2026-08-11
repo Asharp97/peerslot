@@ -61,9 +61,11 @@ const postgresAvailableTimeRepository = {
           startsAt: availabilitySlots.startsAt,
           endsAt: availabilitySlots.endsAt,
           recurrence: appointments.recurrence,
+          recurrenceEndsAt: appointments.recurrenceEndsAt,
           exceptionForAppointmentId: appointments.exceptionForAppointmentId,
           exceptionOriginalStartsAt: appointments.exceptionOriginalStartsAt,
           status: appointments.status,
+          deletedAt: appointments.deletedAt,
         })
         .from(appointments)
         .innerJoin(

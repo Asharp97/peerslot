@@ -1,0 +1,61 @@
+meta {
+  name: Edit this and future recurring sessions
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/api/provider/appointments/{{providerAppointmentId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  content-type: application/json
+  origin: {{baseUrl}}
+}
+
+body:json {
+  {
+    "startsAt": "{{futureSeriesStartsAt}}",
+    "endsAt": "{{futureSeriesEndsAt}}",
+    "examName": "LGS",
+    "schoolYear": null,
+    "comment": "New routine from this week onward",
+    "editScope": "future",
+    "occurrenceStartsAt": "{{futureSeriesOriginalStartsAt}}",
+    "color": "#f47c6c"
+  }
+}
+
+script:pre-request {
+  const originalStartsAt = new Date(bru.getVar("providerSessionStartsAt"));
+  originalStartsAt.setUTCDate(originalStartsAt.getUTCDate() + 7);
+  const startsAt = new Date(originalStartsAt.getTime() + 2 * 60 * 60 * 1000);
+  const endsAt = new Date(startsAt.getTime() + 45 * 60 * 1000);
+
+  bru.setVar("futureSeriesOriginalStartsAt", originalStartsAt.toISOString());
+  bru.setVar("futureSeriesStartsAt", startsAt.toISOString());
+  bru.setVar("futureSeriesEndsAt", endsAt.toISOString());
+}
+
+script:post-response {
+  if (res.getBody().appointment) {
+    bru.setVar("futureSeriesId", res.getBody().appointment.id);
+  }
+}
+
+tests {
+  test("editing future sessions creates a newly anchored weekly series", function () {
+    const appointment = res.getBody().appointment;
+    expect(res.getStatus()).to.equal(200);
+    expect(appointment.id).to.not.equal(bru.getVar("providerAppointmentId"));
+    expect(appointment.startsAt).to.equal(bru.getVar("futureSeriesStartsAt"));
+    expect(appointment.recurrence).to.equal("weekly");
+    expect(appointment.comment).to.equal("New routine from this week onward");
+  });
+}

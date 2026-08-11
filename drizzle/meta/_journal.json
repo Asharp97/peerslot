@@ -78,6 +78,13 @@
       "when": 1786428883257,
       "tag": "0010_fearless_red_shift",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1786471719317,
+      "tag": "0011_recurring_session_controls",
+      "breakpoints": true
     }
   ]
 }

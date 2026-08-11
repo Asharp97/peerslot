@@ -1,0 +1,3 @@
+ALTER TABLE "appointments" ADD COLUMN "recurrence_ends_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "appointments" ADD COLUMN "deleted_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "appointments" ADD CONSTRAINT "appointment_recurrence_end_only_on_series" CHECK ("appointments"."recurrence_ends_at" is null or ("appointments"."recurrence" = 'weekly' and "appointments"."exception_for_appointment_id" is null));
