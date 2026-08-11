@@ -463,7 +463,7 @@ export function ProviderAppointments({
             {copy.eyebrow}
           </p>
           <h1 className="mt-1 font-display text-4xl tracking-[-0.04em] sm:text-5xl">
-            {copy.title}
+            {copy.title.replace("{name}", data.profile.displayName)}
           </h1>
         </div>
         <div className="flex flex-wrap justify-end gap-2">

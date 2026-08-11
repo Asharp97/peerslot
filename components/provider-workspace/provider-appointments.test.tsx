@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act, render, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -24,6 +24,7 @@ vi.mock("./provider-shell", () => ({
   useProviderWorkspace: () => ({
     accessToken: "access-token",
     data: {
+      profile: { displayName: "Ada" },
       bookingPage: {
         timeZone: "Europe/Istanbul",
         appointmentDurationMinutes: 45,
@@ -75,6 +76,10 @@ describe("provider appointments calendar", () => {
 
     render(<ProviderAppointments copy={copy} />);
 
+    expect(
+      screen.getByRole("heading", { name: "Ada’s sessions" }),
+    ).toBeTruthy();
+
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
         "/api/provider/students",
@@ -117,6 +122,11 @@ describe("session color contrast", () => {
 });
 
 const copy = new Proxy(
-  {},
-  { get: (_target, property) => String(property) },
+  { title: "{name}’s sessions" },
+  {
+    get: (target, property) =>
+      property in target
+        ? target[property as keyof typeof target]
+        : String(property),
+  },
 ) as ProviderAppointmentsCopy;

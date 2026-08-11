@@ -270,7 +270,7 @@
     },
     "appointments": {
       "eyebrow": "Weekly timetable",
-      "title": "Ceyda’s sessions",
+      "title": "{name}’s sessions",
       "intro": "Every appointment for the selected week, shown in your booking-page time zone.",
       "addSession": "Add session",
       "manageStudents": "Manage students",

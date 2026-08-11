@@ -270,7 +270,7 @@
     },
     "appointments": {
       "eyebrow": "Haftalık program",
-      "title": "Ceyda’nın dersleri",
+      "title": "{name} için dersler",
       "intro": "Seçili haftadaki tüm randevular, rezervasyon sayfanızın saat diliminde gösterilir.",
       "addSession": "Ders ekle",
       "manageStudents": "Öğrencileri yönet",
