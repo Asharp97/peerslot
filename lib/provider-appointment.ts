@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const timestampWithOffsetSchema = z.string().datetime({ offset: true });
+const sessionColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/);
 const optionalText = (maximum: number) =>
   z
     .string()
@@ -30,6 +31,21 @@ export const providerStudentCreateSchema = z
   })
   .strict();
 
+export const providerStudentUpdateSchema = z
+  .object({
+    displayName: z.string().trim().min(2).max(100).optional(),
+    email: z
+      .union([z.string().trim().email().max(254), z.literal(""), z.null()])
+      .optional()
+      .transform((value) =>
+        value === undefined ? undefined : value?.toLowerCase() || null,
+      ),
+  })
+  .strict()
+  .refine((input) => Object.keys(input).length > 0, {
+    message: "At least one student change is required",
+  });
+
 export const providerAppointmentCreateSchema = z
   .object({
     providerStudentId: z.string().uuid(),
@@ -38,6 +54,8 @@ export const providerAppointmentCreateSchema = z
     comment: optionalText(1000),
     examName: optionalText(120),
     schoolYear: optionalText(80),
+    recurrence: z.enum(["none", "weekly"]).default("none"),
+    color: sessionColorSchema.default("#f0d7ff"),
   })
   .strict()
   .refine(({ startsAt, endsAt }) => new Date(endsAt) > new Date(startsAt), {
@@ -65,6 +83,9 @@ export const providerAppointmentUpdateSchema = z
     examName: nullableText(120),
     schoolYear: nullableText(80),
     status: z.enum(["scheduled", "cancelled"]).optional(),
+    color: sessionColorSchema.optional(),
+    editScope: z.enum(["exception", "series"]).optional(),
+    occurrenceStartsAt: timestampWithOffsetSchema.optional(),
   })
   .strict()
   .refine((input) => Object.keys(input).length > 0, {
@@ -97,11 +118,17 @@ export const providerAppointmentUpdateSchema = z
       path: ["schoolYear"],
     },
   )
-  .transform(({ startsAt, endsAt, ...input }) => ({
-    ...input,
-    startsAt: startsAt ? new Date(startsAt) : undefined,
-    endsAt: endsAt ? new Date(endsAt) : undefined,
-  }));
+  .transform(
+    ({ startsAt, endsAt, occurrenceStartsAt, editScope, ...input }) => ({
+      ...input,
+      editScope: editScope ?? "exception",
+      startsAt: startsAt ? new Date(startsAt) : undefined,
+      endsAt: endsAt ? new Date(endsAt) : undefined,
+      occurrenceStartsAt: occurrenceStartsAt
+        ? new Date(occurrenceStartsAt)
+        : undefined,
+    }),
+  );
 
 export const providerAppointmentRangeSchema = z
   .object({
@@ -131,6 +158,9 @@ export type ProviderAppointmentUpdateInput = z.infer<
 >;
 export type ProviderStudentCreateInput = z.infer<
   typeof providerStudentCreateSchema
+>;
+export type ProviderStudentUpdateInput = z.infer<
+  typeof providerStudentUpdateSchema
 >;
 
 export function appointmentTimesChanged(

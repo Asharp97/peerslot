@@ -19,6 +19,8 @@ import {
 import { availabilityRulesOverlap } from "@/lib/availability-recurrence";
 import { findBookingPage } from "@/lib/booking-pages";
 import { isPostgresError } from "@/lib/database-errors";
+import { loadProviderAppointmentRows } from "@/lib/provider-appointments";
+import { findAppointmentConflictInRows } from "@/lib/provider-appointment-occurrence";
 
 type AvailabilityWindowUpdate = {
   startsAt?: Date;
@@ -35,9 +37,15 @@ export class AvailabilityWindowNotFoundError extends Error {
 }
 
 export class AvailabilityWindowConflictError extends Error {
-  constructor() {
-    super("Availability window overlaps another active window");
+  studentName?: string;
+
+  constructor(
+    message = "Availability window overlaps another active window",
+    studentName?: string,
+  ) {
+    super(message);
     this.name = "AvailabilityWindowConflictError";
+    this.studentName = studentName;
   }
 }
 
@@ -75,6 +83,7 @@ export async function createAvailabilityWindow(
   const bookingPage = await requireBookingPage(providerId);
   validateFutureRange(rule);
   await assertNoActiveOverlap(bookingPage.id, rule, bookingPage.timeZone);
+  await assertNoSessionOverlap(providerId, rule, bookingPage.timeZone);
 
   const windowId = randomUUID();
   const slots = deriveSlots(rule, bookingPage);
@@ -128,6 +137,11 @@ export async function updateAvailabilityWindow(
       { ...range, recurrence },
       current.bookingPage.timeZone,
       windowId,
+    );
+    await assertNoSessionOverlap(
+      providerId,
+      { ...range, recurrence },
+      current.bookingPage.timeZone,
     );
   }
 
@@ -299,6 +313,27 @@ async function assertNoActiveOverlap(
     )
   ) {
     throw new AvailabilityWindowConflictError();
+  }
+}
+
+async function assertNoSessionOverlap(
+  providerId: string,
+  rule: AvailabilityWindowRule,
+  timeZone: string,
+) {
+  const overlap = findAppointmentConflictInRows(
+    (await loadProviderAppointmentRows(providerId)).filter(
+      ({ createdByProvider }) => createdByProvider,
+    ),
+    rule,
+    timeZone,
+  );
+
+  if (overlap) {
+    throw new AvailabilityWindowConflictError(
+      `Availability overlaps ${overlap.studentName}'s preset session`,
+      overlap.studentName,
+    );
   }
 }
 

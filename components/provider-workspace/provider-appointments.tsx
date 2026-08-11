@@ -12,7 +12,15 @@ import interactionPlugin, {
 } from "@fullcalendar/interaction";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
-import { CalendarPlus, LoaderCircle, RotateCcw, UserPlus } from "lucide-react";
+import {
+  CalendarPlus,
+  LoaderCircle,
+  Pencil,
+  RotateCcw,
+  Trash2,
+  UserPlus,
+  Users,
+} from "lucide-react";
 import { useLocale } from "next-intl";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
@@ -48,6 +56,11 @@ type ProviderStudent = {
 
 type CalendarAppointment = {
   id: string;
+  appointmentId: string;
+  seriesId: string | null;
+  occurrenceStartsAt: string;
+  recurrence: "none" | "weekly";
+  isException: boolean;
   providerStudentId: string | null;
   studentName: string;
   studentEmail: string | null;
@@ -57,6 +70,7 @@ type CalendarAppointment = {
   comment: string | null;
   examName: string | null;
   schoolYear: string | null;
+  color: string;
   createdByProvider: boolean;
   rescheduleCount: number;
 };
@@ -74,6 +88,10 @@ type SessionDraft = {
   contextValue: string;
   comment: string;
   status: "scheduled" | "cancelled";
+  recurrence: "none" | "weekly";
+  editScope: "exception" | "series";
+  occurrenceStartsAt: string | null;
+  color: string;
 };
 
 export type ProviderAppointmentsCopy = {
@@ -81,6 +99,8 @@ export type ProviderAppointmentsCopy = {
   title: string;
   intro: string;
   addSession: string;
+  manageStudents: string;
+  manageStudentsDescription: string;
   editSession: string;
   addSessionDescription: string;
   editSessionDescription: string;
@@ -102,7 +122,20 @@ export type ProviderAppointmentsCopy = {
   saving: string;
   cancelSession: string;
   restoreSession: string;
+  repetition: string;
+  oneTime: string;
+  everyWeek: string;
+  editScope: string;
+  thisSessionOnly: string;
+  entireSeries: string;
+  sessionColor: string;
+  editStudent: string;
+  deleteStudent: string;
+  deleteStudentConfirm: string;
+  noStudents: string;
+  cancelEdit: string;
   exceptionHelp: string;
+  seriesHelp: string;
   emptyStudents: string;
   loadError: string;
   saveError: string;
@@ -136,6 +169,11 @@ export function ProviderAppointments({
   const [students, setStudents] = useState<ProviderStudent[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [studentsDialogOpen, setStudentsDialogOpen] = useState(false);
+  const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
+  const [studentName, setStudentName] = useState("");
+  const [studentEmail, setStudentEmail] = useState("");
+  const [studentSaving, setStudentSaving] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [draft, setDraft] = useState<SessionDraft | null>(null);
@@ -163,7 +201,10 @@ export function ProviderAppointments({
 
         setError("");
         return body.appointments.map((appointment) =>
-          appointmentToCalendarEvent(appointment, timeZone),
+          appointmentToCalendarEvent(appointment, timeZone, {
+            oneTime: copy.oneTime,
+            weekly: copy.everyWeek,
+          }),
         );
       } catch {
         setError(copy.loadError);
@@ -172,22 +213,26 @@ export function ProviderAppointments({
         setLoading(false);
       }
     },
-    [accessToken, copy.loadError, timeZone],
+    [accessToken, copy.everyWeek, copy.loadError, copy.oneTime, timeZone],
   );
 
+  const loadStudents = useCallback(async () => {
+    const response = await fetch("/api/provider/students", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      cache: "no-store",
+    });
+    if (!response.ok) return;
+    const body = (await response.json()) as { students: ProviderStudent[] };
+    setStudents(body.students);
+  }, [accessToken]);
+
   useEffect(() => {
-    async function loadStudents() {
-      const response = await fetch("/api/provider/students", {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        cache: "no-store",
-      });
-      if (!response.ok) return;
-      const body = (await response.json()) as { students: ProviderStudent[] };
-      setStudents(body.students);
+    async function initializeStudents() {
+      await loadStudents();
     }
 
-    void loadStudents();
-  }, [accessToken]);
+    void initializeStudents();
+  }, [loadStudents]);
 
   const openNewSession = useCallback(
     (date = nextRoundedHour(timeZone)) => {
@@ -209,6 +254,10 @@ export function ProviderAppointments({
         contextValue: "",
         comment: "",
         status: "scheduled",
+        recurrence: "weekly",
+        editScope: "exception",
+        occurrenceStartsAt: null,
+        color: "#f0d7ff",
       });
       setError("");
       setDialogOpen(true);
@@ -230,7 +279,7 @@ export function ProviderAppointments({
       const startsAt = splitProviderDateTime(appointment.startsAt, timeZone);
       const endsAt = splitProviderDateTime(appointment.endsAt, timeZone);
       setDraft({
-        appointmentId: appointment.id,
+        appointmentId: appointment.appointmentId,
         studentId: appointment.providerStudentId ?? "",
         studentName: appointment.studentName,
         newStudentName: "",
@@ -242,6 +291,10 @@ export function ProviderAppointments({
         contextValue: appointment.examName ?? appointment.schoolYear ?? "",
         comment: appointment.comment ?? "",
         status: appointment.status,
+        recurrence: appointment.recurrence,
+        editScope: appointment.recurrence === "weekly" ? "exception" : "series",
+        occurrenceStartsAt: appointment.occurrenceStartsAt,
+        color: appointment.color,
       });
       setError("");
       setDialogOpen(true);
@@ -284,6 +337,9 @@ export function ProviderAppointments({
               comment: draft.comment || null,
               ...context,
               status: draft.status,
+              color: draft.color,
+              editScope: draft.editScope,
+              occurrenceStartsAt: draft.occurrenceStartsAt,
             }),
           },
         );
@@ -325,6 +381,8 @@ export function ProviderAppointments({
             comment: draft.comment || undefined,
             examName: context.examName ?? undefined,
             schoolYear: context.schoolYear ?? undefined,
+            recurrence: draft.recurrence,
+            color: draft.color,
           }),
         });
         if (!response.ok) throw new Error(await responseError(response));
@@ -348,6 +406,55 @@ export function ProviderAppointments({
     });
   }
 
+  function beginStudentEdit(student: ProviderStudent) {
+    setEditingStudentId(student.id);
+    setStudentName(student.displayName);
+    setStudentEmail(student.email ?? "");
+  }
+
+  async function saveStudent(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!editingStudentId) return;
+    setStudentSaving(true);
+    setError("");
+    try {
+      const response = await fetch(
+        `/api/provider/students/${editingStudentId}`,
+        {
+          method: "PATCH",
+          headers: authenticatedJsonHeaders(accessToken),
+          body: JSON.stringify({
+            displayName: studentName,
+            email: studentEmail,
+          }),
+        },
+      );
+      if (!response.ok) throw new Error(await responseError(response));
+      await loadStudents();
+      calendarRef.current?.getApi().refetchEvents();
+      setEditingStudentId(null);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : copy.saveError);
+    } finally {
+      setStudentSaving(false);
+    }
+  }
+
+  async function deleteStudent(student: ProviderStudent) {
+    if (!window.confirm(copy.deleteStudentConfirm)) return;
+    setError("");
+    const response = await fetch(`/api/provider/students/${student.id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!response.ok) {
+      setError(await responseError(response));
+      return;
+    }
+    await loadStudents();
+    if (editingStudentId === student.id) setEditingStudentId(null);
+  }
+
   return (
     <div className="flex h-[calc(100dvh-9rem)] min-h-160 flex-col lg:h-[calc(100dvh-5rem)]">
       <header className="mb-4 flex shrink-0 items-end justify-between gap-4">
@@ -359,12 +466,21 @@ export function ProviderAppointments({
             {copy.title}
           </h1>
         </div>
-        <Button
-          className="min-h-11 rounded-full bg-vast-ink px-5 font-bold text-white"
-          onClick={() => openNewSession()}
-        >
-          <CalendarPlus size={17} /> {copy.addSession}
-        </Button>
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button
+            className="min-h-11 rounded-full"
+            onClick={() => setStudentsDialogOpen(true)}
+            variant="outline"
+          >
+            <Users size={17} /> {copy.manageStudents}
+          </Button>
+          <Button
+            className="min-h-11 rounded-full bg-vast-ink px-5 font-bold text-white"
+            onClick={() => openNewSession()}
+          >
+            <CalendarPlus size={17} /> {copy.addSession}
+          </Button>
+        </div>
       </header>
 
       {error && !dialogOpen ? (
@@ -519,6 +635,67 @@ export function ProviderAppointments({
                     value={draft.endsAt}
                   />
                 </Field>
+                {!draft.appointmentId ? (
+                  <Field label={copy.repetition}>
+                    <Select
+                      onValueChange={(recurrence) =>
+                        setDraft({
+                          ...draft,
+                          recurrence: recurrence as "none" | "weekly",
+                        })
+                      }
+                      value={draft.recurrence}
+                    >
+                      <SelectTrigger className="min-h-11 w-full rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">{copy.oneTime}</SelectItem>
+                        <SelectItem value="weekly">{copy.everyWeek}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                ) : draft.recurrence === "weekly" ? (
+                  <Field label={copy.editScope}>
+                    <Select
+                      onValueChange={(editScope) =>
+                        setDraft({
+                          ...draft,
+                          editScope: editScope as "exception" | "series",
+                        })
+                      }
+                      value={draft.editScope}
+                    >
+                      <SelectTrigger className="min-h-11 w-full rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="exception">
+                          {copy.thisSessionOnly}
+                        </SelectItem>
+                        <SelectItem value="series">
+                          {copy.entireSeries}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                ) : null}
+                <Field label={copy.sessionColor}>
+                  <div className="flex min-h-11 items-center gap-3 rounded-xl border border-black/10 bg-white px-3">
+                    <Input
+                      aria-label={copy.sessionColor}
+                      className="h-8 w-12 cursor-pointer border-0 p-0"
+                      onChange={(event) =>
+                        setDraft({ ...draft, color: event.target.value })
+                      }
+                      type="color"
+                      value={draft.color}
+                    />
+                    <span className="font-mono text-xs font-semibold">
+                      {draft.color.toUpperCase()}
+                    </span>
+                  </div>
+                </Field>
                 <Field label={copy.sessionContext}>
                   <Select
                     onValueChange={(contextType) =>
@@ -565,7 +742,9 @@ export function ProviderAppointments({
 
               {draft.appointmentId ? (
                 <p className="mt-4 rounded-xl bg-lavender-whisper px-4 py-3 text-xs leading-5">
-                  {copy.exceptionHelp}
+                  {draft.editScope === "series"
+                    ? copy.seriesHelp
+                    : copy.exceptionHelp}
                 </p>
               ) : null}
               {error ? (
@@ -605,6 +784,108 @@ export function ProviderAppointments({
           ) : null}
         </DialogContent>
       </Dialog>
+
+      <Dialog open={studentsDialogOpen} onOpenChange={setStudentsDialogOpen}>
+        <DialogContent className="max-h-[88dvh] overflow-y-auto sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="font-display text-3xl">
+              {copy.manageStudents}
+            </DialogTitle>
+            <DialogDescription>
+              {copy.manageStudentsDescription}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-5 space-y-3">
+            {students.length ? (
+              students.map((student) =>
+                editingStudentId === student.id ? (
+                  <form
+                    className="rounded-2xl border border-black/10 bg-lavender-whisper/40 p-4"
+                    key={student.id}
+                    onSubmit={saveStudent}
+                  >
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Field label={copy.studentName}>
+                        <Input
+                          onChange={(event) =>
+                            setStudentName(event.target.value)
+                          }
+                          required
+                          value={studentName}
+                        />
+                      </Field>
+                      <Field label={copy.studentEmail}>
+                        <Input
+                          onChange={(event) =>
+                            setStudentEmail(event.target.value)
+                          }
+                          type="email"
+                          value={studentEmail}
+                        />
+                      </Field>
+                    </div>
+                    <div className="mt-3 flex justify-end gap-2">
+                      <Button
+                        onClick={() => setEditingStudentId(null)}
+                        type="button"
+                        variant="outline"
+                      >
+                        {copy.cancelEdit}
+                      </Button>
+                      <Button disabled={studentSaving} type="submit">
+                        {studentSaving ? copy.saving : copy.save}
+                      </Button>
+                    </div>
+                  </form>
+                ) : (
+                  <div
+                    className="flex items-center gap-3 rounded-2xl border border-black/10 bg-white p-4"
+                    key={student.id}
+                  >
+                    <span className="grid size-10 shrink-0 place-items-center rounded-full bg-lavender-whisper font-bold">
+                      {student.displayName.slice(0, 1).toUpperCase()}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold">
+                        {student.displayName}
+                      </p>
+                      <p className="truncate text-xs text-black/50">
+                        {student.email ?? "—"}
+                      </p>
+                    </div>
+                    <Button
+                      aria-label={copy.editStudent}
+                      onClick={() => beginStudentEdit(student)}
+                      size="icon"
+                      variant="outline"
+                    >
+                      <Pencil size={15} />
+                    </Button>
+                    <Button
+                      aria-label={copy.deleteStudent}
+                      onClick={() => void deleteStudent(student)}
+                      size="icon"
+                      variant="outline"
+                    >
+                      <Trash2 size={15} />
+                    </Button>
+                  </div>
+                ),
+              )
+            ) : (
+              <p className="rounded-2xl border border-dashed border-black/15 p-8 text-center text-sm text-black/45">
+                {copy.noStudents}
+              </p>
+            )}
+          </div>
+          {error ? (
+            <p className="mt-4 rounded-xl bg-ember-glow px-4 py-3 text-xs font-semibold">
+              {error}
+            </p>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -630,9 +911,15 @@ function renderSession(info: EventContentArg) {
   const appointment = info.event.extendedProps
     .appointment as CalendarAppointment;
   const context = appointment.examName ?? appointment.schoolYear;
+  const recurrenceLabel = info.event.extendedProps.recurrenceLabel as string;
 
   return (
-    <div className="overflow-hidden px-1 py-0.5 leading-tight text-forest-ink">
+    <div className="overflow-hidden px-1 py-0.5 leading-tight">
+      <p className="flex gap-1 truncate text-[9px] font-bold opacity-80">
+        <span>{info.timeText}</span>
+        <span aria-hidden="true">·</span>
+        <span className="truncate">{recurrenceLabel}</span>
+      </p>
       <p className="truncate text-[11px] font-bold">
         {appointment.studentName}
       </p>
@@ -646,6 +933,7 @@ function renderSession(info: EventContentArg) {
 function appointmentToCalendarEvent(
   appointment: CalendarAppointment,
   timeZone: string,
+  labels: { oneTime: string; weekly: string },
 ): EventInput {
   return {
     id: appointment.id,
@@ -656,8 +944,29 @@ function appointmentToCalendarEvent(
       appointment.status === "cancelled"
         ? ["provider-session-cancelled"]
         : ["provider-session-scheduled"],
-    extendedProps: { appointment },
+    backgroundColor: appointment.color,
+    borderColor: readableBorderColor(appointment.color),
+    textColor: readableTextColor(appointment.color),
+    extendedProps: {
+      appointment,
+      recurrenceLabel:
+        appointment.recurrence === "weekly" && !appointment.isException
+          ? labels.weekly
+          : labels.oneTime,
+    },
   };
+}
+
+export function readableTextColor(background: string) {
+  const [red, green, blue] = [1, 3, 5].map((index) =>
+    Number.parseInt(background.slice(index, index + 2), 16),
+  );
+  const luminance = (red * 299 + green * 587 + blue * 114) / 1000;
+  return luminance >= 145 ? "#1a1a1a" : "#ffffff";
+}
+
+function readableBorderColor(background: string) {
+  return readableTextColor(background) === "#ffffff" ? "#ffffff" : "#1a1a1a";
 }
 
 function authenticatedJsonHeaders(accessToken: string) {

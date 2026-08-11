@@ -16,7 +16,10 @@ export function availabilityWindowErrorResponse(error: unknown) {
   }
 
   if (error instanceof AvailabilityWindowConflictError) {
-    return NextResponse.json({ error: error.message }, { status: 409 });
+    return NextResponse.json(
+      { error: error.message, studentName: error.studentName },
+      { status: 409 },
+    );
   }
 
   throw error;

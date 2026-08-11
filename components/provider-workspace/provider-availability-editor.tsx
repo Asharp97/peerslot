@@ -67,6 +67,7 @@ export type ProviderAvailabilityCopy = {
   timezoneNote: string;
   invalidWindow: string;
   saveError: string;
+  overlapError: string;
   repeats: string;
   doesNotRepeat: string;
   weekly: string;
@@ -191,8 +192,17 @@ export function ProviderAvailabilityEditor({
           }),
         },
       );
-      const body = (await response.json()) as { error?: string };
-      if (!response.ok) throw new Error(body.error || copy.saveError);
+      const body = (await response.json()) as {
+        error?: string;
+        studentName?: string;
+      };
+      if (!response.ok) {
+        throw new Error(
+          body.studentName
+            ? copy.overlapError.replace("{studentName}", body.studentName)
+            : body.error || copy.saveError,
+        );
+      }
 
       resetForm();
       await Promise.all([loadWindows(), refresh()]);
@@ -248,9 +258,16 @@ export function ProviderAvailabilityEditor({
       },
       body: body ? JSON.stringify(body) : undefined,
     });
-    const result = (await response.json()) as { error?: string };
+    const result = (await response.json()) as {
+      error?: string;
+      studentName?: string;
+    };
     if (!response.ok) {
-      setError(result.error || copy.saveError);
+      setError(
+        result.studentName
+          ? copy.overlapError.replace("{studentName}", result.studentName)
+          : result.error || copy.saveError,
+      );
       return;
     }
     if (editingId === windowId) resetForm();

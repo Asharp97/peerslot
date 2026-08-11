@@ -14,6 +14,7 @@ vi.mock("@/lib/current-user", () => ({ getCurrentUser: vi.fn() }));
 vi.mock("@/lib/provider-appointments", () => ({
   ProviderAppointmentConflictError: class extends Error {},
   ProviderAppointmentNotFoundError: class extends Error {},
+  ProviderAppointmentValidationError: class extends Error {},
   ProviderStudentNotFoundError: class extends Error {},
   createProviderAppointment: vi.fn(),
   listProviderAppointments: vi.fn(),
@@ -96,8 +97,10 @@ describe("provider appointments API integration", () => {
       providerId,
       appointmentId,
       {
+        editScope: "exception",
         startsAt: new Date("2030-01-16T10:00:00Z"),
         endsAt: new Date("2030-01-16T10:45:00Z"),
+        occurrenceStartsAt: undefined,
       },
     );
   });

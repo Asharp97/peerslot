@@ -6,6 +6,7 @@ import {
   providerAppointmentRangeSchema,
   providerAppointmentUpdateSchema,
   providerStudentCreateSchema,
+  providerStudentUpdateSchema,
 } from "./provider-appointment";
 
 const studentId = "7d45e9f4-6260-4dca-a95a-b5fa6c068cb8";
@@ -21,6 +22,15 @@ describe("provider student input", () => {
       displayName: "Ada Yilmaz",
       email: "ada@example.com",
     });
+  });
+
+  it("allows editing a name and clearing an email", () => {
+    expect(
+      providerStudentUpdateSchema.parse({
+        displayName: "  Ada Updated  ",
+        email: "",
+      }),
+    ).toEqual({ displayName: "Ada Updated", email: null });
   });
 });
 
@@ -79,12 +89,46 @@ describe("provider appointment input", () => {
     expect(result.schoolYear).toBeNull();
   });
 
+  it("accepts weekly sessions and validates their color", () => {
+    const result = providerAppointmentCreateSchema.parse({
+      providerStudentId: studentId,
+      startsAt: "2030-01-15T09:00:00Z",
+      endsAt: "2030-01-15T09:45:00Z",
+      schoolYear: "Year 8",
+      recurrence: "weekly",
+      color: "#034f46",
+    });
+
+    expect(result).toMatchObject({ recurrence: "weekly", color: "#034f46" });
+    expect(
+      providerAppointmentCreateSchema.safeParse({
+        providerStudentId: studentId,
+        startsAt: "2030-01-15T09:00:00Z",
+        endsAt: "2030-01-15T09:45:00Z",
+        schoolYear: "Year 8",
+        color: "green",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("parses the selected occurrence and recurring edit scope", () => {
+    const result = providerAppointmentUpdateSchema.parse({
+      color: "#ffa946",
+      editScope: "exception",
+      occurrenceStartsAt: "2030-01-15T09:00:00Z",
+    });
+
+    expect(result.occurrenceStartsAt).toEqual(new Date("2030-01-15T09:00:00Z"));
+    expect(result.editScope).toBe("exception");
+  });
+
   it("rejects a partial date change", () => {
     expect(
       providerAppointmentUpdateSchema.safeParse({
         startsAt: "2030-01-16T10:00:00Z",
       }).success,
     ).toBe(false);
+    expect(providerAppointmentUpdateSchema.safeParse({}).success).toBe(false);
   });
 
   it("requires both context fields when switching context type", () => {

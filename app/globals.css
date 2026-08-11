@@ -248,7 +248,6 @@ a {
   background: #e4e4d0;
   color: #686860;
   text-decoration: line-through;
-  opacity: 0.72;
 }
 
 @media (max-width: 640px) {

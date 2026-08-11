@@ -1,22 +1,34 @@
 import { randomUUID } from "node:crypto";
 
-import { and, asc, eq, gt, lt, ne, notExists, sql } from "drizzle-orm";
+import { and, asc, eq, notExists, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { appointments, availabilitySlots, providerStudents } from "@/db/schema";
+import { findBookingPage } from "@/lib/booking-pages";
 import { isPostgresError } from "@/lib/database-errors";
+import {
+  expandProviderAppointmentOccurrences,
+  findAppointmentConflictInRows,
+} from "@/lib/provider-appointment-occurrence";
 import { appointmentTimesChanged } from "@/lib/provider-appointment";
 import type {
   ProviderAppointmentCreateInput,
   ProviderAppointmentUpdateInput,
   ProviderStudentCreateInput,
+  ProviderStudentUpdateInput,
 } from "@/lib/provider-appointment";
 
 export class ProviderAppointmentConflictError extends Error {
-  constructor() {
-    super("This time overlaps another scheduled appointment");
+  studentName?: string;
+
+  constructor(
+    message = "This time overlaps another scheduled appointment",
+    studentName?: string,
+  ) {
+    super(message);
     this.name = "ProviderAppointmentConflictError";
+    this.studentName = studentName;
   }
 }
 
@@ -27,6 +39,13 @@ export class ProviderAppointmentNotFoundError extends Error {
   }
 }
 
+export class ProviderAppointmentValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ProviderAppointmentValidationError";
+  }
+}
+
 export class ProviderStudentNotFoundError extends Error {
   constructor() {
     super("Student not found");
@@ -34,11 +53,40 @@ export class ProviderStudentNotFoundError extends Error {
   }
 }
 
+const appointmentSelection = {
+  id: appointments.id,
+  slotId: availabilitySlots.id,
+  windowId: availabilitySlots.availabilityWindowId,
+  accountStudentName: user.name,
+  accountStudentEmail: user.email,
+  providerStudentId: providerStudents.id,
+  providerStudentName: providerStudents.displayName,
+  providerStudentEmail: providerStudents.email,
+  startsAt: availabilitySlots.startsAt,
+  endsAt: availabilitySlots.endsAt,
+  recurrence: appointments.recurrence,
+  exceptionForAppointmentId: appointments.exceptionForAppointmentId,
+  exceptionOriginalStartsAt: appointments.exceptionOriginalStartsAt,
+  status: appointments.status,
+  comment: appointments.comment,
+  examName: appointments.examName,
+  schoolYear: appointments.schoolYear,
+  color: appointments.color,
+  createdByProvider: appointments.createdByProvider,
+  rescheduleCount: appointments.rescheduleCount,
+  createdAt: appointments.createdAt,
+};
+
 export async function listProviderStudents(providerId: string) {
   return db
     .select()
     .from(providerStudents)
-    .where(eq(providerStudents.providerId, providerId))
+    .where(
+      and(
+        eq(providerStudents.providerId, providerId),
+        eq(providerStudents.isActive, true),
+      ),
+    )
     .orderBy(asc(providerStudents.displayName));
 }
 
@@ -55,7 +103,7 @@ export async function createProviderStudent(
   } catch (error) {
     if (!input.email || !isPostgresError(error, "23505")) throw error;
 
-    const [student] = await db
+    const [existing] = await db
       .select()
       .from(providerStudents)
       .where(
@@ -66,55 +114,86 @@ export async function createProviderStudent(
       )
       .limit(1);
 
-    if (student) return student;
+    if (!existing) throw error;
+    if (existing.isActive) return existing;
+
+    const [reactivated] = await db
+      .update(providerStudents)
+      .set({
+        displayName: input.displayName,
+        isActive: true,
+        updatedAt: new Date(),
+      })
+      .where(eq(providerStudents.id, existing.id))
+      .returning();
+    return reactivated;
+  }
+}
+
+export async function updateProviderStudent(
+  providerId: string,
+  studentId: string,
+  input: ProviderStudentUpdateInput,
+) {
+  try {
+    const [student] = await db
+      .update(providerStudents)
+      .set({ ...input, updatedAt: new Date() })
+      .where(
+        and(
+          eq(providerStudents.id, studentId),
+          eq(providerStudents.providerId, providerId),
+          eq(providerStudents.isActive, true),
+        ),
+      )
+      .returning();
+
+    if (!student) throw new ProviderStudentNotFoundError();
+    return student;
+  } catch (error) {
+    if (isPostgresError(error, "23505")) {
+      throw new ProviderAppointmentConflictError(
+        "A student with this email already exists",
+      );
+    }
     throw error;
   }
+}
+
+export async function archiveProviderStudent(
+  providerId: string,
+  studentId: string,
+) {
+  const [student] = await db
+    .update(providerStudents)
+    .set({ isActive: false, updatedAt: new Date() })
+    .where(
+      and(
+        eq(providerStudents.id, studentId),
+        eq(providerStudents.providerId, providerId),
+        eq(providerStudents.isActive, true),
+      ),
+    )
+    .returning({ id: providerStudents.id });
+
+  if (!student) throw new ProviderStudentNotFoundError();
+  return { archived: true, id: student.id };
 }
 
 export async function listProviderAppointments(
   providerId: string,
   range: { startsAt: Date; endsAt: Date },
 ) {
-  const rows = await db
-    .select({
-      id: appointments.id,
-      windowId: availabilitySlots.availabilityWindowId,
-      accountStudentName: user.name,
-      accountStudentEmail: user.email,
-      providerStudentId: providerStudents.id,
-      providerStudentName: providerStudents.displayName,
-      providerStudentEmail: providerStudents.email,
-      startsAt: availabilitySlots.startsAt,
-      endsAt: availabilitySlots.endsAt,
-      status: appointments.status,
-      comment: appointments.comment,
-      examName: appointments.examName,
-      schoolYear: appointments.schoolYear,
-      createdByProvider: appointments.createdByProvider,
-      rescheduleCount: appointments.rescheduleCount,
-      createdAt: appointments.createdAt,
-    })
-    .from(appointments)
-    .innerJoin(availabilitySlots, eq(availabilitySlots.id, appointments.slotId))
-    .leftJoin(user, eq(user.id, appointments.studentId))
-    .leftJoin(
-      providerStudents,
-      eq(providerStudents.id, appointments.providerStudentId),
-    )
-    .where(
-      and(
-        eq(availabilitySlots.teacherId, providerId),
-        lt(availabilitySlots.startsAt, range.endsAt),
-        gt(availabilitySlots.endsAt, range.startsAt),
-      ),
-    )
-    .orderBy(asc(availabilitySlots.startsAt));
+  const [rows, bookingPage] = await Promise.all([
+    loadProviderAppointmentRows(providerId),
+    findBookingPage(providerId),
+  ]);
 
-  return rows.map(({ accountStudentName, accountStudentEmail, ...row }) => ({
-    ...row,
-    studentName: row.providerStudentName ?? accountStudentName ?? "Student",
-    studentEmail: row.providerStudentEmail ?? accountStudentEmail ?? null,
-  }));
+  return expandProviderAppointmentOccurrences(
+    rows,
+    range,
+    bookingPage?.timeZone ?? "UTC",
+  );
 }
 
 export async function createProviderAppointment(
@@ -124,47 +203,10 @@ export async function createProviderAppointment(
   await requireProviderStudent(providerId, input.providerStudentId);
   await assertNoAppointmentOverlap(providerId, input);
 
-  const slot = await findOpenSlot(providerId, input);
-  const appointmentId = randomUUID();
-
-  if (slot) {
-    await db.insert(appointments).values({
-      id: appointmentId,
-      providerStudentId: input.providerStudentId,
-      slotId: slot.id,
-      comment: input.comment,
-      examName: input.examName,
-      schoolYear: input.schoolYear,
-      createdByProvider: true,
-    });
-  } else {
-    const slotId = randomUUID();
-    try {
-      await db.batch([
-        db.insert(availabilitySlots).values({
-          id: slotId,
-          teacherId: providerId,
-          startsAt: input.startsAt,
-          endsAt: input.endsAt,
-        }),
-        db.insert(appointments).values({
-          id: appointmentId,
-          providerStudentId: input.providerStudentId,
-          slotId,
-          comment: input.comment,
-          examName: input.examName,
-          schoolYear: input.schoolYear,
-          createdByProvider: true,
-        }),
-      ]);
-    } catch (error) {
-      if (isPostgresError(error, "23505")) {
-        throw new ProviderAppointmentConflictError();
-      }
-      throw error;
-    }
-  }
-
+  const appointmentId = await insertAppointment(providerId, {
+    ...input,
+    createdByProvider: true,
+  });
   return requireProviderAppointment(providerId, appointmentId);
 }
 
@@ -174,12 +216,116 @@ export async function updateProviderAppointment(
   input: ProviderAppointmentUpdateInput,
 ) {
   const current = await requireProviderAppointment(providerId, appointmentId);
-  const timesChanged = appointmentTimesChanged(input, current);
+
+  if (
+    input.editScope === "exception" &&
+    current.recurrence === "weekly" &&
+    !current.exceptionForAppointmentId
+  ) {
+    return createAppointmentException(providerId, current, input);
+  }
+
+  const seriesTarget =
+    input.editScope === "series" && current.exceptionForAppointmentId
+      ? await requireProviderAppointment(
+          providerId,
+          current.exceptionForAppointmentId,
+        )
+      : current;
+  const updated = await updateAppointmentRecord(
+    providerId,
+    seriesTarget,
+    input,
+  );
+
+  if (
+    input.editScope === "series" &&
+    current.exceptionForAppointmentId &&
+    current.id !== seriesTarget.id
+  ) {
+    await deleteAppointmentRecord(current);
+  }
+
+  return updated;
+}
+
+async function createAppointmentException(
+  providerId: string,
+  series: Awaited<ReturnType<typeof requireProviderAppointment>>,
+  input: ProviderAppointmentUpdateInput,
+) {
+  if (!input.occurrenceStartsAt) {
+    throw new ProviderAppointmentValidationError(
+      "The selected recurring occurrence is required",
+    );
+  }
+
+  const duration = series.endsAt.getTime() - series.startsAt.getTime();
+  const range = {
+    startsAt: input.startsAt ?? input.occurrenceStartsAt,
+    endsAt:
+      input.endsAt ?? new Date(input.occurrenceStartsAt.getTime() + duration),
+  };
+  await assertNoAppointmentOverlap(
+    providerId,
+    { ...range, recurrence: "none" },
+    {
+      excludedOccurrence: {
+        appointmentId: series.id,
+        startsAt: input.occurrenceStartsAt,
+      },
+    },
+  );
+
+  const appointmentId = await insertAppointment(providerId, {
+    providerStudentId: series.providerStudentId!,
+    ...range,
+    recurrence: "none",
+    exceptionForAppointmentId: series.id,
+    exceptionOriginalStartsAt: input.occurrenceStartsAt,
+    comment:
+      input.comment !== undefined
+        ? input.comment
+        : (series.comment ?? undefined),
+    examName:
+      input.examName !== undefined
+        ? input.examName
+        : (series.examName ?? undefined),
+    schoolYear:
+      input.schoolYear !== undefined
+        ? input.schoolYear
+        : (series.schoolYear ?? undefined),
+    color: input.color ?? series.color,
+    status: input.status ?? series.status,
+    createdByProvider: true,
+    rescheduleCount: sql`${series.rescheduleCount} + 1`,
+  });
+
+  return requireProviderAppointment(providerId, appointmentId);
+}
+
+async function updateAppointmentRecord(
+  providerId: string,
+  current: Awaited<ReturnType<typeof requireProviderAppointment>>,
+  input: ProviderAppointmentUpdateInput,
+) {
+  const comparisonRange =
+    current.recurrence === "weekly" && input.occurrenceStartsAt
+      ? {
+          startsAt: input.occurrenceStartsAt,
+          endsAt: new Date(
+            input.occurrenceStartsAt.getTime() +
+              (current.endsAt.getTime() - current.startsAt.getTime()),
+          ),
+        }
+      : current;
+  const timesChanged = appointmentTimesChanged(input, comparisonRange);
   const appointmentUpdate = {
     ...(input.comment !== undefined ? { comment: input.comment } : {}),
     ...(input.examName !== undefined ? { examName: input.examName } : {}),
     ...(input.schoolYear !== undefined ? { schoolYear: input.schoolYear } : {}),
     ...(input.status !== undefined ? { status: input.status } : {}),
+    ...(input.color !== undefined ? { color: input.color } : {}),
     ...(timesChanged
       ? { rescheduleCount: sql`${appointments.rescheduleCount} + 1` }
       : {}),
@@ -190,51 +336,110 @@ export async function updateProviderAppointment(
     await db
       .update(appointments)
       .set(appointmentUpdate)
-      .where(eq(appointments.id, appointmentId));
-    return requireProviderAppointment(providerId, appointmentId);
+      .where(eq(appointments.id, current.id));
+    return requireProviderAppointment(providerId, current.id);
   }
 
   const range = { startsAt: input.startsAt!, endsAt: input.endsAt! };
-  await assertNoAppointmentOverlap(providerId, range, appointmentId);
+  await assertNoAppointmentOverlap(
+    providerId,
+    { ...range, recurrence: current.recurrence },
+    current.recurrence === "weekly"
+      ? { excludedSeriesId: current.id }
+      : { excludedAppointmentId: current.id },
+  );
 
   const targetSlot = await findOpenSlot(providerId, range);
   const targetSlotId = targetSlot?.id ?? randomUUID();
   const shouldDeleteOldSlot = current.windowId === null;
 
   try {
+    const updateQuery = db
+      .update(appointments)
+      .set({ ...appointmentUpdate, slotId: targetSlotId })
+      .where(eq(appointments.id, current.id));
+    const deleteOldSlot = db
+      .delete(availabilitySlots)
+      .where(eq(availabilitySlots.id, current.slotId));
+
     if (targetSlot) {
-      await db.batch([
-        db
-          .update(appointments)
-          .set({ ...appointmentUpdate, slotId: targetSlotId })
-          .where(eq(appointments.id, appointmentId)),
-        ...(shouldDeleteOldSlot && current.slotId !== targetSlotId
-          ? [
-              db
-                .delete(availabilitySlots)
-                .where(eq(availabilitySlots.id, current.slotId)),
-            ]
-          : []),
-      ]);
+      await db.batch(
+        shouldDeleteOldSlot && current.slotId !== targetSlotId
+          ? [updateQuery, deleteOldSlot]
+          : [updateQuery],
+      );
+    } else {
+      const insertSlot = db.insert(availabilitySlots).values({
+        id: targetSlotId,
+        teacherId: providerId,
+        ...range,
+      });
+      await db.batch(
+        shouldDeleteOldSlot
+          ? [insertSlot, updateQuery, deleteOldSlot]
+          : [insertSlot, updateQuery],
+      );
+    }
+  } catch (error) {
+    if (isPostgresError(error, "23505")) {
+      throw new ProviderAppointmentConflictError();
+    }
+    throw error;
+  }
+
+  return requireProviderAppointment(providerId, current.id);
+}
+
+type InsertAppointmentInput = {
+  providerStudentId: string;
+  startsAt: Date;
+  endsAt: Date;
+  recurrence: "none" | "weekly";
+  exceptionForAppointmentId?: string;
+  exceptionOriginalStartsAt?: Date;
+  comment?: string | null;
+  examName?: string | null;
+  schoolYear?: string | null;
+  color: string;
+  status?: "scheduled" | "cancelled";
+  createdByProvider: boolean;
+  rescheduleCount?: number | ReturnType<typeof sql>;
+};
+
+async function insertAppointment(
+  providerId: string,
+  input: InsertAppointmentInput,
+) {
+  const slot = await findOpenSlot(providerId, input);
+  const appointmentId = randomUUID();
+  const appointmentValues = {
+    id: appointmentId,
+    providerStudentId: input.providerStudentId,
+    slotId: slot?.id ?? randomUUID(),
+    recurrence: input.recurrence,
+    exceptionForAppointmentId: input.exceptionForAppointmentId,
+    exceptionOriginalStartsAt: input.exceptionOriginalStartsAt,
+    comment: input.comment,
+    examName: input.examName,
+    schoolYear: input.schoolYear,
+    color: input.color,
+    status: input.status,
+    createdByProvider: input.createdByProvider,
+    rescheduleCount: input.rescheduleCount,
+  };
+
+  try {
+    if (slot) {
+      await db.insert(appointments).values(appointmentValues);
     } else {
       await db.batch([
         db.insert(availabilitySlots).values({
-          id: targetSlotId,
+          id: appointmentValues.slotId,
           teacherId: providerId,
-          startsAt: range.startsAt,
-          endsAt: range.endsAt,
+          startsAt: input.startsAt,
+          endsAt: input.endsAt,
         }),
-        db
-          .update(appointments)
-          .set({ ...appointmentUpdate, slotId: targetSlotId })
-          .where(eq(appointments.id, appointmentId)),
-        ...(shouldDeleteOldSlot
-          ? [
-              db
-                .delete(availabilitySlots)
-                .where(eq(availabilitySlots.id, current.slotId)),
-            ]
-          : []),
+        db.insert(appointments).values(appointmentValues),
       ]);
     }
   } catch (error) {
@@ -244,7 +449,22 @@ export async function updateProviderAppointment(
     throw error;
   }
 
-  return requireProviderAppointment(providerId, appointmentId);
+  return appointmentId;
+}
+
+async function deleteAppointmentRecord(
+  appointment: Awaited<ReturnType<typeof requireProviderAppointment>>,
+) {
+  await db.batch([
+    db.delete(appointments).where(eq(appointments.id, appointment.id)),
+    ...(appointment.windowId === null
+      ? [
+          db
+            .delete(availabilitySlots)
+            .where(eq(availabilitySlots.id, appointment.slotId)),
+        ]
+      : []),
+  ]);
 }
 
 async function requireProviderStudent(providerId: string, studentId: string) {
@@ -255,6 +475,7 @@ async function requireProviderStudent(providerId: string, studentId: string) {
       and(
         eq(providerStudents.id, studentId),
         eq(providerStudents.providerId, providerId),
+        eq(providerStudents.isActive, true),
       ),
     )
     .limit(1);
@@ -267,33 +488,7 @@ async function requireProviderAppointment(
   providerId: string,
   appointmentId: string,
 ) {
-  const [row] = await db
-    .select({
-      id: appointments.id,
-      slotId: availabilitySlots.id,
-      windowId: availabilitySlots.availabilityWindowId,
-      accountStudentName: user.name,
-      accountStudentEmail: user.email,
-      providerStudentId: providerStudents.id,
-      providerStudentName: providerStudents.displayName,
-      providerStudentEmail: providerStudents.email,
-      startsAt: availabilitySlots.startsAt,
-      endsAt: availabilitySlots.endsAt,
-      status: appointments.status,
-      comment: appointments.comment,
-      examName: appointments.examName,
-      schoolYear: appointments.schoolYear,
-      createdByProvider: appointments.createdByProvider,
-      rescheduleCount: appointments.rescheduleCount,
-      createdAt: appointments.createdAt,
-    })
-    .from(appointments)
-    .innerJoin(availabilitySlots, eq(availabilitySlots.id, appointments.slotId))
-    .leftJoin(user, eq(user.id, appointments.studentId))
-    .leftJoin(
-      providerStudents,
-      eq(providerStudents.id, appointments.providerStudentId),
-    )
+  const [row] = await appointmentQuery()
     .where(
       and(
         eq(appointments.id, appointmentId),
@@ -303,7 +498,33 @@ async function requireProviderAppointment(
     .limit(1);
 
   if (!row) throw new ProviderAppointmentNotFoundError();
+  return presentAppointmentRow(row);
+}
 
+export async function loadProviderAppointmentRows(providerId: string) {
+  const rows = await appointmentQuery().where(
+    eq(availabilitySlots.teacherId, providerId),
+  );
+  return rows.map(presentAppointmentRow);
+}
+
+function appointmentQuery() {
+  return db
+    .select(appointmentSelection)
+    .from(appointments)
+    .innerJoin(availabilitySlots, eq(availabilitySlots.id, appointments.slotId))
+    .leftJoin(user, eq(user.id, appointments.studentId))
+    .leftJoin(
+      providerStudents,
+      eq(providerStudents.id, appointments.providerStudentId),
+    );
+}
+
+function presentAppointmentRow(
+  row: Awaited<
+    ReturnType<ReturnType<typeof appointmentQuery>["limit"]>
+  >[number],
+) {
   const { accountStudentName, accountStudentEmail, ...appointment } = row;
   return {
     ...appointment,
@@ -316,27 +537,30 @@ async function requireProviderAppointment(
 
 async function assertNoAppointmentOverlap(
   providerId: string,
-  range: { startsAt: Date; endsAt: Date },
-  excludedAppointmentId?: string,
+  candidate: {
+    startsAt: Date;
+    endsAt: Date;
+    recurrence: "none" | "weekly";
+  },
+  exclusions?: Parameters<typeof findAppointmentConflictInRows>[3],
 ) {
-  const [overlap] = await db
-    .select({ id: appointments.id })
-    .from(appointments)
-    .innerJoin(availabilitySlots, eq(availabilitySlots.id, appointments.slotId))
-    .where(
-      and(
-        eq(availabilitySlots.teacherId, providerId),
-        eq(appointments.status, "scheduled"),
-        lt(availabilitySlots.startsAt, range.endsAt),
-        gt(availabilitySlots.endsAt, range.startsAt),
-        excludedAppointmentId
-          ? ne(appointments.id, excludedAppointmentId)
-          : undefined,
-      ),
-    )
-    .limit(1);
+  const [rows, bookingPage] = await Promise.all([
+    loadProviderAppointmentRows(providerId),
+    findBookingPage(providerId),
+  ]);
+  const overlap = findAppointmentConflictInRows(
+    rows,
+    candidate,
+    bookingPage?.timeZone ?? "UTC",
+    exclusions,
+  );
 
-  if (overlap) throw new ProviderAppointmentConflictError();
+  if (overlap) {
+    throw new ProviderAppointmentConflictError(
+      `This time overlaps ${overlap.studentName}'s scheduled session`,
+      overlap.studentName,
+    );
+  }
 }
 
 async function findOpenSlot(

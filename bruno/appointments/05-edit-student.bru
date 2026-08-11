@@ -1,0 +1,36 @@
+meta {
+  name: Edit provider student
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/api/provider/students/{{providerStudentId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  content-type: application/json
+  origin: {{baseUrl}}
+}
+
+body:json {
+  {
+    "displayName": "Bruno Student Updated",
+    "email": "{{providerStudentEmail}}"
+  }
+}
+
+tests {
+  test("provider can edit a student's information", function () {
+    const student = res.getBody().student;
+    expect(res.getStatus()).to.equal(200);
+    expect(student.displayName).to.equal("Bruno Student Updated");
+    expect(student.email).to.equal(bru.getVar("providerStudentEmail"));
+  });
+}

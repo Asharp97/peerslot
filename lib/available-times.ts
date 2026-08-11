@@ -1,4 +1,4 @@
-import { and, eq, gt, lt } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import {
@@ -10,6 +10,7 @@ import {
 } from "@/db/schema";
 import { createAvailableTimeService } from "@/lib/available-time-service";
 import { expandAvailabilityRule } from "@/lib/availability-recurrence";
+import { expandProviderAppointmentOccurrences } from "@/lib/provider-appointment-occurrence";
 import type {
   AvailabilityBookingPage,
   AvailableTimeRange,
@@ -48,35 +49,42 @@ const postgresAvailableTimeRepository = {
     restBetweenSessionsMinutes: number,
   ) {
     const restMilliseconds = restBetweenSessionsMinutes * 60 * 1000;
+    const [bookingPage, rows] = await Promise.all([
+      db
+        .select({ timeZone: bookingPages.timeZone })
+        .from(bookingPages)
+        .where(eq(bookingPages.id, bookingPageId))
+        .limit(1),
+      db
+        .select({
+          id: appointments.id,
+          startsAt: availabilitySlots.startsAt,
+          endsAt: availabilitySlots.endsAt,
+          recurrence: appointments.recurrence,
+          exceptionForAppointmentId: appointments.exceptionForAppointmentId,
+          exceptionOriginalStartsAt: appointments.exceptionOriginalStartsAt,
+          status: appointments.status,
+        })
+        .from(appointments)
+        .innerJoin(
+          availabilitySlots,
+          eq(availabilitySlots.id, appointments.slotId),
+        )
+        .innerJoin(
+          bookingPages,
+          eq(bookingPages.providerId, availabilitySlots.teacherId),
+        )
+        .where(eq(bookingPages.id, bookingPageId)),
+    ]);
 
-    return db
-      .select({
-        startsAt: availabilitySlots.startsAt,
-        endsAt: availabilitySlots.endsAt,
-        status: appointments.status,
-      })
-      .from(appointments)
-      .innerJoin(
-        availabilitySlots,
-        eq(availabilitySlots.id, appointments.slotId),
-      )
-      .innerJoin(
-        bookingPages,
-        eq(bookingPages.providerId, availabilitySlots.teacherId),
-      )
-      .where(
-        and(
-          eq(bookingPages.id, bookingPageId),
-          lt(
-            availabilitySlots.startsAt,
-            new Date(range.endsAt.getTime() + restMilliseconds),
-          ),
-          gt(
-            availabilitySlots.endsAt,
-            new Date(range.startsAt.getTime() - restMilliseconds),
-          ),
-        ),
-      );
+    return expandProviderAppointmentOccurrences(
+      rows.map((row) => ({ ...row, studentName: "Student" })),
+      {
+        startsAt: new Date(range.startsAt.getTime() - restMilliseconds),
+        endsAt: new Date(range.endsAt.getTime() + restMilliseconds),
+      },
+      bookingPage[0]?.timeZone ?? "UTC",
+    ).map(({ startsAt, endsAt, status }) => ({ startsAt, endsAt, status }));
   },
 };
 

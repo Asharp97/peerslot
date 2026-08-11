@@ -1,0 +1,79 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { DELETE, PATCH } from "./[id]/route";
+
+import {
+  archiveProviderStudent,
+  updateProviderStudent,
+} from "@/lib/provider-appointments";
+import { getCurrentUser } from "@/lib/current-user";
+
+vi.mock("@/lib/current-user", () => ({ getCurrentUser: vi.fn() }));
+vi.mock("@/lib/provider-appointments", () => ({
+  ProviderAppointmentConflictError: class extends Error {},
+  ProviderAppointmentNotFoundError: class extends Error {},
+  ProviderAppointmentValidationError: class extends Error {},
+  ProviderStudentNotFoundError: class extends Error {},
+  archiveProviderStudent: vi.fn(),
+  updateProviderStudent: vi.fn(),
+}));
+
+const providerId = "provider-id";
+const studentId = "7d45e9f4-6260-4dca-a95a-b5fa6c068cb8";
+
+describe("provider students API integration", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(getCurrentUser).mockResolvedValue({
+      user: { id: providerId },
+      capabilities: { canProvide: true },
+    } as Awaited<ReturnType<typeof getCurrentUser>>);
+  });
+
+  it("edits an owned student", async () => {
+    vi.mocked(updateProviderStudent).mockResolvedValue({
+      id: studentId,
+      displayName: "Ada Updated",
+      email: null,
+    } as Awaited<ReturnType<typeof updateProviderStudent>>);
+
+    const response = await PATCH(
+      jsonRequest(`http://localhost/api/provider/students/${studentId}`, {
+        displayName: "Ada Updated",
+        email: "",
+      }),
+      { params: Promise.resolve({ id: studentId }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(updateProviderStudent).toHaveBeenCalledWith(providerId, studentId, {
+      displayName: "Ada Updated",
+      email: null,
+    });
+  });
+
+  it("archives an owned student instead of destroying appointment history", async () => {
+    vi.mocked(archiveProviderStudent).mockResolvedValue({
+      archived: true,
+      id: studentId,
+    });
+
+    const response = await DELETE(
+      new Request(`http://localhost/api/provider/students/${studentId}`, {
+        method: "DELETE",
+      }),
+      { params: Promise.resolve({ id: studentId }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(archiveProviderStudent).toHaveBeenCalledWith(providerId, studentId);
+  });
+});
+
+function jsonRequest(url: string, body: unknown) {
+  return new Request(url, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}

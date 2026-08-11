@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  foreignKey,
   index,
   integer,
   pgEnum,
@@ -210,7 +211,7 @@ export const availabilitySlots = pgTable(
   },
   (table) => [
     index("availability_slots_window_idx").on(table.availabilityWindowId),
-    uniqueIndex("teacher_slot_start_unique").on(
+    index("availability_slots_teacher_start_idx").on(
       table.teacherId,
       table.startsAt,
     ),
@@ -227,6 +228,7 @@ export const providerStudents = pgTable(
       .references(() => providerProfiles.userId, { onDelete: "cascade" }),
     displayName: text("display_name").notNull(),
     email: text("email"),
+    isActive: boolean("is_active").default(true).notNull(),
     createdAt: timestamp("created_at", {
       withTimezone: true,
       mode: "date",
@@ -268,6 +270,13 @@ export const appointments = pgTable(
     comment: text("comment"),
     examName: text("exam_name"),
     schoolYear: text("school_year"),
+    recurrence: availabilityRecurrence("recurrence").default("none").notNull(),
+    exceptionForAppointmentId: uuid("exception_for_appointment_id"),
+    exceptionOriginalStartsAt: timestamp("exception_original_starts_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
+    color: text("color").default("#f0d7ff").notNull(),
     createdByProvider: boolean("created_by_provider").default(false).notNull(),
     createdAt: timestamp("created_at", {
       withTimezone: true,
@@ -287,6 +296,18 @@ export const appointments = pgTable(
     uniqueIndex("appointment_slot_unique").on(table.slotId),
     index("appointments_student_idx").on(table.studentId),
     index("appointments_provider_student_idx").on(table.providerStudentId),
+    index("appointments_exception_series_idx").on(
+      table.exceptionForAppointmentId,
+    ),
+    uniqueIndex("appointments_series_occurrence_unique").on(
+      table.exceptionForAppointmentId,
+      table.exceptionOriginalStartsAt,
+    ),
+    foreignKey({
+      columns: [table.exceptionForAppointmentId],
+      foreignColumns: [table.id],
+      name: "appointments_exception_series_fk",
+    }).onDelete("cascade"),
     check("reschedule_count_valid", sql`${table.rescheduleCount} >= 0`),
     check(
       "appointment_student_present",
@@ -296,5 +317,14 @@ export const appointments = pgTable(
       "appointment_context_single",
       sql`num_nonnulls(${table.examName}, ${table.schoolYear}) <= 1`,
     ),
+    check(
+      "appointment_exception_fields_paired",
+      sql`(${table.exceptionForAppointmentId} is null) = (${table.exceptionOriginalStartsAt} is null)`,
+    ),
+    check(
+      "appointment_exception_not_recurring",
+      sql`${table.exceptionForAppointmentId} is null or ${table.recurrence} = 'none'`,
+    ),
+    check("appointment_color_hex", sql`${table.color} ~ '^#[0-9A-Fa-f]{6}$'`),
   ],
 );

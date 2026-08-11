@@ -25,7 +25,9 @@ body:json {
     "startsAt": "{{providerSessionStartsAt}}",
     "endsAt": "{{providerSessionEndsAt}}",
     "schoolYear": "Year 8",
-    "comment": "One-off timetable session"
+    "comment": "Weekly timetable session",
+    "recurrence": "weekly",
+    "color": "#034f46"
   }
 }
 
@@ -55,7 +57,9 @@ tests {
     expect(appointment.studentName).to.equal("Bruno Student");
     expect(appointment.schoolYear).to.equal("Year 8");
     expect(appointment.examName).to.equal(null);
-    expect(appointment.comment).to.equal("One-off timetable session");
+    expect(appointment.comment).to.equal("Weekly timetable session");
+    expect(appointment.recurrence).to.equal("weekly");
+    expect(appointment.color).to.equal("#034f46");
     expect(appointment.createdByProvider).to.equal(true);
   });
 }

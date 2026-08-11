@@ -18,12 +18,14 @@ tests {
   test("weekly timetable includes the provider-created session", function () {
     const appointments = res.getBody().appointments;
     const appointment = appointments.find(
-      ({ id }) => id === bru.getVar("providerAppointmentId")
+      ({ appointmentId }) => appointmentId === bru.getVar("providerAppointmentId")
     );
 
     expect(res.getStatus()).to.equal(200);
     expect(appointment).to.be.an("object");
     expect(appointment.studentName).to.equal("Bruno Student");
     expect(appointment.schoolYear).to.equal("Year 8");
+    expect(appointment.recurrence).to.equal("weekly");
+    expect(appointment.isException).to.equal(false);
   });
 }

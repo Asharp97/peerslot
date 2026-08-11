@@ -1,0 +1,24 @@
+meta {
+  name: Archive provider student
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/api/provider/students/{{providerStudentId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+tests {
+  test("deleting a student preserves appointment history", function () {
+    const body = res.getBody();
+    expect(res.getStatus()).to.equal(200);
+    expect(body.archived).to.equal(true);
+    expect(body.id).to.equal(bru.getVar("providerStudentId"));
+  });
+}
