@@ -2,9 +2,28 @@ import { and, asc, desc, eq, gt } from "drizzle-orm";
 
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
-import { appointments, availabilitySlots } from "@/db/schema";
+import { appointments, availabilitySlots, providerStudents } from "@/db/schema";
 import { getAvailableTimesForBookingPage } from "@/lib/available-times";
 import { findProviderSetup } from "@/lib/provider-profiles";
+
+type ProviderWorkspaceAppointmentRow = {
+  accountStudentName: string | null;
+  accountStudentEmail: string | null;
+  providerStudentId: string | null;
+  providerStudentName: string | null;
+  providerStudentEmail: string | null;
+  id: string;
+  windowId: string | null;
+  startsAt: Date;
+  endsAt: Date;
+  status: "scheduled" | "cancelled";
+  comment: string | null;
+  examName: string | null;
+  schoolYear: string | null;
+  createdByProvider: boolean;
+  rescheduleCount: number;
+  createdAt: Date;
+};
 
 export async function loadProviderWorkspace(providerId: string) {
   const setup = await findProviderSetup(providerId);
@@ -16,11 +35,19 @@ export async function loadProviderWorkspace(providerId: string) {
   const appointmentSelection = {
     id: appointments.id,
     windowId: availabilitySlots.availabilityWindowId,
-    studentName: user.name,
-    studentEmail: user.email,
+    accountStudentName: user.name,
+    accountStudentEmail: user.email,
+    providerStudentId: providerStudents.id,
+    providerStudentName: providerStudents.displayName,
+    providerStudentEmail: providerStudents.email,
     startsAt: availabilitySlots.startsAt,
     endsAt: availabilitySlots.endsAt,
     status: appointments.status,
+    comment: appointments.comment,
+    examName: appointments.examName,
+    schoolYear: appointments.schoolYear,
+    createdByProvider: appointments.createdByProvider,
+    rescheduleCount: appointments.rescheduleCount,
     createdAt: appointments.createdAt,
   };
 
@@ -33,7 +60,11 @@ export async function loadProviderWorkspace(providerId: string) {
           availabilitySlots,
           eq(availabilitySlots.id, appointments.slotId),
         )
-        .innerJoin(user, eq(user.id, appointments.studentId))
+        .leftJoin(user, eq(user.id, appointments.studentId))
+        .leftJoin(
+          providerStudents,
+          eq(providerStudents.id, appointments.providerStudentId),
+        )
         .where(
           and(
             eq(availabilitySlots.teacherId, providerId),
@@ -50,7 +81,11 @@ export async function loadProviderWorkspace(providerId: string) {
           availabilitySlots,
           eq(availabilitySlots.id, appointments.slotId),
         )
-        .innerJoin(user, eq(user.id, appointments.studentId))
+        .leftJoin(user, eq(user.id, appointments.studentId))
+        .leftJoin(
+          providerStudents,
+          eq(providerStudents.id, appointments.providerStudentId),
+        )
         .where(eq(availabilitySlots.teacherId, providerId))
         .orderBy(desc(appointments.createdAt))
         .limit(8),
@@ -69,8 +104,19 @@ export async function loadProviderWorkspace(providerId: string) {
   return {
     profile: setup.profile,
     bookingPage: setup.bookingPage,
-    upcomingAppointments,
-    recentBookings,
+    upcomingAppointments: upcomingAppointments.map(presentAppointment),
+    recentBookings: recentBookings.map(presentAppointment),
     openTimesThisWeek,
+  };
+}
+
+function presentAppointment(appointment: ProviderWorkspaceAppointmentRow) {
+  const { accountStudentName, accountStudentEmail, ...rest } = appointment;
+  return {
+    ...rest,
+    studentName:
+      appointment.providerStudentName ?? accountStudentName ?? "Student",
+    studentEmail:
+      appointment.providerStudentEmail ?? accountStudentEmail ?? null,
   };
 }

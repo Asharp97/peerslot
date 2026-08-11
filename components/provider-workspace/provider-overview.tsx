@@ -93,7 +93,7 @@ export function ProviderOverview({ copy }: { copy: ProviderOverviewCopy }) {
         <span
           className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-2 text-xs font-bold ${
             data.bookingPage.isPublished
-              ? "bg-flow-lime text-vast-ink"
+              ? "bg-lavender-whisper text-vast-ink"
               : "bg-black/8 text-black/55"
           }`}
         >
@@ -111,7 +111,7 @@ export function ProviderOverview({ copy }: { copy: ProviderOverviewCopy }) {
               <p className="text-[10px] font-bold tracking-[0.14em] text-white/45 uppercase">
                 {copy.publicLink}
               </p>
-              <p className="mt-3 break-all font-mono text-sm text-flow-lime sm:text-base">
+              <p className="mt-3 break-all font-mono text-sm text-lavender-whisper sm:text-base">
                 {bookingPath}
               </p>
             </div>
@@ -121,7 +121,7 @@ export function ProviderOverview({ copy }: { copy: ProviderOverviewCopy }) {
           </div>
           <div className="mt-8 flex flex-wrap gap-2">
             <button
-              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-flow-lime px-5 text-sm font-bold text-vast-ink transition hover:-translate-y-0.5"
+              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-lavender-whisper px-5 text-sm font-bold text-vast-ink transition hover:-translate-y-0.5"
               onClick={copyLink}
               type="button"
             >
@@ -152,7 +152,7 @@ export function ProviderOverview({ copy }: { copy: ProviderOverviewCopy }) {
           </div>
         </article>
 
-        <article className="rounded-[28px] border border-black/10 bg-flow-lime p-6 sm:p-8">
+        <article className="rounded-[28px] border border-black/10 bg-lavender-whisper p-6 sm:p-8">
           <Clock3 size={22} />
           <p className="mt-8 text-5xl font-semibold tracking-[-0.05em]">
             {data.openTimesThisWeek.length}

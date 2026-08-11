@@ -174,7 +174,7 @@ export function ProviderSettings({ copy }: { copy: ProviderSettingsCopy }) {
 
           <div className="mt-6 flex items-center gap-4 rounded-2xl border border-black/10 bg-white p-4">
             <span
-              className={`grid size-10 place-items-center rounded-full ${published ? "bg-flow-lime" : "bg-black/5 text-black/35"}`}
+              className={`grid size-10 place-items-center rounded-full ${published ? "bg-lavender-whisper" : "bg-black/5 text-black/35"}`}
             >
               {published ? <Eye size={18} /> : <EyeOff size={18} />}
             </span>
@@ -205,21 +205,21 @@ export function ProviderSettings({ copy }: { copy: ProviderSettingsCopy }) {
             {state === "saving" ? (
               <LoaderCircle className="animate-spin" size={16} />
             ) : (
-              <Check className="text-flow-lime" size={16} />
+              <Check className="text-lavender-whisper" size={16} />
             )}
             {state === "saved" ? copy.saved : copy.save}
           </Button>
         </form>
 
         <article className="h-fit rounded-[28px] bg-vast-ink p-6 text-white sm:p-8">
-          <span className="grid size-11 place-items-center rounded-full bg-flow-lime text-vast-ink">
+          <span className="grid size-11 place-items-center rounded-full bg-lavender-whisper text-vast-ink">
             <Link2 size={19} />
           </span>
           <h2 className="mt-8 font-display text-3xl">{copy.linkSecurity}</h2>
           <p className="mt-3 text-sm leading-6 text-white/55">
             {copy.linkDescription}
           </p>
-          <p className="mt-6 rounded-xl bg-white/8 px-4 py-3 font-mono text-sm text-flow-lime">
+          <p className="mt-6 rounded-xl bg-white/8 px-4 py-3 font-mono text-sm text-lavender-whisper">
             {data.bookingPage.slug}
           </p>
           <Button

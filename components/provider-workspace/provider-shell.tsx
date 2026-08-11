@@ -125,7 +125,7 @@ export function ProviderShell({
     return (
       <main className="grid min-h-screen place-items-center bg-[#f4f3eb] px-6 text-vast-ink">
         <div className="max-w-sm text-center">
-          <span className="mx-auto grid size-12 place-items-center rounded-full bg-flow-lime">
+          <span className="mx-auto grid size-12 place-items-center rounded-full bg-lavender-whisper">
             <LoaderCircle className="animate-spin" size={20} />
           </span>
           <p className="mt-5 text-sm font-semibold">{error || copy.loading}</p>
@@ -135,6 +135,7 @@ export function ProviderShell({
   }
 
   const workspaceData = contextValue.data;
+  const isAppointmentsPage = pathname.startsWith("/provider/appointments");
 
   const navigation = [
     { href: "/provider", label: copy.overview, icon: LayoutDashboard },
@@ -156,7 +157,7 @@ export function ProviderShell({
       <div className="min-h-screen bg-[#f4f3eb] text-vast-ink">
         <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-black/10 bg-[#fbfaf4] p-5 lg:flex">
           <Link className="flex items-center gap-3 px-2 py-2" href="/">
-            <span className="grid size-9 place-items-center rounded-full bg-vast-ink text-sm font-bold text-flow-lime">
+            <span className="grid size-9 place-items-center rounded-full bg-vast-ink text-sm font-bold text-lavender-whisper">
               P
             </span>
             <span className="text-lg font-bold tracking-[-0.02em]">
@@ -190,7 +191,9 @@ export function ProviderShell({
                   key={href}
                 >
                   <Icon
-                    className={active ? "text-flow-lime" : "text-black/45"}
+                    className={
+                      active ? "text-lavender-whisper" : "text-black/45"
+                    }
                     size={18}
                   />
                   {label}
@@ -199,7 +202,7 @@ export function ProviderShell({
             })}
           </nav>
 
-          <div className="mt-auto rounded-2xl bg-flow-lime p-4">
+          <div className="mt-auto rounded-2xl bg-lavender-whisper p-4">
             <Sparkles size={18} />
             <p className="mt-3 text-xs leading-5 font-semibold">
               {workspaceData.bookingPage.isPublished
@@ -222,7 +225,7 @@ export function ProviderShell({
               className="flex items-center gap-2 font-bold"
               href="/provider"
             >
-              <span className="grid size-8 place-items-center rounded-full bg-vast-ink text-xs text-flow-lime">
+              <span className="grid size-8 place-items-center rounded-full bg-vast-ink text-xs text-lavender-whisper">
                 P
               </span>
               PeerSlot
@@ -255,8 +258,12 @@ export function ProviderShell({
           </nav>
         </header>
 
-        <main className="px-4 py-6 sm:px-7 lg:ml-64 lg:px-10 lg:py-10">
-          <div className="mx-auto max-w-6xl">{children}</div>
+        <main
+          className={`px-4 py-4 sm:px-6 lg:ml-64 ${isAppointmentsPage ? "lg:px-6 lg:py-6" : "lg:px-10 lg:py-10"}`}
+        >
+          <div className={isAppointmentsPage ? "w-full" : "mx-auto max-w-6xl"}>
+            {children}
+          </div>
         </main>
       </div>
     </ProviderWorkspaceContext.Provider>

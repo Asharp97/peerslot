@@ -1,0 +1,46 @@
+meta {
+  name: Create provider student
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/provider/students
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  content-type: application/json
+  origin: {{baseUrl}}
+}
+
+body:json {
+  {
+    "displayName": "Bruno Student",
+    "email": "{{providerStudentEmail}}"
+  }
+}
+
+script:pre-request {
+  bru.setVar("providerStudentEmail", `bruno.student.${Date.now()}@example.com`);
+}
+
+script:post-response {
+  if (res.getBody().student) {
+    bru.setVar("providerStudentId", res.getBody().student.id);
+  }
+}
+
+tests {
+  test("provider can add a student to the timetable", function () {
+    const student = res.getBody().student;
+    expect(res.getStatus()).to.equal(201);
+    expect(student.displayName).to.equal("Bruno Student");
+    expect(student.email).to.equal(bru.getVar("providerStudentEmail"));
+  });
+}

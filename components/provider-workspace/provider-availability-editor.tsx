@@ -295,7 +295,7 @@ export function ProviderAvailabilityEditor({
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="grid size-10 place-items-center rounded-full bg-flow-lime text-vast-ink">
+              <span className="grid size-10 place-items-center rounded-full bg-lavender-whisper text-vast-ink">
                 {editingId ? <Pencil size={18} /> : <Plus size={19} />}
               </span>
               <h2 className="font-bold">
@@ -354,7 +354,7 @@ export function ProviderAvailabilityEditor({
             <div className="flex items-center justify-between">
               <p className="text-xs font-bold">{copy.preview}</p>
               {preview?.slots.length ? (
-                <span className="rounded-full bg-flow-lime px-2.5 py-1 text-[10px] font-bold text-vast-ink">
+                <span className="rounded-full bg-lavender-whisper px-2.5 py-1 text-[10px] font-bold text-vast-ink">
                   {preview.slots.length} {copy.slots}
                 </span>
               ) : null}
@@ -386,7 +386,7 @@ export function ProviderAvailabilityEditor({
           ) : null}
 
           <button
-            className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-flow-lime px-5 text-sm font-bold text-vast-ink disabled:opacity-50"
+            className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-lavender-whisper px-5 text-sm font-bold text-vast-ink disabled:opacity-50"
             disabled={saving || !preview?.slots.length}
             type="submit"
           >

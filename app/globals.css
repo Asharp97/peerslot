@@ -14,7 +14,6 @@
   --color-fog: #8a8a80;
   --color-charcoal: #222222;
   --color-pure-white: #ffffff;
-  --color-flow-lime: #dfff76;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-figtree);
@@ -179,5 +178,82 @@ a {
   }
   html {
     @apply font-sans;
+  }
+}
+
+.provider-calendar {
+  --fc-border-color: rgb(26 26 26 / 10%);
+  --fc-button-bg-color: #1a1a1a;
+  --fc-button-border-color: #1a1a1a;
+  --fc-button-hover-bg-color: #034f46;
+  --fc-button-hover-border-color: #034f46;
+  --fc-button-active-bg-color: #034f46;
+  --fc-button-active-border-color: #034f46;
+  --fc-today-bg-color: rgb(240 215 255 / 28%);
+  --fc-now-indicator-color: #ffa946;
+  font-family: var(--font-figtree), Arial, Helvetica, sans-serif;
+}
+
+.provider-calendar .fc {
+  height: 100%;
+  color: var(--color-vast-ink);
+}
+
+.provider-calendar .fc .fc-toolbar {
+  gap: 0.75rem;
+  margin-bottom: 0.8rem;
+}
+
+.provider-calendar .fc .fc-toolbar-title {
+  font-family: var(--font-eb-garamond), Georgia, serif;
+  font-size: clamp(1.25rem, 2vw, 1.65rem);
+  font-weight: 400;
+}
+
+.provider-calendar .fc .fc-button {
+  border-radius: 999px;
+  box-shadow: none;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.45rem 0.75rem;
+}
+
+.provider-calendar .fc .fc-col-header-cell-cushion,
+.provider-calendar .fc .fc-timegrid-axis-cushion,
+.provider-calendar .fc .fc-timegrid-slot-label-cushion {
+  color: rgb(26 26 26 / 55%);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.provider-calendar .fc .fc-timegrid-slot {
+  height: 2.6rem;
+}
+
+.provider-calendar .fc .fc-timegrid-event {
+  border-radius: 8px;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.provider-calendar .provider-session-scheduled {
+  border-color: #7859d6;
+  background: #f0d7ff;
+  color: #2f1f57;
+}
+
+.provider-calendar .provider-session-cancelled {
+  border-color: #b7b7a8;
+  background: #e4e4d0;
+  color: #686860;
+  text-decoration: line-through;
+  opacity: 0.72;
+}
+
+@media (max-width: 640px) {
+  .provider-calendar .fc .fc-toolbar {
+    align-items: flex-start;
+    flex-wrap: wrap;
   }
 }

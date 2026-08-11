@@ -61,12 +61,12 @@ const postgresAvailableTimeRepository = {
         eq(availabilitySlots.id, appointments.slotId),
       )
       .innerJoin(
-        availabilityWindows,
-        eq(availabilityWindows.id, availabilitySlots.availabilityWindowId),
+        bookingPages,
+        eq(bookingPages.providerId, availabilitySlots.teacherId),
       )
       .where(
         and(
-          eq(availabilityWindows.bookingPageId, bookingPageId),
+          eq(bookingPages.id, bookingPageId),
           lt(
             availabilitySlots.startsAt,
             new Date(range.endsAt.getTime() + restMilliseconds),

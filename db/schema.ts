@@ -218,18 +218,57 @@ export const availabilitySlots = pgTable(
   ],
 );
 
+export const providerStudents = pgTable(
+  "provider_students",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    providerId: text("provider_id")
+      .notNull()
+      .references(() => providerProfiles.userId, { onDelete: "cascade" }),
+    displayName: text("display_name").notNull(),
+    email: text("email"),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", {
+      withTimezone: true,
+      mode: "date",
+    })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("provider_students_provider_idx").on(table.providerId),
+    uniqueIndex("provider_students_provider_email_unique").on(
+      table.providerId,
+      table.email,
+    ),
+  ],
+);
+
 export const appointments = pgTable(
   "appointments",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    studentId: text("student_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
+    studentId: text("student_id").references(() => user.id, {
+      onDelete: "cascade",
+    }),
+    providerStudentId: uuid("provider_student_id").references(
+      () => providerStudents.id,
+    ),
     slotId: uuid("slot_id")
       .notNull()
       .references(() => availabilitySlots.id),
     rescheduleCount: integer("reschedule_count").default(0).notNull(),
     status: appointmentStatus("status").default("scheduled").notNull(),
+    comment: text("comment"),
+    examName: text("exam_name"),
+    schoolYear: text("school_year"),
+    createdByProvider: boolean("created_by_provider").default(false).notNull(),
     createdAt: timestamp("created_at", {
       withTimezone: true,
       mode: "date",
@@ -247,9 +286,15 @@ export const appointments = pgTable(
   (table) => [
     uniqueIndex("appointment_slot_unique").on(table.slotId),
     index("appointments_student_idx").on(table.studentId),
+    index("appointments_provider_student_idx").on(table.providerStudentId),
+    check("reschedule_count_valid", sql`${table.rescheduleCount} >= 0`),
     check(
-      "reschedule_count_valid",
-      sql`${table.rescheduleCount} between 0 and 1`,
+      "appointment_student_present",
+      sql`${table.studentId} is not null or ${table.providerStudentId} is not null`,
+    ),
+    check(
+      "appointment_context_single",
+      sql`num_nonnulls(${table.examName}, ${table.schoolYear}) <= 1`,
     ),
   ],
 );

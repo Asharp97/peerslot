@@ -1,0 +1,61 @@
+meta {
+  name: Create provider session
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/provider/appointments
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  content-type: application/json
+  origin: {{baseUrl}}
+}
+
+body:json {
+  {
+    "providerStudentId": "{{providerStudentId}}",
+    "startsAt": "{{providerSessionStartsAt}}",
+    "endsAt": "{{providerSessionEndsAt}}",
+    "schoolYear": "Year 8",
+    "comment": "One-off timetable session"
+  }
+}
+
+script:pre-request {
+  const startsAt = new Date(Date.now() + 25 * 24 * 60 * 60 * 1000);
+  const endsAt = new Date(startsAt.getTime() + 45 * 60 * 1000);
+  const rangeStartsAt = new Date(startsAt.getTime() - 24 * 60 * 60 * 1000);
+  const rangeEndsAt = new Date(startsAt.getTime() + 8 * 24 * 60 * 60 * 1000);
+
+  bru.setVar("providerSessionStartsAt", startsAt.toISOString());
+  bru.setVar("providerSessionEndsAt", endsAt.toISOString());
+  bru.setVar("providerSessionRangeStartsAt", rangeStartsAt.toISOString());
+  bru.setVar("providerSessionRangeEndsAt", rangeEndsAt.toISOString());
+}
+
+script:post-response {
+  if (res.getBody().appointment) {
+    bru.setVar("providerAppointmentId", res.getBody().appointment.id);
+  }
+}
+
+tests {
+  test("provider-created session preserves its student context and comment", function () {
+    const appointment = res.getBody().appointment;
+    expect(res.getStatus()).to.equal(201);
+    expect(appointment.providerStudentId).to.equal(bru.getVar("providerStudentId"));
+    expect(appointment.studentName).to.equal("Bruno Student");
+    expect(appointment.schoolYear).to.equal("Year 8");
+    expect(appointment.examName).to.equal(null);
+    expect(appointment.comment).to.equal("One-off timetable session");
+    expect(appointment.createdByProvider).to.equal(true);
+  });
+}

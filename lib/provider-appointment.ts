@@ -1,0 +1,146 @@
+import { z } from "zod";
+
+const timestampWithOffsetSchema = z.string().datetime({ offset: true });
+const optionalText = (maximum: number) =>
+  z
+    .string()
+    .trim()
+    .max(maximum)
+    .optional()
+    .transform((value) => value || undefined);
+const nullableText = (maximum: number) =>
+  z
+    .string()
+    .trim()
+    .max(maximum)
+    .nullable()
+    .optional()
+    .transform((value) => (value === undefined ? undefined : value || null));
+
+export const providerStudentCreateSchema = z
+  .object({
+    displayName: z.string().trim().min(2).max(100),
+    email: z
+      .string()
+      .trim()
+      .email()
+      .max(254)
+      .optional()
+      .transform((value) => value?.toLowerCase()),
+  })
+  .strict();
+
+export const providerAppointmentCreateSchema = z
+  .object({
+    providerStudentId: z.string().uuid(),
+    startsAt: timestampWithOffsetSchema,
+    endsAt: timestampWithOffsetSchema,
+    comment: optionalText(1000),
+    examName: optionalText(120),
+    schoolYear: optionalText(80),
+  })
+  .strict()
+  .refine(({ startsAt, endsAt }) => new Date(endsAt) > new Date(startsAt), {
+    message: "endsAt must be after startsAt",
+    path: ["endsAt"],
+  })
+  .refine(
+    ({ examName, schoolYear }) => Boolean(examName) !== Boolean(schoolYear),
+    {
+      message: "Choose either an exam name or a school year",
+      path: ["examName"],
+    },
+  )
+  .transform(({ startsAt, endsAt, ...input }) => ({
+    ...input,
+    startsAt: new Date(startsAt),
+    endsAt: new Date(endsAt),
+  }));
+
+export const providerAppointmentUpdateSchema = z
+  .object({
+    startsAt: timestampWithOffsetSchema.optional(),
+    endsAt: timestampWithOffsetSchema.optional(),
+    comment: nullableText(1000),
+    examName: nullableText(120),
+    schoolYear: nullableText(80),
+    status: z.enum(["scheduled", "cancelled"]).optional(),
+  })
+  .strict()
+  .refine((input) => Object.keys(input).length > 0, {
+    message: "At least one appointment change is required",
+  })
+  .refine(
+    ({ startsAt, endsAt }) =>
+      (startsAt === undefined && endsAt === undefined) ||
+      (startsAt !== undefined && endsAt !== undefined),
+    {
+      message: "startsAt and endsAt must be updated together",
+      path: ["endsAt"],
+    },
+  )
+  .refine(
+    ({ startsAt, endsAt }) =>
+      !startsAt || !endsAt || new Date(endsAt) > new Date(startsAt),
+    { message: "endsAt must be after startsAt", path: ["endsAt"] },
+  )
+  .refine(({ examName, schoolYear }) => !(examName && schoolYear), {
+    message: "Choose either an exam name or a school year",
+    path: ["examName"],
+  })
+  .refine(
+    ({ examName, schoolYear }) =>
+      (examName === undefined && schoolYear === undefined) ||
+      (examName !== undefined && schoolYear !== undefined),
+    {
+      message: "examName and schoolYear must be updated together",
+      path: ["schoolYear"],
+    },
+  )
+  .transform(({ startsAt, endsAt, ...input }) => ({
+    ...input,
+    startsAt: startsAt ? new Date(startsAt) : undefined,
+    endsAt: endsAt ? new Date(endsAt) : undefined,
+  }));
+
+export const providerAppointmentRangeSchema = z
+  .object({
+    startsAt: timestampWithOffsetSchema,
+    endsAt: timestampWithOffsetSchema,
+  })
+  .refine(({ startsAt, endsAt }) => new Date(endsAt) > new Date(startsAt), {
+    message: "endsAt must be after startsAt",
+    path: ["endsAt"],
+  })
+  .refine(
+    ({ startsAt, endsAt }) =>
+      new Date(endsAt).getTime() - new Date(startsAt).getTime() <=
+      45 * 24 * 60 * 60 * 1000,
+    { message: "Appointment range cannot exceed 45 days", path: ["endsAt"] },
+  )
+  .transform(({ startsAt, endsAt }) => ({
+    startsAt: new Date(startsAt),
+    endsAt: new Date(endsAt),
+  }));
+
+export type ProviderAppointmentCreateInput = z.infer<
+  typeof providerAppointmentCreateSchema
+>;
+export type ProviderAppointmentUpdateInput = z.infer<
+  typeof providerAppointmentUpdateSchema
+>;
+export type ProviderStudentCreateInput = z.infer<
+  typeof providerStudentCreateSchema
+>;
+
+export function appointmentTimesChanged(
+  input: Pick<ProviderAppointmentUpdateInput, "startsAt" | "endsAt">,
+  current: { startsAt: Date; endsAt: Date },
+) {
+  return (
+    input.startsAt !== undefined &&
+    input.endsAt !== undefined &&
+    (input.startsAt.getTime() !== current.startsAt.getTime() ||
+      input.endsAt.getTime() !== current.endsAt.getTime())
+  );
+}

@@ -2,10 +2,16 @@ export type ProviderWorkspaceAppointment = {
   id: string;
   windowId: string | null;
   studentName: string;
-  studentEmail: string;
+  studentEmail: string | null;
+  providerStudentId: string | null;
   startsAt: string;
   endsAt: string;
   status: "scheduled" | "cancelled";
+  comment: string | null;
+  examName: string | null;
+  schoolYear: string | null;
+  createdByProvider: boolean;
+  rescheduleCount: number;
   createdAt: string;
 };
 

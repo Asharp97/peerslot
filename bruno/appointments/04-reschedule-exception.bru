@@ -1,0 +1,52 @@
+meta {
+  name: Reschedule one appointment
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/api/provider/appointments/{{providerAppointmentId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  content-type: application/json
+  origin: {{baseUrl}}
+}
+
+body:json {
+  {
+    "startsAt": "{{rescheduledSessionStartsAt}}",
+    "endsAt": "{{rescheduledSessionEndsAt}}",
+    "examName": "LGS",
+    "schoolYear": null,
+    "comment": "Moved once because the student had a conflict"
+  }
+}
+
+script:pre-request {
+  const startsAt = new Date(bru.getVar("providerSessionStartsAt"));
+  const endsAt = new Date(bru.getVar("providerSessionEndsAt"));
+  startsAt.setUTCDate(startsAt.getUTCDate() + 1);
+  endsAt.setUTCDate(endsAt.getUTCDate() + 1);
+
+  bru.setVar("rescheduledSessionStartsAt", startsAt.toISOString());
+  bru.setVar("rescheduledSessionEndsAt", endsAt.toISOString());
+}
+
+tests {
+  test("rescheduling changes only this appointment", function () {
+    const appointment = res.getBody().appointment;
+    expect(res.getStatus()).to.equal(200);
+    expect(appointment.startsAt).to.equal(bru.getVar("rescheduledSessionStartsAt"));
+    expect(appointment.endsAt).to.equal(bru.getVar("rescheduledSessionEndsAt"));
+    expect(appointment.rescheduleCount).to.equal(1);
+    expect(appointment.examName).to.equal("LGS");
+    expect(appointment.schoolYear).to.equal(null);
+  });
+}

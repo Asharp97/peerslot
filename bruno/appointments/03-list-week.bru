@@ -1,0 +1,29 @@
+meta {
+  name: List timetable week
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/provider/appointments?startsAt={{providerSessionRangeStartsAt}}&endsAt={{providerSessionRangeEndsAt}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+tests {
+  test("weekly timetable includes the provider-created session", function () {
+    const appointments = res.getBody().appointments;
+    const appointment = appointments.find(
+      ({ id }) => id === bru.getVar("providerAppointmentId")
+    );
+
+    expect(res.getStatus()).to.equal(200);
+    expect(appointment).to.be.an("object");
+    expect(appointment.studentName).to.equal("Bruno Student");
+    expect(appointment.schoolYear).to.equal("Year 8");
+  });
+}
