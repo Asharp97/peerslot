@@ -81,8 +81,8 @@ a {
 }
 
 :focus-visible {
-  outline: 3px solid var(--color-ember-glow);
-  outline-offset: 3px;
+  outline: 2px solid rgb(3 79 70 / 45%);
+  outline-offset: 2px;
 }
 
 ::selection {
@@ -114,7 +114,7 @@ a {
   --destructive: oklch(0.577 0.245 27.325);
   --border: #deded0;
   --input: #deded0;
-  --ring: #ffa946;
+  --ring: #034f46;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);

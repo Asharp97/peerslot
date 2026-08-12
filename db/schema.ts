@@ -78,7 +78,7 @@ export const providerProfiles = pgTable(
   (table) => [
     check(
       "provider_duration_valid",
-      sql`${table.defaultAppointmentDurationMinutes} between 15 and 180`,
+      sql`${table.defaultAppointmentDurationMinutes} between 10 and 120 and mod(${table.defaultAppointmentDurationMinutes}, 5) = 0`,
     ),
     check(
       "provider_booking_notice_valid",
@@ -86,7 +86,7 @@ export const providerProfiles = pgTable(
     ),
     check(
       "provider_rest_time_valid",
-      sql`${table.restBetweenSessionsMinutes} between 0 and 120`,
+      sql`${table.restBetweenSessionsMinutes} between 0 and 120 and mod(${table.restBetweenSessionsMinutes}, 5) = 0`,
     ),
   ],
 );
@@ -128,11 +128,11 @@ export const bookingPages = pgTable(
     check("booking_page_slug_length", sql`char_length(${table.slug}) = 8`),
     check(
       "booking_page_duration_valid",
-      sql`${table.appointmentDurationMinutes} between 15 and 180`,
+      sql`${table.appointmentDurationMinutes} between 10 and 120 and mod(${table.appointmentDurationMinutes}, 5) = 0`,
     ),
     check(
       "booking_page_interval_valid",
-      sql`${table.bookingIntervalMinutes} between 15 and 300`,
+      sql`${table.bookingIntervalMinutes} between 10 and 240 and mod(${table.bookingIntervalMinutes}, 5) = 0`,
     ),
     check(
       "booking_page_interval_covers_duration",
@@ -263,6 +263,7 @@ export const appointments = pgTable(
     }),
     providerStudentId: uuid("provider_student_id").references(
       () => providerStudents.id,
+      { onDelete: "cascade" },
     ),
     slotId: uuid("slot_id")
       .notNull()

@@ -179,24 +179,22 @@ export async function updateProviderStudent(
   }
 }
 
-export async function archiveProviderStudent(
+export async function deleteProviderStudent(
   providerId: string,
   studentId: string,
 ) {
   const [student] = await db
-    .update(providerStudents)
-    .set({ isActive: false, updatedAt: new Date() })
+    .delete(providerStudents)
     .where(
       and(
         eq(providerStudents.id, studentId),
         eq(providerStudents.providerId, providerId),
-        eq(providerStudents.isActive, true),
       ),
     )
     .returning({ id: providerStudents.id });
 
   if (!student) throw new ProviderStudentNotFoundError();
-  return { archived: true, id: student.id };
+  return { deleted: true, id: student.id };
 }
 
 export async function listProviderAppointments(

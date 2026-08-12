@@ -3,6 +3,7 @@ import { randomInt } from "node:crypto";
 import { z } from "zod";
 
 import { isPostgresError } from "./database-errors";
+import { isFiveMinuteOption } from "./scheduling-options";
 
 const slugAlphabet =
   "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
@@ -15,9 +16,18 @@ export const bookingPageSettingsSchema = z
       .trim()
       .refine(isValidTimeZone, "Invalid time zone")
       .optional(),
-    appointmentDurationMinutes: z.number().int().min(15).max(180).optional(),
-    bookingIntervalMinutes: z.number().int().min(15).max(300).optional(),
-    restBetweenSessionsMinutes: z.number().int().min(0).max(120).optional(),
+    appointmentDurationMinutes: z
+      .number()
+      .refine((value) => isFiveMinuteOption(value, 10, 120))
+      .optional(),
+    bookingIntervalMinutes: z
+      .number()
+      .refine((value) => isFiveMinuteOption(value, 10, 240))
+      .optional(),
+    restBetweenSessionsMinutes: z
+      .number()
+      .refine((value) => isFiveMinuteOption(value, 0, 120))
+      .optional(),
     minimumNoticeHours: z.number().int().min(0).max(720).optional(),
     isPublished: z.boolean().optional(),
   })

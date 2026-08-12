@@ -615,7 +615,13 @@ export function ProviderAppointments({
   }
 
   async function deleteStudent(student: ProviderStudent) {
-    if (!window.confirm(copy.deleteStudentConfirm)) return;
+    if (
+      !window.confirm(
+        copy.deleteStudentConfirm.replace("{name}", student.displayName),
+      )
+    ) {
+      return;
+    }
     setError("");
     const response = await fetch(`/api/provider/students/${student.id}`, {
       method: "DELETE",
@@ -626,6 +632,8 @@ export function ProviderAppointments({
       return;
     }
     await loadStudents();
+    calendarRef.current?.getApi().refetchEvents();
+    await refresh();
     if (editingStudentId === student.id) setEditingStudentId(null);
   }
 

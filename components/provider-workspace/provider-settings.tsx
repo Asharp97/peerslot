@@ -21,6 +21,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import {
+  appointmentDurationOptions,
+  restTimeOptions,
+} from "@/lib/scheduling-options";
 
 import { TimeZoneCombobox } from "./time-zone-combobox";
 import { useProviderWorkspace } from "./provider-shell";
@@ -149,14 +153,14 @@ export function ProviderSettings({ copy }: { copy: ProviderSettingsCopy }) {
             <NumberSelect
               label={copy.duration}
               onChange={setDuration}
-              options={[15, 30, 45, 60, 90]}
+              options={appointmentDurationOptions}
               suffix={copy.minutes}
               value={duration}
             />
             <NumberSelect
               label={copy.rest}
               onChange={setRest}
-              options={[0, 5, 10, 15, 20, 30]}
+              options={restTimeOptions}
               suffix={copy.minutes}
               value={rest}
             />
@@ -269,7 +273,7 @@ function NumberSelect({
 }: {
   label: string;
   onChange: (value: number) => void;
-  options: number[];
+  options: readonly number[];
   suffix: string;
   value: number;
 }) {

@@ -5,6 +5,10 @@ import { ArrowRight, CalendarClock, LoaderCircle } from "lucide-react";
 
 import { useRouter } from "@/i18n/navigation";
 import { getTimeZones } from "@/lib/time-zones";
+import {
+  appointmentDurationOptions,
+  restTimeOptions,
+} from "@/lib/scheduling-options";
 
 type ProviderAuthCopy = {
   checking: string;
@@ -54,9 +58,7 @@ type ProviderSetupResponse = {
   user: { email: string; name: string };
 };
 
-const durationOptions = [15, 30, 45, 60, 90];
 const noticeOptions = [0, 60, 240, 720, 1440, 2880];
-const restOptions = [0, 5, 10, 15, 20, 30];
 
 export function ProviderAuthFlow({
   copy,
@@ -413,7 +415,7 @@ export function ProviderAuthFlow({
         <NumberSelect
           label={copy.durationLabel}
           value={settings.defaultAppointmentDurationMinutes}
-          options={durationOptions}
+          options={appointmentDurationOptions}
           renderOption={(value) => `${value} ${copy.minutes}`}
           onChange={(defaultAppointmentDurationMinutes) =>
             setSettings((current) => ({
@@ -437,7 +439,7 @@ export function ProviderAuthFlow({
         <NumberSelect
           label={copy.restLabel}
           value={settings.restBetweenSessionsMinutes}
-          options={restOptions}
+          options={restTimeOptions}
           renderOption={(value) => `${value} ${copy.minutes}`}
           onChange={(restBetweenSessionsMinutes) =>
             setSettings((current) => ({
@@ -467,7 +469,7 @@ export function ProviderAuthFlow({
 }
 
 const fieldClassName =
-  "mt-2 min-h-12 w-full rounded-xl border-2 border-vast-ink bg-white px-3.5 font-normal outline-none transition focus:ring-3 focus:ring-ember-glow";
+  "mt-2 min-h-12 w-full rounded-xl border-2 border-vast-ink bg-white px-3.5 font-normal outline-none transition focus:border-forest-ink focus:ring-2 focus:ring-forest-ink/25";
 
 type FieldProps = {
   label: string;
@@ -518,7 +520,7 @@ function NumberSelect({
 }: {
   label: string;
   value: number;
-  options: number[];
+  options: readonly number[];
   renderOption: (value: number) => string;
   onChange: (value: number) => void;
 }) {

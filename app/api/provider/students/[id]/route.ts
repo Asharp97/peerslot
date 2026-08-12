@@ -5,7 +5,7 @@ import { providerAppointmentErrorResponse } from "../../appointments/error-respo
 
 import { providerStudentUpdateSchema } from "@/lib/provider-appointment";
 import {
-  archiveProviderStudent,
+  deleteProviderStudent,
   updateProviderStudent,
 } from "@/lib/provider-appointments";
 import { getCurrentUser } from "@/lib/current-user";
@@ -69,7 +69,7 @@ export async function DELETE(request: Request, context: RouteContext) {
 
   try {
     return NextResponse.json(
-      await archiveProviderStudent(currentUser.user.id, id.data),
+      await deleteProviderStudent(currentUser.user.id, id.data),
     );
   } catch (error) {
     return providerAppointmentErrorResponse(error);

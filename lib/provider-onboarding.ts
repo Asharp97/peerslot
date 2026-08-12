@@ -1,10 +1,13 @@
 import { z } from "zod";
 
 import { isValidTimeZone } from "./booking-page";
+import {
+  appointmentDurationOptions,
+  restTimeOptions,
+} from "./scheduling-options";
 
-export const appointmentDurationOptions = [15, 30, 45, 60, 90] as const;
+export { appointmentDurationOptions, restTimeOptions };
 export const bookingNoticeOptions = [0, 60, 240, 720, 1440, 2880] as const;
-export const restTimeOptions = [0, 5, 10, 15, 20, 30] as const;
 
 export const providerOnboardingSchema = z.object({
   displayName: z.string().trim().min(2).max(80),
@@ -14,8 +17,7 @@ export const providerOnboardingSchema = z.object({
     .number()
     .int()
     .refine(
-      (value) =>
-        (appointmentDurationOptions as readonly number[]).includes(value),
+      (value) => appointmentDurationOptions.includes(value),
       "Invalid appointment duration",
     ),
   minimumBookingNoticeMinutes: z
@@ -28,10 +30,7 @@ export const providerOnboardingSchema = z.object({
   restBetweenSessionsMinutes: z
     .number()
     .int()
-    .refine(
-      (value) => (restTimeOptions as readonly number[]).includes(value),
-      "Invalid rest time",
-    ),
+    .refine((value) => restTimeOptions.includes(value), "Invalid rest time"),
 });
 
 export type ProviderOnboardingInput = z.infer<typeof providerOnboardingSchema>;

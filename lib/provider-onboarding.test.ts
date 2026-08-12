@@ -30,6 +30,19 @@ describe("provider onboarding", () => {
     });
   });
 
+  it("accepts five-minute duration and rest steps through 120 minutes", () => {
+    expect(
+      providerOnboardingSchema.safeParse({
+        displayName: "Ceyda",
+        professionalTitle: "Counselor",
+        timeZone: "Europe/Istanbul",
+        defaultAppointmentDurationMinutes: 10,
+        minimumBookingNoticeMinutes: 1440,
+        restBetweenSessionsMinutes: 120,
+      }).success,
+    ).toBe(true);
+  });
+
   it("rejects unsupported duration, notice, and rest settings", () => {
     expect(
       providerOnboardingSchema.safeParse({

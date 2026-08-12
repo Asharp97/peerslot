@@ -92,6 +92,20 @@
       "when": 1786520837648,
       "tag": "0012_pending_appointment_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1786522101879,
+      "tag": "0013_cascade_student_appointments",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1786522687113,
+      "tag": "0014_five_minute_scheduling_options",
+      "breakpoints": true
     }
   ]
 }

@@ -256,6 +256,44 @@ describe("provider appointments calendar", () => {
     });
   });
 
+  it("warns that deleting a student also deletes all of their appointments", async () => {
+    const user = userEvent.setup();
+    const confirm = vi.fn(() => false);
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/provider/students")) {
+        return Response.json({
+          students: [
+            {
+              id: "student-id",
+              displayName: "Ada Student",
+              email: "ada@example.com",
+            },
+          ],
+        });
+      }
+      if (url.includes("/api/availability-windows")) {
+        return Response.json({ windows: [] });
+      }
+      return Response.json({ appointments: [] });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("confirm", confirm);
+    render(<ProviderAppointments copy={copy} />);
+
+    await user.click(screen.getByRole("button", { name: "manageStudents" }));
+    expect(await screen.findByText("Ada Student")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "deleteStudent" }));
+
+    expect(confirm).toHaveBeenCalledWith(
+      "Delete Ada Student? This permanently deletes the student and all of their appointments, including recurring and pending appointments. This cannot be undone.",
+    );
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      "/api/provider/students/student-id",
+      expect.objectContaining({ method: "DELETE" }),
+    );
+  });
+
   it("deletes only the selected recurring occurrence from its edit dialog", async () => {
     const appointment = {
       id: "occurrence-id",
@@ -326,7 +364,11 @@ describe("session color contrast", () => {
 });
 
 const copy = new Proxy(
-  { title: "{name}’s sessions" },
+  {
+    title: "{name}’s sessions",
+    deleteStudentConfirm:
+      "Delete {name}? This permanently deletes the student and all of their appointments, including recurring and pending appointments. This cannot be undone.",
+  },
   {
     get: (target, property) =>
       property in target

@@ -55,6 +55,23 @@ describe("booking pages", () => {
     ).toBe(false);
   });
 
+  it("accepts five-minute scheduling steps and rejects in-between values", () => {
+    expect(
+      bookingPageSettingsSchema.safeParse({
+        appointmentDurationMinutes: 10,
+        bookingIntervalMinutes: 130,
+        restBetweenSessionsMinutes: 120,
+      }).success,
+    ).toBe(true);
+    expect(
+      bookingPageSettingsSchema.safeParse({
+        appointmentDurationMinutes: 12,
+        bookingIntervalMinutes: 17,
+        restBetweenSessionsMinutes: 5,
+      }).success,
+    ).toBe(false);
+  });
+
   it("rejects empty, unknown, or invalid updates", () => {
     expect(bookingPageSettingsSchema.safeParse({}).success).toBe(false);
     expect(bookingPageSettingsSchema.safeParse({ unknown: true }).success).toBe(

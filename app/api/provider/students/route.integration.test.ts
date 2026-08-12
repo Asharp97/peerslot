@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DELETE, PATCH } from "./[id]/route";
 
 import {
-  archiveProviderStudent,
+  deleteProviderStudent,
   updateProviderStudent,
 } from "@/lib/provider-appointments";
 import { getCurrentUser } from "@/lib/current-user";
@@ -14,7 +14,7 @@ vi.mock("@/lib/provider-appointments", () => ({
   ProviderAppointmentNotFoundError: class extends Error {},
   ProviderAppointmentValidationError: class extends Error {},
   ProviderStudentNotFoundError: class extends Error {},
-  archiveProviderStudent: vi.fn(),
+  deleteProviderStudent: vi.fn(),
   updateProviderStudent: vi.fn(),
 }));
 
@@ -52,9 +52,9 @@ describe("provider students API integration", () => {
     });
   });
 
-  it("archives an owned student instead of destroying appointment history", async () => {
-    vi.mocked(archiveProviderStudent).mockResolvedValue({
-      archived: true,
+  it("deletes an owned student and cascades their appointments", async () => {
+    vi.mocked(deleteProviderStudent).mockResolvedValue({
+      deleted: true,
       id: studentId,
     });
 
@@ -66,7 +66,7 @@ describe("provider students API integration", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(archiveProviderStudent).toHaveBeenCalledWith(providerId, studentId);
+    expect(deleteProviderStudent).toHaveBeenCalledWith(providerId, studentId);
   });
 });
 
