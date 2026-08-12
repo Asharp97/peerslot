@@ -1,0 +1,25 @@
+meta {
+  name: List pending requests
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/provider/appointment-requests
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+tests {
+  test("lists the pending request", function () {
+    const appointment = res.getBody().appointments.find(
+      ({ id }) => id === bru.getVar("pendingAppointmentId")
+    );
+    expect(res.getStatus()).to.equal(200);
+    expect(appointment.status).to.equal("pending");
+  });
+}

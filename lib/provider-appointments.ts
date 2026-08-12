@@ -1,6 +1,15 @@
 import { randomUUID } from "node:crypto";
 
-import { and, asc, eq, gte, notExists, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  eq,
+  gte,
+  inArray,
+  isNull,
+  notExists,
+  sql,
+} from "drizzle-orm";
 
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
@@ -44,6 +53,13 @@ export class ProviderAppointmentValidationError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "ProviderAppointmentValidationError";
+  }
+}
+
+export class ProviderAppointmentReviewConflictError extends Error {
+  constructor() {
+    super("This appointment request has already been reviewed");
+    this.name = "ProviderAppointmentReviewConflictError";
   }
 }
 
@@ -199,6 +215,45 @@ export async function listProviderAppointments(
   );
 }
 
+export async function listPendingProviderAppointments(providerId: string) {
+  const rows = await appointmentQuery()
+    .where(
+      and(
+        eq(availabilitySlots.teacherId, providerId),
+        eq(appointments.status, "pending"),
+        isNull(appointments.deletedAt),
+      ),
+    )
+    .orderBy(asc(availabilitySlots.startsAt));
+
+  return rows.map(presentAppointmentRow);
+}
+
+export async function reviewProviderAppointment(
+  providerId: string,
+  appointmentId: string,
+  decision: "accept" | "decline",
+) {
+  await requireProviderAppointment(providerId, appointmentId);
+
+  const [appointment] = await db
+    .update(appointments)
+    .set({
+      status: decision === "accept" ? "scheduled" : "declined",
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(appointments.id, appointmentId),
+        eq(appointments.status, "pending"),
+      ),
+    )
+    .returning({ id: appointments.id });
+
+  if (!appointment) throw new ProviderAppointmentReviewConflictError();
+  return requireProviderAppointment(providerId, appointmentId);
+}
+
 export async function createProviderAppointment(
   providerId: string,
   input: ProviderAppointmentCreateInput,
@@ -209,6 +264,31 @@ export async function createProviderAppointment(
   const appointmentId = await insertAppointment(providerId, {
     ...input,
     createdByProvider: true,
+  });
+  return requireProviderAppointment(providerId, appointmentId);
+}
+
+export async function createPendingProviderAppointment(
+  providerId: string,
+  input: {
+    providerStudentId: string;
+    startsAt: Date;
+    endsAt: Date;
+    comment?: string;
+  },
+) {
+  await requireProviderStudent(providerId, input.providerStudentId);
+  await assertNoAppointmentOverlap(providerId, {
+    ...input,
+    recurrence: "none",
+  });
+
+  const appointmentId = await insertAppointment(providerId, {
+    ...input,
+    recurrence: "none",
+    color: "#f0d7ff",
+    status: "pending",
+    createdByProvider: false,
   });
   return requireProviderAppointment(providerId, appointmentId);
 }
@@ -591,7 +671,7 @@ type InsertAppointmentInput = {
   examName?: string | null;
   schoolYear?: string | null;
   color: string;
-  status?: "scheduled" | "cancelled";
+  status?: "pending" | "scheduled" | "declined" | "cancelled";
   deletedAt?: Date;
   createdByProvider: boolean;
   rescheduleCount?: number | ReturnType<typeof sql>;
@@ -795,7 +875,12 @@ async function findOpenSlot(
           db
             .select({ id: appointments.id })
             .from(appointments)
-            .where(eq(appointments.slotId, availabilitySlots.id)),
+            .where(
+              and(
+                eq(appointments.slotId, availabilitySlots.id),
+                inArray(appointments.status, ["pending", "scheduled"]),
+              ),
+            ),
         ),
       ),
     )

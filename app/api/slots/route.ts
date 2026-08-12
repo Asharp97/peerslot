@@ -1,4 +1,4 @@
-import { and, asc, eq, gt, isNull, notExists, or } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, isNull, notExists, or } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 import { db } from "@/db";
@@ -43,7 +43,12 @@ export async function GET(request: Request) {
           db
             .select({ id: appointments.id })
             .from(appointments)
-            .where(eq(appointments.slotId, availabilitySlots.id)),
+            .where(
+              and(
+                eq(appointments.slotId, availabilitySlots.id),
+                inArray(appointments.status, ["pending", "scheduled"]),
+              ),
+            ),
         ),
       ),
     )

@@ -16,7 +16,9 @@ import {
 import { user } from "@/db/auth-schema";
 
 export const appointmentStatus = pgEnum("appointment_status", [
+  "pending",
   "scheduled",
+  "declined",
   "cancelled",
 ]);
 
@@ -301,7 +303,9 @@ export const appointments = pgTable(
       .notNull(),
   },
   (table) => [
-    uniqueIndex("appointment_slot_unique").on(table.slotId),
+    uniqueIndex("appointment_slot_unique")
+      .on(table.slotId)
+      .where(sql`${table.status} in ('pending', 'scheduled')`),
     index("appointments_student_idx").on(table.studentId),
     index("appointments_provider_student_idx").on(table.providerStudentId),
     index("appointments_exception_series_idx").on(

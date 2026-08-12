@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import {
   ProviderAppointmentConflictError,
   ProviderAppointmentNotFoundError,
+  ProviderAppointmentReviewConflictError,
   ProviderAppointmentValidationError,
   ProviderStudentNotFoundError,
 } from "@/lib/provider-appointments";
@@ -13,6 +14,10 @@ export function providerAppointmentErrorResponse(error: unknown) {
       { error: error.message, studentName: error.studentName },
       { status: 409 },
     );
+  }
+
+  if (error instanceof ProviderAppointmentReviewConflictError) {
+    return NextResponse.json({ error: error.message }, { status: 409 });
   }
 
   if (error instanceof ProviderAppointmentValidationError) {

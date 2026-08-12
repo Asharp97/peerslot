@@ -250,6 +250,14 @@ a {
   text-decoration: line-through;
 }
 
+.provider-calendar .provider-availability-window {
+  border: 1px solid #56a46f !important;
+  background: #dff3e4;
+  color: #174b2a;
+  opacity: 1;
+  cursor: default !important;
+}
+
 @media (max-width: 640px) {
   .provider-calendar .fc .fc-toolbar {
     align-items: flex-start;

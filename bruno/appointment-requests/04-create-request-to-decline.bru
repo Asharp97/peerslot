@@ -1,0 +1,25 @@
+meta {
+  name: Create request to decline
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/booking-pages/{{bookingSlug}}/appointments
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "studentName": "Declined Bruno Student",
+    "studentEmail": "declined.bruno@example.com",
+    "startsAt": "{{bookingRequestDeclineStartsAt}}"
+  }
+}
+
+script:post-response {
+  if (res.getStatus() === 201) {
+    bru.setVar("declinedAppointmentId", res.getBody().appointment.id);
+  }
+}

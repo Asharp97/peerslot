@@ -6,7 +6,7 @@ export type ProviderWorkspaceAppointment = {
   providerStudentId: string | null;
   startsAt: string;
   endsAt: string;
-  status: "scheduled" | "cancelled";
+  status: "pending" | "scheduled" | "declined" | "cancelled";
   comment: string | null;
   examName: string | null;
   schoolYear: string | null;

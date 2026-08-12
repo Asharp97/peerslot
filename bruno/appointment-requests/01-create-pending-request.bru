@@ -1,0 +1,33 @@
+meta {
+  name: Create pending request
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/booking-pages/{{bookingSlug}}/appointments
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "studentName": "Pending Bruno Student",
+    "studentEmail": "pending.bruno@example.com",
+    "startsAt": "{{bookingRequestStartsAt}}",
+    "comment": "Created for the request review flow"
+  }
+}
+
+script:post-response {
+  if (res.getStatus() === 201) {
+    bru.setVar("pendingAppointmentId", res.getBody().appointment.id);
+  }
+}
+
+tests {
+  test("creates a pending request", function () {
+    expect(res.getStatus()).to.equal(201);
+    expect(res.getBody().appointment.status).to.equal("pending");
+  });
+}

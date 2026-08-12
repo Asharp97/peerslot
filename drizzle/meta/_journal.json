@@ -85,6 +85,13 @@
       "when": 1786471719317,
       "tag": "0011_recurring_session_controls",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1786520837648,
+      "tag": "0012_pending_appointment_requests",
+      "breakpoints": true
     }
   ]
 }

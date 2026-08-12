@@ -22,7 +22,7 @@ export type AvailabilityWindowForCalculation = AvailableTimeRange & {
 };
 
 export type AppointmentForCalculation = AvailableTimeRange & {
-  status: "scheduled" | "cancelled";
+  status: "pending" | "scheduled" | "declined" | "cancelled";
 };
 
 export type AvailableTime = AvailableTimeRange & {
@@ -60,8 +60,8 @@ export function calculateAvailableTimes(input: {
   const minimumNoticeCutoff = new Date(
     now.getTime() + bookingPage.minimumNoticeHours * 60 * 60 * 1000,
   );
-  const scheduledAppointments = appointments.filter(
-    ({ status }) => status === "scheduled",
+  const occupiedAppointments = appointments.filter(
+    ({ status }) => status === "scheduled" || status === "pending",
   );
   const candidates = new Map<number, AvailableTime>();
 
@@ -79,7 +79,7 @@ export function calculateAvailableTimes(input: {
       if (startsAt < range.startsAt || endsAt > range.endsAt) continue;
       if (startsAt < minimumNoticeCutoff) continue;
       if (
-        scheduledAppointments.some((appointment) =>
+        occupiedAppointments.some((appointment) =>
           occupiedRangesOverlap(
             { startsAt, endsAt },
             appointment,

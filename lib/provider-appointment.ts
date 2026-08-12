@@ -149,6 +149,10 @@ export const providerAppointmentDeleteSchema = z
     occurrenceStartsAt: new Date(occurrenceStartsAt),
   }));
 
+export const providerAppointmentReviewSchema = z
+  .object({ decision: z.enum(["accept", "decline"]) })
+  .strict();
+
 export const providerAppointmentRangeSchema = z
   .object({
     startsAt: timestampWithOffsetSchema,
@@ -177,6 +181,9 @@ export type ProviderAppointmentUpdateInput = z.infer<
 >;
 export type ProviderAppointmentDeleteInput = z.infer<
   typeof providerAppointmentDeleteSchema
+>;
+export type ProviderAppointmentReviewInput = z.infer<
+  typeof providerAppointmentReviewSchema
 >;
 export type ProviderStudentCreateInput = z.infer<
   typeof providerStudentCreateSchema

@@ -5,6 +5,10 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 
 import { db } from "@/db";
+import {
+  BookingRequestPicker,
+  type BookingRequestCopy,
+} from "@/components/booking/booking-request-picker";
 import { bookingPages, providerProfiles } from "@/db/schema";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
@@ -98,27 +102,33 @@ export default async function BookingPage({ params }: BookingPageProps) {
             </p>
 
             {slots.length ? (
-              <div className="mt-7 grid gap-3 sm:grid-cols-2">
-                {slots.map((slot) => (
-                  <button
-                    className="min-h-14 rounded-xl border-2 border-vast-ink bg-lumen-cream px-4 text-left text-sm font-semibold transition hover:-translate-y-0.5 hover:bg-lavender-whisper"
-                    key={slot.startsAt.toISOString()}
-                    type="button"
-                  >
-                    <span className="block">
-                      {slot.localized[availabilityLocale]}
-                    </span>
-                    <span className="mt-1 block text-xs font-medium text-black/45">
-                      {t("endsAt", {
-                        time: new Intl.DateTimeFormat(locale, {
-                          timeZone: provider.timeZone,
-                          timeStyle: "short",
-                        }).format(slot.endsAt),
-                      })}
-                    </span>
-                  </button>
-                ))}
-              </div>
+              <BookingRequestPicker
+                copy={
+                  {
+                    endsAt: t("endsAt", { time: "{time}" }),
+                    requestTitle: t("requestTitle"),
+                    requestBody: t("requestBody"),
+                    name: t("name"),
+                    email: t("email"),
+                    comment: t("comment"),
+                    commentPlaceholder: t("commentPlaceholder"),
+                    sendRequest: t("sendRequest"),
+                    sending: t("sending"),
+                    requestedTitle: t("requestedTitle"),
+                    requestedBody: t("requestedBody"),
+                    requestError: t("requestError"),
+                  } satisfies BookingRequestCopy
+                }
+                slug={slug}
+                slots={slots.map((slot) => ({
+                  startsAt: slot.startsAt.toISOString(),
+                  label: slot.localized[availabilityLocale],
+                  endsAtLabel: new Intl.DateTimeFormat(locale, {
+                    timeZone: provider.timeZone,
+                    timeStyle: "short",
+                  }).format(slot.endsAt),
+                }))}
+              />
             ) : (
               <div className="mt-7 rounded-2xl border-2 border-dashed border-lumen-stone p-8 text-center text-sm text-[#686860]">
                 {t("noTimes")}

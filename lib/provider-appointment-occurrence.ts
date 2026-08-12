@@ -12,7 +12,7 @@ export type ProviderAppointmentScheduleRow = {
   exceptionForAppointmentId: string | null;
   exceptionOriginalStartsAt: Date | null;
   deletedAt: Date | null;
-  status: "scheduled" | "cancelled";
+  status: "pending" | "scheduled" | "declined" | "cancelled";
   studentName: string;
   [key: string]: unknown;
 };
@@ -137,7 +137,8 @@ export function findAppointmentConflictInRows<
   } = {},
 ) {
   const scheduledRows = rows.filter(
-    ({ deletedAt, status }) => status === "scheduled" && !deletedAt,
+    ({ deletedAt, status }) =>
+      (status === "scheduled" || status === "pending") && !deletedAt,
   );
 
   if (candidate.recurrence === "weekly") {
@@ -191,7 +192,12 @@ export function findAppointmentConflictInRows<
 
   return expandProviderAppointmentOccurrences(rows, candidate, timeZone).find(
     (occurrence) => {
-      if (occurrence.status !== "scheduled") return false;
+      if (
+        occurrence.status !== "scheduled" &&
+        occurrence.status !== "pending"
+      ) {
+        return false;
+      }
       if (occurrence.appointmentId === exclusions.excludedAppointmentId) {
         return false;
       }

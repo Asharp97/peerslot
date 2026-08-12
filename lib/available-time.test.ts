@@ -44,8 +44,12 @@ describe("available-time calculation", () => {
           ...range("2030-01-15T09:30:00.000Z", "2030-01-15T10:00:00.000Z"),
         },
         {
-          status: "cancelled",
+          status: "pending",
           ...range("2030-01-15T10:00:00.000Z", "2030-01-15T10:30:00.000Z"),
+        },
+        {
+          status: "declined",
+          ...range("2030-01-15T10:30:00.000Z", "2030-01-15T11:00:00.000Z"),
         },
       ],
       now: new Date("2030-01-15T08:00:00.000Z"),
@@ -55,7 +59,6 @@ describe("available-time calculation", () => {
       availableTimes.map(({ startsAt }) => startsAt.toISOString()),
     ).toEqual([
       "2030-01-15T09:00:00.000Z",
-      "2030-01-15T10:00:00.000Z",
       "2030-01-15T10:30:00.000Z",
       "2030-01-15T12:00:00.000Z",
       "2030-01-15T12:30:00.000Z",

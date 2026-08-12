@@ -1,0 +1,26 @@
+meta {
+  name: Accept pending request
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{baseUrl}}/api/provider/appointment-requests/{{pendingAppointmentId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  { "decision": "accept" }
+}
+
+tests {
+  test("accepts and schedules the request", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().appointment.status).to.equal("scheduled");
+  });
+}

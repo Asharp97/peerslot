@@ -2,10 +2,10 @@
 
 import {
   CalendarDays,
-  CalendarRange,
   LayoutDashboard,
   LoaderCircle,
   LogOut,
+  Inbox,
   Settings,
   Sparkles,
 } from "lucide-react";
@@ -26,6 +26,7 @@ export type ProviderShellCopy = {
   overview: string;
   availability: string;
   appointments: string;
+  requests: string;
   settings: string;
   workspace: string;
   signOut: string;
@@ -140,15 +141,11 @@ export function ProviderShell({
   const navigation = [
     { href: "/provider", label: copy.overview, icon: LayoutDashboard },
     {
-      href: "/provider/availability",
-      label: copy.availability,
-      icon: CalendarRange,
-    },
-    {
       href: "/provider/appointments",
       label: copy.appointments,
       icon: CalendarDays,
     },
+    { href: "/provider/requests", label: copy.requests, icon: Inbox },
     { href: "/provider/settings", label: copy.settings, icon: Settings },
   ] as const;
 

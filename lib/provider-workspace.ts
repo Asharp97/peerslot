@@ -16,7 +16,7 @@ type ProviderWorkspaceAppointmentRow = {
   windowId: string | null;
   startsAt: Date;
   endsAt: Date;
-  status: "scheduled" | "cancelled";
+  status: "pending" | "scheduled" | "declined" | "cancelled";
   comment: string | null;
   examName: string | null;
   schoolYear: string | null;

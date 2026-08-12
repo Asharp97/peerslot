@@ -39,6 +39,8 @@ export type ProviderOverviewCopy = {
   recentBookings: string;
   noNotifications: string;
   bookedBy: string;
+  pendingBy: string;
+  declinedBy: string;
   cancelledBy: string;
 };
 
@@ -163,7 +165,7 @@ export function ProviderOverview({ copy }: { copy: ProviderOverviewCopy }) {
           </p>
           <Link
             className="mt-6 inline-flex items-center gap-2 text-xs font-bold"
-            href="/provider/availability"
+            href="/provider/appointments"
           >
             {copy.manageAvailability} <ArrowUpRight size={14} />
           </Link>
@@ -213,14 +215,14 @@ export function ProviderOverview({ copy }: { copy: ProviderOverviewCopy }) {
               key={booking.id}
             >
               <span
-                className={`mt-1 size-2 shrink-0 rounded-full ${booking.status === "scheduled" ? "bg-forest-ink" : "bg-black/20"}`}
+                className={`mt-1 size-2 shrink-0 rounded-full ${booking.status === "scheduled" ? "bg-forest-ink" : booking.status === "pending" ? "bg-ember-glow" : "bg-black/20"}`}
               />
               <div>
                 <p className="text-sm leading-5">
-                  {(booking.status === "scheduled"
-                    ? copy.bookedBy
-                    : copy.cancelledBy
-                  ).replace("{name}", booking.studentName)}
+                  {activityMessage(copy, booking.status).replace(
+                    "{name}",
+                    booking.studentName,
+                  )}
                 </p>
                 <p className="mt-1 text-xs text-black/40">
                   {formatDateTime(
@@ -236,6 +238,16 @@ export function ProviderOverview({ copy }: { copy: ProviderOverviewCopy }) {
       </section>
     </div>
   );
+}
+
+function activityMessage(
+  copy: ProviderOverviewCopy,
+  status: "pending" | "scheduled" | "declined" | "cancelled",
+) {
+  if (status === "pending") return copy.pendingBy;
+  if (status === "scheduled") return copy.bookedBy;
+  if (status === "declined") return copy.declinedBy;
+  return copy.cancelledBy;
 }
 
 function WorkspaceListCard({

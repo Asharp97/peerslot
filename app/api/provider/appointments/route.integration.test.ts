@@ -15,6 +15,7 @@ vi.mock("@/lib/current-user", () => ({ getCurrentUser: vi.fn() }));
 vi.mock("@/lib/provider-appointments", () => ({
   ProviderAppointmentConflictError: class extends Error {},
   ProviderAppointmentNotFoundError: class extends Error {},
+  ProviderAppointmentReviewConflictError: class extends Error {},
   ProviderAppointmentValidationError: class extends Error {},
   ProviderStudentNotFoundError: class extends Error {},
   createProviderAppointment: vi.fn(),
