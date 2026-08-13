@@ -27,6 +27,7 @@ export default async function BookingPage({ params }: BookingPageProps) {
   const t = await getTranslations("BookingPage");
   const [provider] = await db
     .select({
+      bookingPageId: bookingPages.id,
       userId: providerProfiles.userId,
       displayName: providerProfiles.displayName,
       professionalTitle: providerProfiles.professionalTitle,
@@ -105,6 +106,8 @@ export default async function BookingPage({ params }: BookingPageProps) {
 
             {slots.length ? (
               <BookingRequestPicker
+                bookingPageId={provider.bookingPageId}
+                bookingTitle={provider.title}
                 copy={
                   {
                     morning: t("morning"),
@@ -116,11 +119,29 @@ export default async function BookingPage({ params }: BookingPageProps) {
                     email: t("email"),
                     comment: t("comment"),
                     commentPlaceholder: t("commentPlaceholder"),
+                    continue: t("continue"),
+                    authTitle: t("authTitle"),
+                    authBody: t("authBody"),
+                    googleAction: t("googleAction"),
+                    microsoftAction: t("microsoftAction"),
+                    orEmail: t("orEmail"),
+                    signInTab: t("signInTab"),
+                    registerTab: t("registerTab"),
+                    password: t("password"),
+                    signInAction: t("signInAction"),
+                    registerAction: t("registerAction"),
+                    confirmTitle: t("confirmTitle"),
+                    confirmBody: t("confirmBody"),
+                    bookingAs: t("bookingAs"),
+                    confirmRequest: t("confirmRequest"),
                     sendRequest: t("sendRequest"),
                     sending: t("sending"),
                     requestedTitle: t("requestedTitle"),
                     requestedBody: t("requestedBody"),
                     requestError: t("requestError"),
+                    authError: t("authError"),
+                    socialError: t("socialError"),
+                    intentError: t("intentError"),
                   } satisfies BookingRequestCopy
                 }
                 locale={locale}

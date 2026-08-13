@@ -7,10 +7,15 @@ const mocks = vi.hoisted(() => {
   class UnavailableError extends Error {}
   return {
     create: vi.fn(),
+    getSession: vi.fn(),
     PageNotFoundError,
     UnavailableError,
   };
 });
+
+vi.mock("@/lib/auth", () => ({
+  auth: { api: { getSession: mocks.getSession } },
+}));
 
 vi.mock("@/lib/public-appointment-request", () => ({
   createPublicAppointmentRequest: mocks.create,
@@ -30,6 +35,12 @@ const startsAt = "2030-01-15T09:00:00.000Z";
 describe("public appointment request API integration", () => {
   beforeEach(() => vi.clearAllMocks());
 
+  beforeEach(() => {
+    mocks.getSession.mockResolvedValue({
+      user: { name: "Authenticated Ada", email: "auth@example.com" },
+    });
+  });
+
   it("creates a pending appointment request", async () => {
     vi.mocked(createPublicAppointmentRequest).mockResolvedValue({
       id: "appointment-id",
@@ -45,11 +56,22 @@ describe("public appointment request API integration", () => {
       appointment: { id: "appointment-id", status: "pending" },
     });
     expect(createPublicAppointmentRequest).toHaveBeenCalledWith(slug, {
-      studentName: "Ada Student",
-      studentEmail: "ada@example.com",
+      studentName: "Authenticated Ada",
+      studentEmail: "auth@example.com",
       startsAt: new Date(startsAt),
       comment: "LGS preparation",
     });
+  });
+
+  it("requires an authenticated booking session", async () => {
+    mocks.getSession.mockResolvedValue(null);
+
+    const response = await POST(request(), {
+      params: Promise.resolve({ slug }),
+    });
+
+    expect(response.status).toBe(401);
+    expect(createPublicAppointmentRequest).not.toHaveBeenCalled();
   });
 
   it("returns a conflict when the selected time was just reserved", async () => {

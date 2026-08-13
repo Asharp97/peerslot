@@ -4,6 +4,7 @@ import { bearer, jwt } from "better-auth/plugins";
 
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
+import { profiles } from "@/db/schema";
 
 const baseURL = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
 
@@ -37,6 +38,18 @@ export const auth = betterAuth({
     provider: "pg",
     schema: authSchema,
   }),
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (createdUser) => {
+          await db
+            .insert(profiles)
+            .values({ userId: createdUser.id })
+            .onConflictDoNothing();
+        },
+      },
+    },
+  },
   emailAndPassword: {
     enabled: true,
     autoSignIn: false,
