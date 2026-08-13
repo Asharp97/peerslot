@@ -54,7 +54,13 @@ export type ProviderSettingsCopy = {
   hours: string;
 };
 
-export function ProviderSettings({ copy }: { copy: ProviderSettingsCopy }) {
+export function ProviderSettings({
+  copy,
+  locale,
+}: {
+  copy: ProviderSettingsCopy;
+  locale: string;
+}) {
   const { accessToken, data, refresh } = useProviderWorkspace();
   const [title, setTitle] = useState(data.bookingPage.title);
   const [duration, setDuration] = useState(
@@ -145,6 +151,7 @@ export function ProviderSettings({ copy }: { copy: ProviderSettingsCopy }) {
               <TimeZoneCombobox
                 emptyLabel={copy.timeZoneEmpty}
                 label={copy.timeZone}
+                locale={locale}
                 onChange={setTimeZone}
                 searchLabel={copy.timeZoneSearch}
                 value={timeZone}
@@ -284,10 +291,10 @@ function NumberSelect({
         onValueChange={(nextValue) => onChange(Number(nextValue))}
         value={String(value)}
       >
-        <SelectTrigger className="mt-2 min-h-12 w-full rounded-xl border-black/10 bg-white px-4 text-vast-ink">
+        <SelectTrigger className="mt-2 min-h-12 w-full rounded-xl border-black/10 bg-white px-4 text-vast-ink focus-visible:border-black/10 focus-visible:ring-0">
           <SelectValue />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="max-h-48 overflow-y-auto">
           {options.map((option) => (
             <SelectItem key={option} value={String(option)}>
               {option} {suffix}

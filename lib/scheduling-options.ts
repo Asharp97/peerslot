@@ -1,5 +1,5 @@
-export const appointmentDurationOptions = fiveMinuteOptions(10, 120);
-export const restTimeOptions = fiveMinuteOptions(0, 120);
+export const appointmentDurationOptions = fiveMinuteOptions(10, 90);
+export const restTimeOptions = fiveMinuteOptions(0, 60);
 
 export function isFiveMinuteOption(
   value: number,

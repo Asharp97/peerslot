@@ -50,11 +50,10 @@ export default async function BookingPage({ params }: BookingPageProps) {
     endsAt: new Date(rangeStartsAt.getTime() + 30 * 24 * 60 * 60 * 1000),
   });
   const slots = availability?.availableTimes.slice(0, 12) ?? [];
-  const availabilityLocale = locale === "tr" ? "tr" : "en";
 
   return (
     <main className="min-h-screen bg-lumen-cream px-4 py-8 text-vast-ink sm:py-14">
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-6xl">
         <Link
           className="inline-flex items-center gap-2 text-lg font-bold"
           href="/"
@@ -65,8 +64,8 @@ export default async function BookingPage({ params }: BookingPageProps) {
           PeerSlot
         </Link>
 
-        <div className="mt-10 grid overflow-hidden rounded-[32px] border-2 border-vast-ink bg-white shadow-[7px_7px_0_var(--color-vast-ink)] md:grid-cols-[0.8fr_1.2fr]">
-          <section className="bg-forest-ink p-7 text-lumen-cream sm:p-10">
+        <div className="mt-10 grid overflow-hidden rounded-[32px] border-2 border-vast-ink bg-white shadow-[7px_7px_0_var(--color-vast-ink)] md:grid-cols-[0.7fr_1.3fr]">
+          <section className="bg-forest-ink p-7 text-lumen-cream sm:p-10 md:min-h-180">
             <span className="grid size-16 place-items-center rounded-2xl bg-lavender-whisper font-display text-3xl text-vast-ink">
               {getInitials(provider.displayName)}
             </span>
@@ -93,7 +92,10 @@ export default async function BookingPage({ params }: BookingPageProps) {
             </dl>
           </section>
 
-          <section className="p-7 sm:p-10">
+          <section className="p-6 sm:p-10 lg:p-12">
+            <p className="text-[11px] font-bold tracking-[0.14em] text-black/40 uppercase">
+              {t("availableTimes")}
+            </p>
             <h2 className="font-display text-4xl tracking-[-0.03em]">
               {provider.title}
             </h2>
@@ -105,7 +107,9 @@ export default async function BookingPage({ params }: BookingPageProps) {
               <BookingRequestPicker
                 copy={
                   {
-                    endsAt: t("endsAt", { time: "{time}" }),
+                    morning: t("morning"),
+                    afternoon: t("afternoon"),
+                    evening: t("evening"),
                     requestTitle: t("requestTitle"),
                     requestBody: t("requestBody"),
                     name: t("name"),
@@ -119,15 +123,12 @@ export default async function BookingPage({ params }: BookingPageProps) {
                     requestError: t("requestError"),
                   } satisfies BookingRequestCopy
                 }
+                locale={locale}
                 slug={slug}
                 slots={slots.map((slot) => ({
                   startsAt: slot.startsAt.toISOString(),
-                  label: slot.localized[availabilityLocale],
-                  endsAtLabel: new Intl.DateTimeFormat(locale, {
-                    timeZone: provider.timeZone,
-                    timeStyle: "short",
-                  }).format(slot.endsAt),
                 }))}
+                timeZone={provider.timeZone}
               />
             ) : (
               <div className="mt-7 rounded-2xl border-2 border-dashed border-lumen-stone p-8 text-center text-sm text-[#686860]">

@@ -85,6 +85,15 @@ a {
   outline-offset: 2px;
 }
 
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[data-slot="select-trigger"]:focus-visible,
+[role="combobox"]:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
 ::selection {
   background: var(--color-lavender-whisper);
   color: var(--color-vast-ink);
@@ -255,7 +264,7 @@ a {
   background: #dff3e4;
   color: #174b2a;
   opacity: 1;
-  cursor: default !important;
+  cursor: pointer !important;
 }
 
 @media (max-width: 640px) {

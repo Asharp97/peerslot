@@ -102,6 +102,7 @@ type AvailabilityWindow = {
 type SessionDraft = {
   entryType: "session" | "availability";
   appointmentId: string | null;
+  availabilityWindowId: string | null;
   studentId: string;
   studentName: string;
   newStudentName: string;
@@ -130,7 +131,12 @@ export type ProviderAppointmentsCopy = {
   freeTimeWindow: string;
   availableSlot: string;
   freeTimeDescription: string;
+  editFreeTime: string;
+  editFreeTimeDescription: string;
   saveFreeTime: string;
+  saveFreeTimeChanges: string;
+  deleteFreeTime: string;
+  deleteFreeTimeConfirm: string;
   freeTimePreview: string;
   generatedTimes: string;
   invalidFreeTime: string;
@@ -273,8 +279,7 @@ export function ProviderAppointments({
           ),
           ...appointmentsBody.appointments
             .filter(
-              ({ status }) =>
-                status === "scheduled" || status === "cancelled",
+              ({ status }) => status === "scheduled" || status === "cancelled",
             )
             .map((appointment) =>
               appointmentToCalendarEvent(appointment, timeZone, {
@@ -330,6 +335,7 @@ export function ProviderAppointments({
       setDraft({
         entryType: "session",
         appointmentId: null,
+        availabilityWindowId: null,
         studentId: students[0]?.id ?? newStudentValue,
         studentName: "",
         newStudentName: "",
@@ -353,7 +359,7 @@ export function ProviderAppointments({
   );
 
   const freeTimePreview = useMemo(() => {
-    if (!draft || draft.appointmentId || draft.entryType !== "availability") {
+    if (!draft || draft.entryType !== "availability") {
       return null;
     }
     try {
@@ -379,6 +385,46 @@ export function ProviderAppointments({
 
   const handleEventClick = useCallback(
     (info: EventClickArg) => {
+      const availabilityWindow = info.event.extendedProps.availabilityWindow as
+        AvailabilityWindow | undefined;
+      const availabilityOccurrence = info.event.extendedProps
+        .availabilityOccurrence as
+        { startsAt: string; endsAt: string } | undefined;
+
+      if (availabilityWindow && availabilityOccurrence) {
+        const startsAt = splitProviderDateTime(
+          availabilityOccurrence.startsAt,
+          timeZone,
+        );
+        const endsAt = splitProviderDateTime(
+          availabilityOccurrence.endsAt,
+          timeZone,
+        );
+        setDraft({
+          entryType: "availability",
+          appointmentId: null,
+          availabilityWindowId: availabilityWindow.id,
+          studentId: "",
+          studentName: "",
+          newStudentName: "",
+          newStudentEmail: "",
+          date: startsAt.date,
+          startsAt: startsAt.time,
+          endsAt: endsAt.time,
+          contextType: "schoolYear",
+          contextValue: "",
+          comment: "",
+          status: "scheduled",
+          recurrence: availabilityWindow.recurrence,
+          editScope: "future",
+          occurrenceStartsAt: availabilityOccurrence.startsAt,
+          color: "#dff3e4",
+        });
+        setError("");
+        setDialogOpen(true);
+        return;
+      }
+
       const appointment = info.event.extendedProps.appointment as
         CalendarAppointment | undefined;
       if (
@@ -393,6 +439,7 @@ export function ProviderAppointments({
       setDraft({
         entryType: "session",
         appointmentId: appointment.appointmentId,
+        availabilityWindowId: null,
         studentId: appointment.providerStudentId ?? "",
         studentName: appointment.studentName,
         newStudentName: "",
@@ -438,19 +485,24 @@ export function ProviderAppointments({
           draft.contextType === "schoolYear" ? draft.contextValue : null,
       };
 
-      if (!draft.appointmentId && draft.entryType === "availability") {
+      if (draft.entryType === "availability") {
         if (!freeTimePreview?.slots.length) {
           throw new Error(copy.invalidFreeTime);
         }
-        const response = await fetch("/api/availability-windows", {
-          method: "POST",
-          headers: authenticatedJsonHeaders(accessToken),
-          body: JSON.stringify({
-            startsAt: startsAt.toISOString(),
-            endsAt: endsAt.toISOString(),
-            recurrence: draft.recurrence,
-          }),
-        });
+        const response = await fetch(
+          draft.availabilityWindowId
+            ? `/api/availability-windows/${draft.availabilityWindowId}`
+            : "/api/availability-windows",
+          {
+            method: draft.availabilityWindowId ? "PATCH" : "POST",
+            headers: authenticatedJsonHeaders(accessToken),
+            body: JSON.stringify({
+              startsAt: startsAt.toISOString(),
+              endsAt: endsAt.toISOString(),
+              recurrence: draft.recurrence,
+            }),
+          },
+        );
         if (!response.ok) throw new Error(await responseError(response));
 
         calendarRef.current?.getApi().refetchEvents();
@@ -566,6 +618,32 @@ export function ProviderAppointments({
             deleteScope: deleteFuture ? "future" : "occurrence",
             occurrenceStartsAt: draft.occurrenceStartsAt,
           }),
+        },
+      );
+      if (!response.ok) throw new Error(await responseError(response));
+
+      calendarRef.current?.getApi().refetchEvents();
+      await refresh();
+      setDialogOpen(false);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : copy.saveError);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function deleteAvailableTime() {
+    if (!draft?.availabilityWindowId) return;
+    if (!window.confirm(copy.deleteFreeTimeConfirm)) return;
+
+    setSaving(true);
+    setError("");
+    try {
+      const response = await fetch(
+        `/api/availability-windows/${draft.availabilityWindowId}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${accessToken}` },
         },
       );
       if (!response.ok) throw new Error(await responseError(response));
@@ -722,19 +800,25 @@ export function ProviderAppointments({
             <form onSubmit={saveSession}>
               <DialogHeader>
                 <DialogTitle className="font-display text-3xl">
-                  {draft.appointmentId ? copy.editSession : copy.addToTimetable}
+                  {draft.availabilityWindowId
+                    ? copy.editFreeTime
+                    : draft.appointmentId
+                      ? copy.editSession
+                      : copy.addToTimetable}
                 </DialogTitle>
                 <DialogDescription>
-                  {draft.appointmentId
-                    ? copy.editSessionDescription
-                    : draft.entryType === "availability"
-                      ? copy.freeTimeDescription
-                      : copy.addSessionDescription}
+                  {draft.availabilityWindowId
+                    ? copy.editFreeTimeDescription
+                    : draft.appointmentId
+                      ? copy.editSessionDescription
+                      : draft.entryType === "availability"
+                        ? copy.freeTimeDescription
+                        : copy.addSessionDescription}
                 </DialogDescription>
               </DialogHeader>
 
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                {!draft.appointmentId ? (
+                {!draft.appointmentId && !draft.availabilityWindowId ? (
                   <Field className="sm:col-span-2" label={copy.addType}>
                     <Select
                       onValueChange={(entryType) =>
@@ -991,7 +1075,7 @@ export function ProviderAppointments({
                 ) : null}
               </div>
 
-              {!draft.appointmentId && draft.entryType === "availability" ? (
+              {draft.entryType === "availability" ? (
                 <div className="mt-4 rounded-xl bg-[#dff3e4] px-4 py-3 text-xs text-[#245e37]">
                   <p className="font-bold">{copy.freeTimePreview}</p>
                   {freeTimePreview?.slots.length ? (
@@ -1028,7 +1112,19 @@ export function ProviderAppointments({
               ) : null}
 
               <DialogFooter className="mt-6 -mx-4 -mb-4">
-                {draft.appointmentId ? (
+                {draft.availabilityWindowId ? (
+                  <div className="mr-auto">
+                    <Button
+                      disabled={saving}
+                      onClick={() => void deleteAvailableTime()}
+                      type="button"
+                      variant="destructive"
+                    >
+                      <Trash2 size={15} />
+                      {copy.deleteFreeTime}
+                    </Button>
+                  </div>
+                ) : draft.appointmentId ? (
                   <div className="mr-auto flex flex-wrap gap-2">
                     <Button
                       disabled={saving}
@@ -1071,7 +1167,9 @@ export function ProviderAppointments({
                   {saving
                     ? copy.saving
                     : draft.entryType === "availability"
-                      ? copy.saveFreeTime
+                      ? draft.availabilityWindowId
+                        ? copy.saveFreeTimeChanges
+                        : copy.saveFreeTime
                       : copy.save}
                 </Button>
               </DialogFooter>
@@ -1217,8 +1315,7 @@ function renderSession(info: EventContentArg) {
   }
 
   const appointment = info.event.extendedProps.appointment as
-    | CalendarAppointment
-    | undefined;
+    CalendarAppointment | undefined;
   if (!appointment) return null;
 
   const context = appointment.examName ?? appointment.schoolYear;
@@ -1320,6 +1417,11 @@ function availabilityToCalendarEvents(
           extendedProps: {
             availabilityWindowId: window.id,
             availabilitySlot: true,
+            availabilityWindow: window,
+            availabilityOccurrence: {
+              startsAt: occurrence.startsAt.toISOString(),
+              endsAt: occurrence.endsAt.toISOString(),
+            },
           },
         }));
     }),

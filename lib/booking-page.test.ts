@@ -59,8 +59,8 @@ describe("booking pages", () => {
     expect(
       bookingPageSettingsSchema.safeParse({
         appointmentDurationMinutes: 10,
-        bookingIntervalMinutes: 130,
-        restBetweenSessionsMinutes: 120,
+        bookingIntervalMinutes: 70,
+        restBetweenSessionsMinutes: 60,
       }).success,
     ).toBe(true);
     expect(

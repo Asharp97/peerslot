@@ -3,12 +3,19 @@
 import { FormEvent, useEffect, useState } from "react";
 import { ArrowRight, CalendarClock, LoaderCircle } from "lucide-react";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useRouter } from "@/i18n/navigation";
-import { getTimeZones } from "@/lib/time-zones";
 import {
   appointmentDurationOptions,
   restTimeOptions,
 } from "@/lib/scheduling-options";
+import { getTimeZones } from "@/lib/time-zones";
 
 type ProviderAuthCopy = {
   checking: string;
@@ -469,7 +476,7 @@ export function ProviderAuthFlow({
 }
 
 const fieldClassName =
-  "mt-2 min-h-12 w-full rounded-xl border-2 border-vast-ink bg-white px-3.5 font-normal outline-none transition focus:border-forest-ink focus:ring-2 focus:ring-forest-ink/25";
+  "mt-2 min-h-12 w-full rounded-xl border-2 border-vast-ink bg-white px-3.5 font-normal outline-none transition focus:border-vast-ink focus:ring-0";
 
 type FieldProps = {
   label: string;
@@ -525,20 +532,26 @@ function NumberSelect({
   onChange: (value: number) => void;
 }) {
   return (
-    <label className="flex flex-col justify-between text-sm font-semibold">
-      {label}
-      <select
-        className={fieldClassName}
-        value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
+    <div className="flex flex-col justify-between text-sm font-semibold">
+      <span>{label}</span>
+      <Select
+        onValueChange={(nextValue) => onChange(Number(nextValue))}
+        value={String(value)}
       >
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {renderOption(option)}
-          </option>
-        ))}
-      </select>
-    </label>
+        <SelectTrigger
+          className={`${fieldClassName} focus-visible:border-vast-ink focus-visible:ring-0`}
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent className="max-h-48 overflow-y-auto">
+          {options.map((option) => (
+            <SelectItem key={option} value={String(option)}>
+              {renderOption(option)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }
 

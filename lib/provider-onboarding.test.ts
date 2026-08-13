@@ -30,7 +30,7 @@ describe("provider onboarding", () => {
     });
   });
 
-  it("accepts five-minute duration and rest steps through 120 minutes", () => {
+  it("accepts five-minute duration and rest steps through their limits", () => {
     expect(
       providerOnboardingSchema.safeParse({
         displayName: "Ceyda",
@@ -38,7 +38,7 @@ describe("provider onboarding", () => {
         timeZone: "Europe/Istanbul",
         defaultAppointmentDurationMinutes: 10,
         minimumBookingNoticeMinutes: 1440,
-        restBetweenSessionsMinutes: 120,
+        restBetweenSessionsMinutes: 60,
       }).success,
     ).toBe(true);
   });

@@ -17,34 +17,44 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { getTimeZones } from "@/lib/time-zones";
+import { formatTimeZoneLabel, getTimeZones } from "@/lib/time-zones";
 
 export function TimeZoneCombobox({
   emptyLabel,
   label,
+  locale,
   onChange,
   searchLabel,
   value,
 }: {
   emptyLabel: string;
   label: string;
+  locale: string;
   onChange: (value: string) => void;
   searchLabel: string;
   value: string;
 }) {
   const [open, setOpen] = useState(false);
-  const timeZones = useMemo(() => getTimeZones(value), [value]);
+  const timeZones = useMemo(
+    () =>
+      getTimeZones(value).map((timeZone) => ({
+        label: formatTimeZoneLabel(timeZone, locale),
+        value: timeZone,
+      })),
+    [locale, value],
+  );
+  const selectedLabel = formatTimeZoneLabel(value, locale);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           aria-expanded={open}
-          className="mt-2 min-h-12 w-full justify-between rounded-xl border-black/10 bg-white px-4 font-normal text-vast-ink hover:bg-white"
+          className="mt-2 min-h-12 w-full justify-between rounded-xl border-black/10 bg-white px-4 font-normal text-vast-ink hover:bg-white focus-visible:border-black/10 focus-visible:ring-0"
           role="combobox"
           variant="outline"
         >
-          <span className="truncate">{value}</span>
+          <span className="truncate">{selectedLabel}</span>
           <ChevronsUpDown className="opacity-45" size={16} />
         </Button>
       </PopoverTrigger>
@@ -59,15 +69,15 @@ export function TimeZoneCombobox({
             <CommandGroup>
               {timeZones.map((timeZone) => (
                 <CommandItem
-                  data-checked={timeZone === value}
-                  key={timeZone}
+                  data-checked={timeZone.value === value}
+                  key={timeZone.value}
                   onSelect={() => {
-                    onChange(timeZone);
+                    onChange(timeZone.value);
                     setOpen(false);
                   }}
-                  value={timeZone}
+                  value={`${timeZone.label} ${timeZone.value}`}
                 >
-                  {timeZone}
+                  {timeZone.label}
                 </CommandItem>
               ))}
             </CommandGroup>

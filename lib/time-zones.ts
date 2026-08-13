@@ -24,3 +24,18 @@ export function getTimeZones(current?: string) {
     (timeZone): timeZone is string => Boolean(timeZone),
   );
 }
+
+export function formatTimeZoneLabel(timeZone: string, locale: string) {
+  try {
+    const timeZoneName = new Intl.DateTimeFormat(locale, {
+      timeZone,
+      timeZoneName: "longGeneric",
+    })
+      .formatToParts(new Date("2026-01-15T12:00:00Z"))
+      .find((part) => part.type === "timeZoneName")?.value;
+
+    return timeZoneName ? `${timeZoneName} (${timeZone})` : timeZone;
+  } catch {
+    return timeZone;
+  }
+}

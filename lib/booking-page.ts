@@ -18,15 +18,15 @@ export const bookingPageSettingsSchema = z
       .optional(),
     appointmentDurationMinutes: z
       .number()
-      .refine((value) => isFiveMinuteOption(value, 10, 120))
+      .refine((value) => isFiveMinuteOption(value, 10, 90))
       .optional(),
     bookingIntervalMinutes: z
       .number()
-      .refine((value) => isFiveMinuteOption(value, 10, 240))
+      .refine((value) => isFiveMinuteOption(value, 10, 150))
       .optional(),
     restBetweenSessionsMinutes: z
       .number()
-      .refine((value) => isFiveMinuteOption(value, 0, 120))
+      .refine((value) => isFiveMinuteOption(value, 0, 60))
       .optional(),
     minimumNoticeHours: z.number().int().min(0).max(720).optional(),
     isPublished: z.boolean().optional(),

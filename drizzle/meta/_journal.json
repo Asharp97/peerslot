@@ -106,6 +106,13 @@
       "when": 1786522687113,
       "tag": "0014_five_minute_scheduling_options",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1786524170641,
+      "tag": "0015_scheduling_option_limits",
+      "breakpoints": true
     }
   ]
 }
