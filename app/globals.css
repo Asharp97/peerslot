@@ -90,8 +90,8 @@ textarea:focus-visible,
 select:focus-visible,
 [data-slot="select-trigger"]:focus-visible,
 [role="combobox"]:focus-visible {
-  outline: none;
-  box-shadow: none;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 ::selection {

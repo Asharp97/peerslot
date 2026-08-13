@@ -15,7 +15,6 @@ import {
   appointmentDurationOptions,
   restTimeOptions,
 } from "@/lib/scheduling-options";
-import { getTimeZones } from "@/lib/time-zones";
 
 type ProviderAuthCopy = {
   checking: string;
@@ -397,7 +396,7 @@ export function ProviderAuthFlow({
         />
       </div>
 
-      <label className="block text-sm font-semibold" htmlFor="timeZone">
+      {/* <label className="block text-sm font-semibold" htmlFor="timeZone">
         {copy.timeZoneLabel}
         <select
           className={fieldClassName}
@@ -416,7 +415,7 @@ export function ProviderAuthFlow({
             </option>
           ))}
         </select>
-      </label>
+      </label> */}
 
       <div className="grid gap-4 sm:grid-cols-3">
         <NumberSelect
