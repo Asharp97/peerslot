@@ -3,12 +3,14 @@
 import type {
   EventClickArg,
   EventContentArg,
+  EventDropArg,
   EventInput,
   EventSourceFuncArg,
 } from "@fullcalendar/core";
 import trLocale from "@fullcalendar/core/locales/tr";
 import interactionPlugin, {
   type DateClickArg,
+  type EventResizeDoneArg,
 } from "@fullcalendar/interaction";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -161,6 +163,8 @@ export type ProviderAppointmentsCopy = {
   commentPlaceholder: string;
   save: string;
   saving: string;
+  updatingSession: string;
+  dragHint: string;
   cancelSession: string;
   restoreSession: string;
   repetition: string;
@@ -220,6 +224,7 @@ export function ProviderAppointments({
   const [studentEmail, setStudentEmail] = useState("");
   const [studentSaving, setStudentSaving] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [interactionSaving, setInteractionSaving] = useState(false);
   const [error, setError] = useState("");
   const [draft, setDraft] = useState<SessionDraft | null>(null);
   const calendarRef = useRef<FullCalendar>(null);
@@ -460,6 +465,59 @@ export function ProviderAppointments({
       setDialogOpen(true);
     },
     [timeZone],
+  );
+
+  const handleCalendarEventChange = useCallback(
+    async (info: EventDropArg | EventResizeDoneArg) => {
+      const appointment = info.oldEvent.extendedProps.appointment as
+        CalendarAppointment | undefined;
+      const start = info.event.start;
+      const end = info.event.end;
+
+      if (
+        !appointment ||
+        appointment.status !== "scheduled" ||
+        !start ||
+        !end
+      ) {
+        info.revert();
+        return;
+      }
+
+      setInteractionSaving(true);
+      setError("");
+
+      try {
+        const startsAt = calendarWallTimeToUtc(start, timeZone);
+        const endsAt = calendarWallTimeToUtc(end, timeZone);
+        const response = await fetch(
+          `/api/provider/appointments/${appointment.appointmentId}`,
+          {
+            method: "PATCH",
+            headers: authenticatedJsonHeaders(accessToken),
+            body: JSON.stringify({
+              startsAt: startsAt.toISOString(),
+              endsAt: endsAt.toISOString(),
+              editScope: "exception",
+              ...(appointment.recurrence === "weekly"
+                ? { occurrenceStartsAt: appointment.occurrenceStartsAt }
+                : {}),
+            }),
+          },
+        );
+
+        if (!response.ok) throw new Error(await responseError(response));
+
+        calendarRef.current?.getApi().refetchEvents();
+        void refresh().catch(() => undefined);
+      } catch (caught) {
+        info.revert();
+        setError(caught instanceof Error ? caught.message : copy.saveError);
+      } finally {
+        setInteractionSaving(false);
+      }
+    },
+    [accessToken, copy.saveError, refresh, timeZone],
   );
 
   async function saveSession(event: FormEvent<HTMLFormElement>) {
@@ -735,6 +793,9 @@ export function ProviderAppointments({
               {copy.studentSession}
             </span>
           </div>
+          <p className="mt-2 max-w-2xl text-xs text-black/45">
+            {copy.dragHint}
+          </p>
         </div>
         <div className="flex flex-wrap justify-end gap-2">
           <Button
@@ -759,10 +820,21 @@ export function ProviderAppointments({
         </p>
       ) : null}
 
-      <section className="provider-calendar relative min-h-0 flex-1 overflow-x-auto rounded-[24px] border border-black/10 bg-[#fbfaf4] p-3 shadow-sm sm:p-4">
-        {loading ? (
-          <span className="absolute top-4 right-4 z-10 grid size-9 place-items-center rounded-full bg-lavender-whisper">
-            <LoaderCircle className="animate-spin" size={16} />
+      <section
+        aria-busy={loading || interactionSaving}
+        className="provider-calendar relative min-h-0 flex-1 overflow-x-auto rounded-[24px] border border-black/10 bg-[#fbfaf4] p-3 shadow-sm sm:p-4"
+      >
+        {loading || interactionSaving ? (
+          <span
+            aria-live="polite"
+            className="absolute top-4 right-4 z-10 flex min-h-9 items-center gap-2 rounded-full bg-lavender-whisper px-3 text-xs font-bold shadow-sm"
+            role="status"
+          >
+            <LoaderCircle
+              className="animate-spin motion-reduce:animate-none"
+              size={16}
+            />
+            {interactionSaving ? copy.updatingSession : null}
           </span>
         ) : null}
         <div className="h-full min-w-190">
@@ -772,6 +844,9 @@ export function ProviderAppointments({
             dayHeaderFormat={calendarDayHeaderFormat}
             eventClick={handleEventClick}
             eventContent={renderSession}
+            eventDrop={handleCalendarEventChange}
+            eventResize={handleCalendarEventChange}
+            eventAllow={() => !interactionSaving}
             eventMinHeight={34}
             eventTimeFormat={calendarEventTimeFormat}
             events={loadCalendarEvents}
@@ -786,6 +861,7 @@ export function ProviderAppointments({
             plugins={calendarPlugins}
             ref={calendarRef}
             scrollTime="08:00:00"
+            snapDuration="00:05:00"
             slotDuration="00:30:00"
             slotMaxTime="22:00:00"
             slotMinTime="07:00:00"
@@ -1348,6 +1424,7 @@ function appointmentToCalendarEvent(
     title: appointment.studentName,
     start: formatInTimeZone(new Date(appointment.startsAt), timeZone),
     end: formatInTimeZone(new Date(appointment.endsAt), timeZone),
+    editable: appointment.status === "scheduled",
     classNames:
       appointment.status === "cancelled"
         ? ["provider-session-cancelled"]
@@ -1505,6 +1582,11 @@ function localDateTime(date: Date) {
     date: `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`,
     time: `${pad(date.getHours())}:${pad(date.getMinutes())}`,
   };
+}
+
+function calendarWallTimeToUtc(date: Date, timeZone: string) {
+  const local = localDateTime(date);
+  return zonedLocalDateTimeToUtc(local.date, local.time, timeZone);
 }
 
 function splitProviderDateTime(value: string, timeZone: string) {

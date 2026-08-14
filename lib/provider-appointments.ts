@@ -5,9 +5,13 @@ import {
   asc,
   eq,
   gte,
+  gt,
   inArray,
+  isNotNull,
   isNull,
+  lt,
   notExists,
+  or,
   sql,
 } from "drizzle-orm";
 
@@ -184,17 +188,19 @@ export async function deleteProviderStudent(
   studentId: string,
 ) {
   const [student] = await db
-    .delete(providerStudents)
+    .update(providerStudents)
+    .set({ isActive: false, updatedAt: new Date() })
     .where(
       and(
         eq(providerStudents.id, studentId),
         eq(providerStudents.providerId, providerId),
+        eq(providerStudents.isActive, true),
       ),
     )
     .returning({ id: providerStudents.id });
 
   if (!student) throw new ProviderStudentNotFoundError();
-  return { deleted: true, id: student.id };
+  return { deleted: true, appointmentsPreserved: true, id: student.id };
 }
 
 export async function listProviderAppointments(
@@ -202,7 +208,7 @@ export async function listProviderAppointments(
   range: { startsAt: Date; endsAt: Date },
 ) {
   const [rows, bookingPage] = await Promise.all([
-    loadProviderAppointmentRows(providerId),
+    loadProviderAppointmentRows(providerId, range),
     findBookingPage(providerId),
   ]);
 
@@ -270,6 +276,7 @@ export async function createPendingProviderAppointment(
   providerId: string,
   input: {
     providerStudentId: string;
+    studentId: string;
     startsAt: Date;
     endsAt: Date;
     comment?: string;
@@ -660,6 +667,7 @@ async function updateAppointmentRecord(
 
 type InsertAppointmentInput = {
   providerStudentId: string;
+  studentId?: string;
   startsAt: Date;
   endsAt: Date;
   recurrence: "none" | "weekly";
@@ -684,6 +692,7 @@ async function insertAppointment(
   const appointmentValues = {
     id: appointmentId,
     providerStudentId: input.providerStudentId,
+    studentId: input.studentId,
     slotId: slot?.id ?? randomUUID(),
     recurrence: input.recurrence,
     exceptionForAppointmentId: input.exceptionForAppointmentId,
@@ -756,11 +765,45 @@ async function requireProviderAppointment(
   return presentAppointmentRow(row);
 }
 
-export async function loadProviderAppointmentRows(providerId: string) {
+export async function loadProviderAppointmentRows(
+  providerId: string,
+  range?: { startsAt: Date; endsAt: Date },
+) {
   const rows = await appointmentQuery().where(
-    eq(availabilitySlots.teacherId, providerId),
+    and(
+      eq(availabilitySlots.teacherId, providerId),
+      range ? appointmentMayAffectRange(range) : undefined,
+    ),
   );
   return rows.map(presentAppointmentRow);
+}
+
+function appointmentMayAffectRange(range: { startsAt: Date; endsAt: Date }) {
+  return or(
+    and(
+      eq(appointments.recurrence, "weekly"),
+      isNull(appointments.exceptionForAppointmentId),
+      lt(availabilitySlots.startsAt, range.endsAt),
+      or(
+        isNull(appointments.recurrenceEndsAt),
+        gt(appointments.recurrenceEndsAt, range.startsAt),
+      ),
+    ),
+    and(
+      eq(appointments.recurrence, "none"),
+      or(
+        and(
+          lt(availabilitySlots.startsAt, range.endsAt),
+          gt(availabilitySlots.endsAt, range.startsAt),
+        ),
+        and(
+          isNotNull(appointments.exceptionOriginalStartsAt),
+          gte(appointments.exceptionOriginalStartsAt, range.startsAt),
+          lt(appointments.exceptionOriginalStartsAt, range.endsAt),
+        ),
+      ),
+    ),
+  );
 }
 
 function appointmentQuery() {

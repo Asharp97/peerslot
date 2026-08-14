@@ -8,7 +8,10 @@ import {
   createProviderStudent,
   ProviderAppointmentConflictError,
 } from "@/lib/provider-appointments";
-import type { PublicAppointmentRequestInput } from "@/lib/public-appointment-request-schema";
+import type {
+  PublicAppointmentIdentity,
+  PublicAppointmentRequestInput,
+} from "@/lib/public-appointment-request-schema";
 
 export class PublicAppointmentRequestUnavailableError extends Error {
   constructor() {
@@ -27,6 +30,7 @@ export class PublicAppointmentRequestPageNotFoundError extends Error {
 export async function createPublicAppointmentRequest(
   slug: string,
   input: PublicAppointmentRequestInput,
+  identity: PublicAppointmentIdentity,
 ) {
   const [page] = await db
     .select({
@@ -65,13 +69,14 @@ export async function createPublicAppointmentRequest(
   }
 
   const student = await createProviderStudent(page.providerId, {
-    displayName: input.studentName,
-    email: input.studentEmail,
+    displayName: identity.studentName,
+    email: identity.studentEmail,
   });
 
   try {
     return await createPendingProviderAppointment(page.providerId, {
       providerStudentId: student.id,
+      studentId: identity.studentId,
       startsAt: input.startsAt,
       endsAt,
       comment: input.comment,

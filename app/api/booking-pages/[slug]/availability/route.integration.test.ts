@@ -64,6 +64,18 @@ describe("public available-times API integration", () => {
     expect(getAvailableTimesForPublishedBookingPage).not.toHaveBeenCalled();
   });
 
+  it("rejects an availability range longer than 45 days", async () => {
+    const response = await GET(
+      new Request(
+        `http://localhost/api/booking-pages/${validSlug}/availability?startsAt=2030-01-01T00%3A00%3A00Z&endsAt=2030-03-01T00%3A00%3A00Z`,
+      ),
+      context(validSlug),
+    );
+
+    expect(response.status).toBe(400);
+    expect(getAvailableTimesForPublishedBookingPage).not.toHaveBeenCalled();
+  });
+
   it("hides unavailable or unpublished booking pages", async () => {
     getAvailableTimesForPublishedBookingPage.mockResolvedValue(null);
 

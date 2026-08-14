@@ -37,7 +37,11 @@ describe("public appointment request API integration", () => {
 
   beforeEach(() => {
     mocks.getSession.mockResolvedValue({
-      user: { name: "Authenticated Ada", email: "auth@example.com" },
+      user: {
+        id: "student-user-id",
+        name: "Authenticated Ada",
+        email: "auth@example.com",
+      },
     });
   });
 
@@ -55,12 +59,18 @@ describe("public appointment request API integration", () => {
     expect(await response.json()).toEqual({
       appointment: { id: "appointment-id", status: "pending" },
     });
-    expect(createPublicAppointmentRequest).toHaveBeenCalledWith(slug, {
-      studentName: "Authenticated Ada",
-      studentEmail: "auth@example.com",
-      startsAt: new Date(startsAt),
-      comment: "LGS preparation",
-    });
+    expect(createPublicAppointmentRequest).toHaveBeenCalledWith(
+      slug,
+      {
+        startsAt: new Date(startsAt),
+        comment: "LGS preparation",
+      },
+      {
+        studentId: "student-user-id",
+        studentName: "Authenticated Ada",
+        studentEmail: "auth@example.com",
+      },
+    );
   });
 
   it("requires an authenticated booking session", async () => {
@@ -71,6 +81,27 @@ describe("public appointment request API integration", () => {
     });
 
     expect(response.status).toBe(401);
+    expect(createPublicAppointmentRequest).not.toHaveBeenCalled();
+  });
+
+  it("rejects cross-origin confirmation attempts", async () => {
+    const response = await POST(
+      new Request(`http://localhost/api/booking-pages/${slug}/appointments`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Origin: "https://attacker.example",
+        },
+        body: JSON.stringify({
+          studentName: "Ada Student",
+          studentEmail: "ada@example.com",
+          startsAt,
+        }),
+      }),
+      { params: Promise.resolve({ slug }) },
+    );
+
+    expect(response.status).toBe(403);
     expect(createPublicAppointmentRequest).not.toHaveBeenCalled();
   });
 
@@ -86,12 +117,12 @@ describe("public appointment request API integration", () => {
     expect(response.status).toBe(409);
   });
 
-  it("rejects invalid student details", async () => {
+  it("rejects invalid booking details", async () => {
     const response = await POST(
       new Request(`http://localhost/api/booking-pages/${slug}/appointments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentName: "A", studentEmail: "bad" }),
+        body: JSON.stringify({ startsAt: "not-a-timestamp" }),
       }),
       { params: Promise.resolve({ slug }) },
     );
@@ -106,10 +137,11 @@ function request() {
     `http://localhost/api/booking-pages/${slug}/appointments`,
     {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Origin: "http://localhost",
+      },
       body: JSON.stringify({
-        studentName: "Ada Student",
-        studentEmail: "ADA@example.com",
         startsAt,
         comment: "LGS preparation",
       }),

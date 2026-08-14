@@ -250,6 +250,15 @@ select:focus-visible,
   border-color: #7859d6;
   background: #f0d7ff;
   color: #2f1f57;
+  cursor: grab;
+}
+
+.provider-calendar .fc-event-dragging,
+.provider-calendar .fc-event-resizing {
+  cursor: grabbing !important;
+  filter: saturate(1.08);
+  opacity: 0.82;
+  box-shadow: 0 8px 20px rgb(26 26 26 / 18%);
 }
 
 .provider-calendar .provider-session-cancelled {

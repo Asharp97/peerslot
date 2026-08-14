@@ -12,6 +12,7 @@ import {
   readBookingIntent,
   signBookingIntent,
 } from "@/lib/booking-intent";
+import { enforceRateLimit, requireSameOriginJson } from "@/lib/request-security";
 
 const inputSchema = z
   .object({
@@ -40,6 +41,14 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const requestGuard = requireSameOriginJson(request);
+  if (requestGuard) return requestGuard;
+  const limited = enforceRateLimit(request, "booking-intent", {
+    limit: 20,
+    windowSeconds: 10 * 60,
+  });
+  if (limited) return limited;
+
   const input = inputSchema.safeParse(await request.json().catch(() => null));
   if (!input.success) {
     return NextResponse.json({ error: "Invalid booking intent" }, { status: 400 });

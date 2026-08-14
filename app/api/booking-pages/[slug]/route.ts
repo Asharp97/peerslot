@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 
 import { bookingSlugSchema } from "@/lib/booking-page";
 import { findPublishedBookingPage } from "@/lib/booking-pages";
+import { enforceRateLimit } from "@/lib/request-security";
 
 type RouteContext = {
   params: Promise<{ slug: string }>;
 };
 
-export async function GET(_request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext) {
   const input = bookingSlugSchema.safeParse((await context.params).slug);
 
   if (!input.success) {
@@ -16,6 +17,13 @@ export async function GET(_request: Request, context: RouteContext) {
       { status: 404 },
     );
   }
+
+  const limited = enforceRateLimit(request, "booking-page", {
+    limit: 40,
+    windowSeconds: 60,
+    subject: input.data,
+  });
+  if (limited) return limited;
 
   const bookingPage = await findPublishedBookingPage(input.data);
 

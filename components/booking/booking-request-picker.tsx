@@ -93,7 +93,9 @@ export function BookingRequestPicker({
   const [phase, setPhase] = useState<BookingPhase>("checking");
   const [authMode, setAuthMode] = useState<AuthMode>("sign-in");
   const [sessionChecked, setSessionChecked] = useState(false);
-  const [currentUser, setCurrentUser] = useState<AuthenticatedUser | null>(null);
+  const [currentUser, setCurrentUser] = useState<AuthenticatedUser | null>(
+    null,
+  );
   const [studentName, setStudentName] = useState("");
   const [studentEmail, setStudentEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -125,9 +127,10 @@ export function BookingRequestPicker({
         return;
       }
 
-      const presented = days
-        .flatMap((day) => day.periods.flatMap((period) => period.slots))
-        .find((slot) => slot.startsAt === intent.selectedStartTime) ??
+      const presented =
+        days
+          .flatMap((day) => day.periods.flatMap((period) => period.slots))
+          .find((slot) => slot.startsAt === intent.selectedStartTime) ??
         presentBookingSlot(
           { startsAt: intent.selectedStartTime },
           locale,
@@ -163,17 +166,14 @@ export function BookingRequestPicker({
     return () => {
       cancelled = true;
     };
-  }, [bookingPageId, days, slots]);
+  }, [bookingPageId, copy.socialError, days, locale, slots, timeZone]);
 
   function chooseSlot(slot: PresentedBookingSlot) {
+    if (!sessionChecked) return;
+
     setSelected(slot);
     setRequested(false);
     setError("");
-
-    if (!sessionChecked) {
-      setPhase("checking");
-      return;
-    }
 
     if (currentUser?.name.trim()) {
       setStudentName(currentUser.name);
@@ -184,17 +184,6 @@ export function BookingRequestPicker({
 
     setPhase("details");
   }
-
-  useEffect(() => {
-    if (!selected || !sessionChecked || phase !== "checking") return;
-    if (currentUser?.name.trim()) {
-      setStudentName(currentUser.name);
-      setStudentEmail(currentUser.email);
-      setPhase("confirm");
-    } else {
-      setPhase("details");
-    }
-  }, [currentUser, phase, selected, sessionChecked]);
 
   async function continueFromDetails(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -355,8 +344,6 @@ export function BookingRequestPicker({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          studentName,
-          studentEmail,
           startsAt: selected.startsAt,
           comment: comment || undefined,
         }),
@@ -416,8 +403,9 @@ export function BookingRequestPicker({
                     {period.slots.map((slot) => (
                       <button
                         aria-label={slot.accessibleLabel}
-                        className="min-h-11 min-w-22 rounded-full border border-vast-ink/15 bg-white px-4 text-center text-sm font-extrabold tabular-nums text-vast-ink transition hover:-translate-y-0.5 hover:border-vast-ink hover:bg-vast-ink hover:text-white"
+                        className="min-h-11 min-w-22 rounded-full border border-vast-ink/15 bg-white px-4 text-center text-sm font-extrabold tabular-nums text-vast-ink transition hover:-translate-y-0.5 hover:border-vast-ink hover:bg-vast-ink hover:text-white disabled:cursor-wait disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:bg-white disabled:hover:text-vast-ink"
                         key={slot.startsAt}
+                        disabled={!sessionChecked}
                         onClick={() => chooseSlot(slot)}
                         type="button"
                       >
@@ -486,7 +474,9 @@ export function BookingRequestPicker({
                       disabled={saving}
                       type="submit"
                     >
-                      {saving ? <LoaderCircle className="animate-spin" /> : null}
+                      {saving ? (
+                        <LoaderCircle className="animate-spin" />
+                      ) : null}
                       {copy.continue}
                       {!saving ? <ArrowRight size={17} /> : null}
                     </Button>
@@ -537,7 +527,9 @@ export function BookingRequestPicker({
                     {(["sign-in", "register"] as const).map((mode) => (
                       <button
                         className={`min-h-9 rounded-lg text-sm font-bold ${
-                          authMode === mode ? "bg-white shadow-sm" : "text-black/50"
+                          authMode === mode
+                            ? "bg-white shadow-sm"
+                            : "text-black/50"
                         }`}
                         key={mode}
                         onClick={() => {
@@ -561,7 +553,9 @@ export function BookingRequestPicker({
                           autoComplete="name"
                           id="auth-name"
                           minLength={2}
-                          onChange={(event) => setStudentName(event.target.value)}
+                          onChange={(event) =>
+                            setStudentName(event.target.value)
+                          }
                           required
                           value={studentName}
                         />
@@ -574,7 +568,9 @@ export function BookingRequestPicker({
                       <Input
                         autoComplete="email"
                         id="auth-email"
-                        onChange={(event) => setStudentEmail(event.target.value)}
+                        onChange={(event) =>
+                          setStudentEmail(event.target.value)
+                        }
                         required
                         type="email"
                         value={studentEmail}
@@ -606,7 +602,9 @@ export function BookingRequestPicker({
                       disabled={saving}
                       type="submit"
                     >
-                      {saving ? <LoaderCircle className="animate-spin" /> : null}
+                      {saving ? (
+                        <LoaderCircle className="animate-spin" />
+                      ) : null}
                       {authMode === "register"
                         ? copy.registerAction
                         : copy.signInAction}
@@ -649,7 +647,9 @@ export function BookingRequestPicker({
                       disabled={saving}
                       type="submit"
                     >
-                      {saving ? <LoaderCircle className="animate-spin" /> : null}
+                      {saving ? (
+                        <LoaderCircle className="animate-spin" />
+                      ) : null}
                       {saving ? copy.sending : copy.confirmRequest}
                     </Button>
                   </DialogFooter>
@@ -778,10 +778,22 @@ function SocialButton({
 function GoogleMark() {
   return (
     <svg aria-hidden="true" className="size-4" viewBox="0 0 24 24">
-      <path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.8 3-4.3 3-7.3Z" />
-      <path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4L15.4 17c-.9.6-2 1-3.4 1a5.8 5.8 0 0 1-5.5-4H3.2v2.6A10 10 0 0 0 12 22Z" />
-      <path fill="#FBBC05" d="M6.5 14a6 6 0 0 1 0-4V7.4H3.2a10 10 0 0 0 0 9.2L6.5 14Z" />
-      <path fill="#EA4335" d="M12 6c1.5 0 2.8.5 3.8 1.5l2.9-2.8A9.7 9.7 0 0 0 3.2 7.4L6.5 10A5.8 5.8 0 0 1 12 6Z" />
+      <path
+        fill="#4285F4"
+        d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.8 3-4.3 3-7.3Z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 22c2.7 0 5-.9 6.6-2.4L15.4 17c-.9.6-2 1-3.4 1a5.8 5.8 0 0 1-5.5-4H3.2v2.6A10 10 0 0 0 12 22Z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M6.5 14a6 6 0 0 1 0-4V7.4H3.2a10 10 0 0 0 0 9.2L6.5 14Z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 6c1.5 0 2.8.5 3.8 1.5l2.9-2.8A9.7 9.7 0 0 0 3.2 7.4L6.5 10A5.8 5.8 0 0 1 12 6Z"
+      />
     </svg>
   );
 }

@@ -7,6 +7,7 @@ import {
 } from "@/lib/available-time";
 import { bookingSlugSchema } from "@/lib/booking-page";
 import { getAvailableTimesForPublishedBookingPage } from "@/lib/available-times";
+import { enforceRateLimit } from "@/lib/request-security";
 
 const timestampWithOffsetSchema = z.string().datetime({ offset: true });
 const rangeSchema = z
@@ -21,7 +22,12 @@ const rangeSchema = z
   .refine(({ startsAt, endsAt }) => endsAt > startsAt, {
     message: "endsAt must be after startsAt",
     path: ["endsAt"],
-  });
+  })
+  .refine(
+    ({ startsAt, endsAt }) =>
+      endsAt.getTime() - startsAt.getTime() <= 45 * 24 * 60 * 60 * 1000,
+    { message: "Availability range cannot exceed 45 days", path: ["endsAt"] },
+  );
 
 type RouteContext = {
   params: Promise<{ slug: string }>;
@@ -41,6 +47,13 @@ export async function GET(request: Request, context: RouteContext) {
       { status: 404 },
     );
   }
+
+  const limited = enforceRateLimit(request, "booking-availability", {
+    limit: 60,
+    windowSeconds: 60,
+    subject: slug.data,
+  });
+  if (limited) return limited;
 
   if (!range.success) {
     return NextResponse.json(

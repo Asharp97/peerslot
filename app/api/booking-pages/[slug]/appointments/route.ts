@@ -7,16 +7,49 @@ import {
   PublicAppointmentRequestPageNotFoundError,
   PublicAppointmentRequestUnavailableError,
 } from "@/lib/public-appointment-request";
-import { publicAppointmentRequestSchema } from "@/lib/public-appointment-request-schema";
+import {
+  publicAppointmentIdentitySchema,
+  publicAppointmentRequestSchema,
+} from "@/lib/public-appointment-request-schema";
+import {
+  enforceRateLimit,
+  logFailedBookingAttempt,
+  requireSameOriginJson,
+} from "@/lib/request-security";
 
 export async function POST(
   request: Request,
   context: { params: Promise<{ slug: string }> },
 ) {
+  const { slug } = await context.params;
+  const requestGuard = requireSameOriginJson(request);
+  if (requestGuard) return requestGuard;
+
   const session = await auth.api.getSession({ headers: request.headers });
 
   if (!session) {
+    logFailedBookingAttempt("unauthenticated", { slug, status: 401 });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const limited = enforceRateLimit(request, "booking-confirmation", {
+    limit: 8,
+    windowSeconds: 10 * 60,
+    subject: `${session.user.id}:${slug}`,
+  });
+  if (limited) {
+    logFailedBookingAttempt("rate_limited", { slug, status: 429 });
+    return limited;
+  }
+
+  const identity = publicAppointmentIdentitySchema.safeParse({
+    studentId: session.user.id,
+    studentName: session.user.name,
+    studentEmail: session.user.email,
+  });
+  if (!identity.success) {
+    logFailedBookingAttempt("invalid_identity", { slug, status: 400 });
+    return NextResponse.json({ error: "Invalid booking profile" }, { status: 400 });
   }
 
   const input = publicAppointmentRequestSchema.safeParse(
@@ -32,12 +65,9 @@ export async function POST(
 
   try {
     const appointment = await createPublicAppointmentRequest(
-      (await context.params).slug,
-      {
-        ...input.data,
-        studentName: session.user.name,
-        studentEmail: session.user.email,
-      },
+      slug,
+      input.data,
+      identity.data,
     );
     const response = NextResponse.json(
       { appointment: { id: appointment.id, status: appointment.status } },
@@ -55,9 +85,11 @@ export async function POST(
     return response;
   } catch (error) {
     if (error instanceof PublicAppointmentRequestPageNotFoundError) {
+      logFailedBookingAttempt("page_not_found", { slug, status: 404 });
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
     if (error instanceof PublicAppointmentRequestUnavailableError) {
+      logFailedBookingAttempt("unavailable", { slug, status: 409 });
       return NextResponse.json({ error: error.message }, { status: 409 });
     }
     throw error;

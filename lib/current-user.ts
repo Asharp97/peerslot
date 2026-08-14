@@ -2,9 +2,8 @@ import { eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
-import { profiles } from "@/db/schema";
+import { providerProfiles } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { findProviderProfile } from "@/lib/provider-profiles";
 import { resolveUserCapabilities } from "@/lib/user-capabilities";
 
 export async function getCurrentUser(request: Request) {
@@ -20,28 +19,22 @@ export async function getCurrentUser(request: Request) {
     return null;
   }
 
-  const [currentUser] = await db
-    .select()
+  const [current] = await db
+    .select({ user, provider: providerProfiles })
     .from(user)
+    .leftJoin(providerProfiles, eq(providerProfiles.userId, user.id))
     .where(eq(user.id, payload.sub))
     .limit(1);
 
-  if (!currentUser) {
+  if (!current) {
     return null;
   }
 
-  await db
-    .insert(profiles)
-    .values({ userId: currentUser.id })
-    .onConflictDoNothing();
-
-  const providerProfile = await findProviderProfile(currentUser.id);
-
   return {
-    user: currentUser,
-    provider: providerProfile,
+    user: current.user,
+    provider: current.provider,
     authentication: "jwt" as const,
-    capabilities: resolveUserCapabilities(providerProfile !== null),
+    capabilities: resolveUserCapabilities(current.provider !== null),
   };
 }
 

@@ -21,6 +21,10 @@ const calendar = vi.hoisted(() => ({
   props: null as Record<string, unknown> | null,
 }));
 
+const workspace = vi.hoisted(() => ({
+  refresh: vi.fn(async () => undefined),
+}));
+
 vi.mock("@fullcalendar/react", () => ({
   default: (props: Record<string, unknown>) => {
     calendar.props = props;
@@ -41,7 +45,7 @@ vi.mock("./provider-shell", () => ({
         isPublished: true,
       },
     },
-    refresh: vi.fn(),
+    refresh: workspace.refresh,
   }),
 }));
 
@@ -50,6 +54,7 @@ describe("provider appointments calendar", () => {
     cleanup();
     vi.unstubAllGlobals();
     calendar.props = null;
+    workspace.refresh.mockClear();
   });
 
   it("loads the visible range through an event source without a datesSet state loop", async () => {
@@ -120,6 +125,7 @@ describe("provider appointments calendar", () => {
       expect.any(Object),
     );
     expect(events[0]).toMatchObject({
+      editable: true,
       backgroundColor: "#034f46",
       borderColor: "#ffffff",
       textColor: "#ffffff",
@@ -376,7 +382,7 @@ describe("provider appointments calendar", () => {
     });
   });
 
-  it("warns that deleting a student also deletes all of their appointments", async () => {
+  it("explains that removing a student preserves appointment history", async () => {
     const user = userEvent.setup();
     const confirm = vi.fn(() => false);
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
@@ -406,7 +412,7 @@ describe("provider appointments calendar", () => {
     await user.click(screen.getByRole("button", { name: "deleteStudent" }));
 
     expect(confirm).toHaveBeenCalledWith(
-      "Delete Ada Student? This permanently deletes the student and all of their appointments, including recurring and pending appointments. This cannot be undone.",
+      "Remove Ada Student from your active students? Existing and historical appointments will be preserved.",
     );
     expect(fetchMock).not.toHaveBeenCalledWith(
       "/api/provider/students/student-id",
@@ -474,6 +480,104 @@ describe("provider appointments calendar", () => {
       );
     });
   });
+
+  it("moves a weekly occurrence in the provider time zone", async () => {
+    const fetchMock = calendarFetchMock();
+    vi.stubGlobal("fetch", fetchMock);
+    render(<ProviderAppointments copy={copy} />);
+    await waitFor(() => expect(calendar.props?.eventDrop).toBeTypeOf("function"));
+
+    const revert = vi.fn();
+    await act(async () => {
+      const eventDrop = calendar.props?.eventDrop as (input: unknown) => Promise<void>;
+      await eventDrop({
+        oldEvent: { extendedProps: { appointment: scheduledAppointment } },
+        event: {
+          start: new Date(2030, 0, 16, 14, 0),
+          end: new Date(2030, 0, 16, 14, 45),
+        },
+        revert,
+      });
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/provider/appointments/appointment-id",
+      expect.objectContaining({
+        method: "PATCH",
+        body: JSON.stringify({
+          startsAt: "2030-01-16T11:00:00.000Z",
+          endsAt: "2030-01-16T11:45:00.000Z",
+          editScope: "exception",
+          occurrenceStartsAt: "2030-01-15T09:00:00Z",
+        }),
+      }),
+    );
+    expect(revert).not.toHaveBeenCalled();
+  });
+
+  it("resizes a session and reverts a rejected overlap", async () => {
+    const fetchMock = calendarFetchMock({
+      appointmentMutation: new Response(
+        JSON.stringify({ error: "This time overlaps another session" }),
+        { status: 409 },
+      ),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<ProviderAppointments copy={copy} />);
+    await waitFor(() => expect(calendar.props?.eventResize).toBeTypeOf("function"));
+
+    const revert = vi.fn();
+    await act(async () => {
+      const eventResize = calendar.props?.eventResize as (
+        input: unknown,
+      ) => Promise<void>;
+      await eventResize({
+        oldEvent: { extendedProps: { appointment: scheduledAppointment } },
+        event: {
+          start: new Date(2030, 0, 15, 12, 0),
+          end: new Date(2030, 0, 15, 13, 0),
+        },
+        revert,
+      });
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/provider/appointments/appointment-id",
+      expect.objectContaining({
+        body: JSON.stringify({
+          startsAt: "2030-01-15T09:00:00.000Z",
+          endsAt: "2030-01-15T10:00:00.000Z",
+          editScope: "exception",
+          occurrenceStartsAt: "2030-01-15T09:00:00Z",
+        }),
+      }),
+    );
+    expect(revert).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("This time overlaps another session")).toBeTruthy();
+  });
+
+  it("keeps cancelled sessions and availability projections fixed", async () => {
+    const fetchMock = calendarFetchMock({
+      appointments: [{ ...scheduledAppointment, status: "cancelled" }],
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<ProviderAppointments copy={copy} />);
+
+    let events: Array<Record<string, unknown>> = [];
+    await waitFor(() => expect(calendar.props?.events).toBeTypeOf("function"));
+    await act(async () => {
+      const loadEvents = calendar.props?.events as (range: {
+        start: Date;
+        end: Date;
+      }) => Promise<Array<Record<string, unknown>>>;
+      events = await loadEvents({
+        start: new Date("2030-01-14T00:00:00Z"),
+        end: new Date("2030-01-21T00:00:00Z"),
+      });
+    });
+
+    expect(events[0]).toMatchObject({ editable: false });
+  });
 });
 
 describe("session color contrast", () => {
@@ -487,7 +591,7 @@ const copy = new Proxy(
   {
     title: "{name}’s sessions",
     deleteStudentConfirm:
-      "Delete {name}? This permanently deletes the student and all of their appointments, including recurring and pending appointments. This cannot be undone.",
+      "Remove {name} from your active students? Existing and historical appointments will be preserved.",
   },
   {
     get: (target, property) =>
@@ -504,3 +608,44 @@ const availabilityWindow = {
   isActive: true,
   recurrence: "weekly",
 };
+
+const scheduledAppointment = {
+  id: "occurrence-id",
+  appointmentId: "appointment-id",
+  seriesId: "appointment-id",
+  occurrenceStartsAt: "2030-01-15T09:00:00Z",
+  recurrence: "weekly" as const,
+  isException: false,
+  providerStudentId: "student-id",
+  studentName: "Ada",
+  studentEmail: null,
+  startsAt: "2030-01-15T09:00:00Z",
+  endsAt: "2030-01-15T09:45:00Z",
+  status: "scheduled" as const,
+  comment: null,
+  examName: "LGS",
+  schoolYear: null,
+  color: "#034f46",
+  createdByProvider: true,
+  rescheduleCount: 0,
+};
+
+function calendarFetchMock({
+  appointments = [scheduledAppointment],
+  appointmentMutation = Response.json({ appointment: scheduledAppointment }),
+}: {
+  appointments?: Array<Record<string, unknown>>;
+  appointmentMutation?: Response;
+} = {}) {
+  return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    if (url.includes("/api/provider/students")) {
+      return Response.json({ students: [] });
+    }
+    if (url.includes("/api/availability-windows")) {
+      return Response.json({ windows: [] });
+    }
+    if (init?.method === "PATCH") return appointmentMutation.clone();
+    return Response.json({ appointments });
+  });
+}

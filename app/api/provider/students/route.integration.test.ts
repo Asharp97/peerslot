@@ -52,9 +52,10 @@ describe("provider students API integration", () => {
     });
   });
 
-  it("deletes an owned student and cascades their appointments", async () => {
+  it("removes an owned student while preserving appointments", async () => {
     vi.mocked(deleteProviderStudent).mockResolvedValue({
       deleted: true,
+      appointmentsPreserved: true,
       id: studentId,
     });
 

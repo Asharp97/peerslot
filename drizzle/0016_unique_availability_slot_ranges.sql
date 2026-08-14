@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "availability_slot_teacher_range_unique" ON "availability_slots" USING btree ("teacher_id","starts_at","ends_at");

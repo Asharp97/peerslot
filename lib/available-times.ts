@@ -1,4 +1,13 @@
-import { and, eq } from "drizzle-orm";
+import {
+  and,
+  eq,
+  gte,
+  gt,
+  isNotNull,
+  isNull,
+  lt,
+  or,
+} from "drizzle-orm";
 
 import { db } from "@/db";
 import {
@@ -35,6 +44,17 @@ const postgresAvailableTimeRepository = {
         and(
           eq(availabilityWindows.bookingPageId, bookingPageId),
           eq(availabilityWindows.isActive, true),
+          or(
+            and(
+              eq(availabilityWindows.recurrence, "weekly"),
+              lt(availabilityWindows.startsAt, range.endsAt),
+            ),
+            and(
+              eq(availabilityWindows.recurrence, "none"),
+              lt(availabilityWindows.startsAt, range.endsAt),
+              gt(availabilityWindows.endsAt, range.startsAt),
+            ),
+          ),
         ),
       );
 
@@ -49,6 +69,10 @@ const postgresAvailableTimeRepository = {
     restBetweenSessionsMinutes: number,
   ) {
     const restMilliseconds = restBetweenSessionsMinutes * 60 * 1000;
+    const appointmentRange = {
+      startsAt: new Date(range.startsAt.getTime() - restMilliseconds),
+      endsAt: new Date(range.endsAt.getTime() + restMilliseconds),
+    };
     const [bookingPage, rows] = await Promise.all([
       db
         .select({ timeZone: bookingPages.timeZone })
@@ -76,15 +100,47 @@ const postgresAvailableTimeRepository = {
           bookingPages,
           eq(bookingPages.providerId, availabilitySlots.teacherId),
         )
-        .where(eq(bookingPages.id, bookingPageId)),
+        .where(
+          and(
+            eq(bookingPages.id, bookingPageId),
+            or(
+              and(
+                eq(appointments.recurrence, "weekly"),
+                isNull(appointments.exceptionForAppointmentId),
+                lt(availabilitySlots.startsAt, appointmentRange.endsAt),
+                or(
+                  isNull(appointments.recurrenceEndsAt),
+                  gt(appointments.recurrenceEndsAt, appointmentRange.startsAt),
+                ),
+              ),
+              and(
+                eq(appointments.recurrence, "none"),
+                or(
+                  and(
+                    lt(availabilitySlots.startsAt, appointmentRange.endsAt),
+                    gt(availabilitySlots.endsAt, appointmentRange.startsAt),
+                  ),
+                  and(
+                    isNotNull(appointments.exceptionOriginalStartsAt),
+                    gte(
+                      appointments.exceptionOriginalStartsAt,
+                      appointmentRange.startsAt,
+                    ),
+                    lt(
+                      appointments.exceptionOriginalStartsAt,
+                      appointmentRange.endsAt,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
     ]);
 
     return expandProviderAppointmentOccurrences(
       rows.map((row) => ({ ...row, studentName: "Student" })),
-      {
-        startsAt: new Date(range.startsAt.getTime() - restMilliseconds),
-        endsAt: new Date(range.endsAt.getTime() + restMilliseconds),
-      },
+      appointmentRange,
       bookingPage[0]?.timeZone ?? "UTC",
     ).map(({ startsAt, endsAt, status }) => ({ startsAt, endsAt, status }));
   },

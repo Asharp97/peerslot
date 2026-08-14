@@ -113,6 +113,13 @@
       "when": 1786524170641,
       "tag": "0015_scheduling_option_limits",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1786627734361,
+      "tag": "0016_unique_availability_slot_ranges",
+      "breakpoints": true
     }
   ]
 }

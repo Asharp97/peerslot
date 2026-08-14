@@ -16,8 +16,14 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const teacherId =
-    new URL(request.url).searchParams.get("teacherId") ?? currentUser.user.id;
+  if (!currentUser.capabilities.canProvide) {
+    return NextResponse.json(
+      { error: "Provider setup required" },
+      { status: 403 },
+    );
+  }
+
+  const teacherId = currentUser.user.id;
 
   const slots = await db
     .select({

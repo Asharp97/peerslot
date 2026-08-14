@@ -217,6 +217,11 @@ export const availabilitySlots = pgTable(
       table.teacherId,
       table.startsAt,
     ),
+    uniqueIndex("availability_slot_teacher_range_unique").on(
+      table.teacherId,
+      table.startsAt,
+      table.endsAt,
+    ),
     check("slot_ends_after_start", sql`${table.endsAt} > ${table.startsAt}`),
   ],
 );
