@@ -313,7 +313,7 @@
       "save": "Dersi kaydet",
       "saving": "Kaydediliyor…",
       "updatingSession": "Ders güncelleniyor…",
-      "dragHint": "Planlanmış bir dersi taşımak için sürükleyin. Süresini değiştirmek için alt kenarını çekin. Tekrarlanan derslerde yalnızca o ders değişir.",
+      "dragHint": "Planlanmış bir dersi taşımak için sürükleyin. Süresini değiştirmek için alt kenarını çekin. Değişiklikler 15 dakikalık aralıklara oturur. Tekrarlanan derslerde yalnızca o ders değişir.",
       "cancelSession": "Dersi iptal et",
       "restoreSession": "Dersi geri yükle",
       "repetition": "Tekrar",

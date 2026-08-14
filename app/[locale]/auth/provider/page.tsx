@@ -46,7 +46,7 @@ export default async function ProviderAuthPage({
                 {t("body")}
               </p>
             </div>
-            <div className="rounded-2xl border border-[#4f857e] bg-[#0b5d53] p-5">
+            {/* <div className="rounded-2xl border border-[#4f857e] bg-[#0b5d53] p-5">
               <LockKeyhole
                 className="text-ember-glow"
                 size={22}
@@ -55,7 +55,7 @@ export default async function ProviderAuthPage({
               <p className="mt-3 text-sm leading-6 text-[#e3e1d5]">
                 {t("securityNote")}
               </p>
-            </div>
+            </div> */}
           </section>
 
           <section className="p-7 sm:p-12 lg:p-14">

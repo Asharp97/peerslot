@@ -17,6 +17,7 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import {
   CalendarPlus,
   Clock3,
+  GripVertical,
   LoaderCircle,
   Pencil,
   RotateCcw,
@@ -224,6 +225,8 @@ export function ProviderAppointments({
   const [studentEmail, setStudentEmail] = useState("");
   const [studentSaving, setStudentSaving] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [calendarInteractionActive, setCalendarInteractionActive] =
+    useState(false);
   const [interactionSaving, setInteractionSaving] = useState(false);
   const [error, setError] = useState("");
   const [draft, setDraft] = useState<SessionDraft | null>(null);
@@ -822,7 +825,7 @@ export function ProviderAppointments({
 
       <section
         aria-busy={loading || interactionSaving}
-        className="provider-calendar relative min-h-0 flex-1 overflow-x-auto rounded-[24px] border border-black/10 bg-[#fbfaf4] p-3 shadow-sm sm:p-4"
+        className={`provider-calendar relative min-h-0 flex-1 overflow-x-auto rounded-[24px] border border-black/10 bg-[#fbfaf4] p-3 shadow-sm sm:p-4 ${calendarInteractionActive ? "provider-calendar-interacting" : ""}`}
       >
         {loading || interactionSaving ? (
           <span
@@ -844,7 +847,11 @@ export function ProviderAppointments({
             dayHeaderFormat={calendarDayHeaderFormat}
             eventClick={handleEventClick}
             eventContent={renderSession}
+            eventDragStart={() => setCalendarInteractionActive(true)}
+            eventDragStop={() => setCalendarInteractionActive(false)}
             eventDrop={handleCalendarEventChange}
+            eventResizeStart={() => setCalendarInteractionActive(true)}
+            eventResizeStop={() => setCalendarInteractionActive(false)}
             eventResize={handleCalendarEventChange}
             eventAllow={() => !interactionSaving}
             eventMinHeight={34}
@@ -861,7 +868,7 @@ export function ProviderAppointments({
             plugins={calendarPlugins}
             ref={calendarRef}
             scrollTime="08:00:00"
-            snapDuration="00:05:00"
+            snapDuration="00:15:00"
             slotDuration="00:30:00"
             slotMaxTime="22:00:00"
             slotMinTime="07:00:00"
@@ -1396,20 +1403,30 @@ function renderSession(info: EventContentArg) {
 
   const context = appointment.examName ?? appointment.schoolYear;
   const recurrenceLabel = info.event.extendedProps.recurrenceLabel as string;
+  const isDraggable = appointment.status === "scheduled";
 
   return (
-    <div className="overflow-hidden px-1 py-0.5 leading-tight">
-      <p className="flex gap-1 truncate text-[9px] font-bold opacity-80">
-        <span>{info.timeText}</span>
-        <span aria-hidden="true">·</span>
-        <span className="truncate">{recurrenceLabel}</span>
-      </p>
-      <p className="truncate text-[11px] font-bold">
-        {appointment.studentName}
-      </p>
-      {context ? (
-        <p className="truncate text-[9px] opacity-70">{context}</p>
+    <div className="flex min-w-0 items-start gap-0.5 overflow-hidden px-1 py-0.5 leading-tight">
+      {isDraggable ? (
+        <GripVertical
+          aria-hidden="true"
+          className="provider-session-drag-handle mt-0.5 size-3 shrink-0 opacity-55"
+          strokeWidth={2.5}
+        />
       ) : null}
+      <div className="min-w-0 flex-1 overflow-hidden">
+        <p className="flex gap-1 truncate text-[9px] font-bold opacity-80">
+          <span>{info.timeText}</span>
+          <span aria-hidden="true">·</span>
+          <span className="truncate">{recurrenceLabel}</span>
+        </p>
+        <p className="truncate text-[11px] font-bold">
+          {appointment.studentName}
+        </p>
+        {context ? (
+          <p className="truncate text-[9px] opacity-70">{context}</p>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -1428,7 +1445,9 @@ function appointmentToCalendarEvent(
     classNames:
       appointment.status === "cancelled"
         ? ["provider-session-cancelled"]
-        : ["provider-session-scheduled"],
+        : appointment.status === "scheduled"
+          ? ["provider-session-scheduled", "provider-session-draggable"]
+          : ["provider-session-scheduled"],
     backgroundColor: appointment.color,
     borderColor: readableBorderColor(appointment.color),
     textColor: readableTextColor(appointment.color),

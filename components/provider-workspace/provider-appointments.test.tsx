@@ -107,6 +107,23 @@ describe("provider appointments calendar", () => {
     });
     expect(calendar.props?.datesSet).toBeUndefined();
     expect(calendar.props?.events).toBeTypeOf("function");
+    expect(calendar.props?.snapDuration).toBe("00:15:00");
+
+    const calendarSurface = document.querySelector(".provider-calendar");
+    act(() => {
+      const startDrag = calendar.props?.eventDragStart as () => void;
+      startDrag();
+    });
+    expect(
+      calendarSurface?.classList.contains("provider-calendar-interacting"),
+    ).toBe(true);
+    act(() => {
+      const stopDrag = calendar.props?.eventDragStop as () => void;
+      stopDrag();
+    });
+    expect(
+      calendarSurface?.classList.contains("provider-calendar-interacting"),
+    ).toBe(false);
 
     let events: unknown[] = [];
     await act(async () => {
@@ -126,11 +143,36 @@ describe("provider appointments calendar", () => {
     );
     expect(events[0]).toMatchObject({
       editable: true,
+      classNames: ["provider-session-scheduled", "provider-session-draggable"],
       backgroundColor: "#034f46",
       borderColor: "#ffffff",
       textColor: "#ffffff",
       extendedProps: { recurrenceLabel: "everyWeek" },
     });
+
+    const renderEvent = calendar.props?.eventContent as (info: {
+      event: {
+        title: string;
+        extendedProps: Record<string, unknown>;
+      };
+      timeText: string;
+    }) => React.ReactElement;
+    const event = events[0] as {
+      extendedProps: Record<string, unknown>;
+      title: string;
+    };
+    const { container } = render(
+      renderEvent({
+        event: {
+          title: event.title,
+          extendedProps: event.extendedProps,
+        },
+        timeText: "12:00",
+      }),
+    );
+    expect(
+      container.querySelector(".provider-session-drag-handle"),
+    ).toBeTruthy();
   });
 
   it("renders a weekly free-time window as bordered, labeled slots", async () => {
@@ -485,11 +527,15 @@ describe("provider appointments calendar", () => {
     const fetchMock = calendarFetchMock();
     vi.stubGlobal("fetch", fetchMock);
     render(<ProviderAppointments copy={copy} />);
-    await waitFor(() => expect(calendar.props?.eventDrop).toBeTypeOf("function"));
+    await waitFor(() =>
+      expect(calendar.props?.eventDrop).toBeTypeOf("function"),
+    );
 
     const revert = vi.fn();
     await act(async () => {
-      const eventDrop = calendar.props?.eventDrop as (input: unknown) => Promise<void>;
+      const eventDrop = calendar.props?.eventDrop as (
+        input: unknown,
+      ) => Promise<void>;
       await eventDrop({
         oldEvent: { extendedProps: { appointment: scheduledAppointment } },
         event: {
@@ -524,7 +570,9 @@ describe("provider appointments calendar", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
     render(<ProviderAppointments copy={copy} />);
-    await waitFor(() => expect(calendar.props?.eventResize).toBeTypeOf("function"));
+    await waitFor(() =>
+      expect(calendar.props?.eventResize).toBeTypeOf("function"),
+    );
 
     const revert = vi.fn();
     await act(async () => {

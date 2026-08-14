@@ -313,7 +313,7 @@
       "save": "Save session",
       "saving": "Saving…",
       "updatingSession": "Updating session…",
-      "dragHint": "Drag a scheduled session to move it. Pull its bottom edge to change its duration. Recurring gestures change only that occurrence.",
+      "dragHint": "Drag a scheduled session to move it. Pull its bottom edge to change its duration. Changes snap to 15-minute intervals. Recurring gestures change only that occurrence.",
       "cancelSession": "Cancel session",
       "restoreSession": "Restore session",
       "repetition": "Repetition",
