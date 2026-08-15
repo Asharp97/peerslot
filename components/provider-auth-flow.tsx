@@ -1,7 +1,12 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { ArrowRight, CalendarClock, LoaderCircle } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarClock,
+  LoaderCircle,
+  MailCheck,
+} from "lucide-react";
 
 import {
   Select,
@@ -25,6 +30,9 @@ type ProviderAuthCopy = {
   registerTitle: string;
   signInBody: string;
   registerBody: string;
+  verifyTitle: string;
+  verifyBody: string;
+  verifyAction: string;
   nameLabel: string;
   emailLabel: string;
   passwordLabel: string;
@@ -56,7 +64,7 @@ type ProviderAuthCopy = {
 };
 
 type AuthMode = "sign-in" | "register";
-type Phase = "checking" | "auth" | "onboarding";
+type Phase = "checking" | "auth" | "verify-email" | "onboarding";
 type SocialProvider = "google" | "microsoft";
 
 type ProviderSetupResponse = {
@@ -146,7 +154,12 @@ export function ProviderAuthFlow({
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          callbackURL: `/${locale}/auth/provider`,
+        }),
       });
 
       if (!registration.ok) {
@@ -154,6 +167,10 @@ export function ProviderAuthFlow({
         setSubmitting(false);
         return;
       }
+
+      setPhase("verify-email");
+      setSubmitting(false);
+      return;
     }
 
     const signIn = await fetch("/api/auth/sign-in/email", {
@@ -354,6 +371,34 @@ export function ProviderAuthFlow({
           />
         </div>
       </form>
+    );
+  }
+
+  if (phase === "verify-email") {
+    return (
+      <div className="space-y-6 py-8 text-center">
+        <span className="mx-auto grid size-16 place-items-center rounded-2xl border-2 border-vast-ink bg-lavender-whisper">
+          <MailCheck size={28} aria-hidden="true" />
+        </span>
+        <div>
+          <h2 className="font-display text-4xl tracking-[-0.03em]">
+            {copy.verifyTitle}
+          </h2>
+          <p className="mt-3 text-sm leading-6 text-[#62625a]">
+            {copy.verifyBody.replace("{email}", email)}
+          </p>
+        </div>
+        <button
+          className="inline-flex min-h-12 w-full items-center justify-center rounded-xl border-2 border-vast-ink bg-white px-5 text-sm font-semibold"
+          onClick={() => {
+            setMode("sign-in");
+            setPhase("auth");
+          }}
+          type="button"
+        >
+          {copy.verifyAction}
+        </button>
+      </div>
     );
   }
 

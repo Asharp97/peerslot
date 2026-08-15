@@ -8,6 +8,10 @@ import {
   PublicAppointmentRequestUnavailableError,
 } from "@/lib/public-appointment-request";
 import {
+  emailLocaleFromRequest,
+  notifyProviderOfBookingRequest,
+} from "@/lib/email-notifications";
+import {
   publicAppointmentIdentitySchema,
   publicAppointmentRequestSchema,
 } from "@/lib/public-appointment-request-schema";
@@ -49,7 +53,10 @@ export async function POST(
   });
   if (!identity.success) {
     logFailedBookingAttempt("invalid_identity", { slug, status: 400 });
-    return NextResponse.json({ error: "Invalid booking profile" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid booking profile" },
+      { status: 400 },
+    );
   }
 
   const input = publicAppointmentRequestSchema.safeParse(
@@ -64,13 +71,30 @@ export async function POST(
   }
 
   try {
-    const appointment = await createPublicAppointmentRequest(
+    const result = await createPublicAppointmentRequest(
       slug,
       input.data,
       identity.data,
     );
+    await notifyProviderOfBookingRequest({
+      appointmentId: result.appointment.id,
+      comment: result.appointment.comment,
+      endsAt: result.appointment.endsAt,
+      locale: emailLocaleFromRequest(request),
+      providerEmail: result.provider.email,
+      providerName: result.provider.name,
+      startsAt: result.appointment.startsAt,
+      studentEmail: identity.data.studentEmail,
+      studentName: identity.data.studentName,
+      timeZone: result.provider.timeZone,
+    });
     const response = NextResponse.json(
-      { appointment: { id: appointment.id, status: appointment.status } },
+      {
+        appointment: {
+          id: result.appointment.id,
+          status: result.appointment.status,
+        },
+      },
       { status: 201 },
     );
     response.cookies.set({

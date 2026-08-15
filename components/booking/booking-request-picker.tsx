@@ -5,6 +5,7 @@ import {
   Check,
   LockKeyhole,
   LoaderCircle,
+  MailCheck,
   MoonStar,
   SunMedium,
   Sunrise,
@@ -49,6 +50,9 @@ export type BookingRequestCopy = {
   password: string;
   signInAction: string;
   registerAction: string;
+  verifyTitle: string;
+  verifyBody: string;
+  verifyAction: string;
   confirmTitle: string;
   confirmBody: string;
   bookingAs: string;
@@ -64,7 +68,8 @@ export type BookingRequestCopy = {
 };
 
 type AuthenticatedUser = { name: string; email: string };
-type BookingPhase = "checking" | "details" | "auth" | "confirm";
+type BookingPhase =
+  "checking" | "details" | "auth" | "verify-email" | "confirm";
 type AuthMode = "sign-in" | "register";
 type SocialProvider = "google" | "microsoft";
 
@@ -217,6 +222,12 @@ export function BookingRequestPicker({
     setError("");
 
     if (authMode === "register") {
+      const returnPath = await createBookingAuthIntent();
+      if (!returnPath) {
+        setError(copy.intentError);
+        setSaving(false);
+        return;
+      }
       const registration = await fetch("/api/auth/sign-up/email", {
         method: "POST",
         credentials: "include",
@@ -225,6 +236,7 @@ export function BookingRequestPicker({
           name: studentName,
           email: studentEmail,
           password,
+          callbackURL: returnPath,
         }),
       });
       if (!registration.ok) {
@@ -232,6 +244,10 @@ export function BookingRequestPicker({
         setSaving(false);
         return;
       }
+
+      setPhase("verify-email");
+      setSaving(false);
+      return;
     }
 
     const signIn = await fetch("/api/auth/sign-in/email", {
@@ -258,42 +274,14 @@ export function BookingRequestPicker({
     setSaving(true);
     setError("");
 
-    saveDraft(bookingPageId, { studentName, studentEmail, comment });
-    const intent = await fetch("/api/booking-intent", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        bookingPageId,
-        selectedStartTime: selected.startsAt,
-        locale,
-      }),
-    });
-    if (!intent.ok) {
+    const returnPath = await createBookingAuthIntent();
+    if (!returnPath) {
       setError(copy.intentError);
       setSaving(false);
       return;
     }
 
-    const intentBody = (await intent.json().catch(() => null)) as {
-      returnPath?: string;
-    } | null;
-    if (
-      !intentBody?.returnPath?.startsWith("/") ||
-      intentBody.returnPath.startsWith("//")
-    ) {
-      setError(copy.intentError);
-      setSaving(false);
-      return;
-    }
-
-    const callback = new URL(intentBody.returnPath, window.location.origin);
-    if (callback.origin !== window.location.origin) {
-      setError(copy.intentError);
-      setSaving(false);
-      return;
-    }
-    const callbackURL = callback.toString();
+    const callbackURL = new URL(returnPath, window.location.origin).toString();
     const response = await fetch("/api/auth/sign-in/social", {
       method: "POST",
       credentials: "include",
@@ -316,6 +304,38 @@ export function BookingRequestPicker({
     }
 
     window.location.assign(body.url);
+  }
+
+  async function createBookingAuthIntent() {
+    if (!selected) return null;
+
+    saveDraft(bookingPageId, { studentName, studentEmail, comment });
+    const intent = await fetch("/api/booking-intent", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        bookingPageId,
+        selectedStartTime: selected.startsAt,
+        locale,
+      }),
+    });
+    if (!intent.ok) return null;
+
+    const intentBody = (await intent.json().catch(() => null)) as {
+      returnPath?: string;
+    } | null;
+    if (
+      !intentBody?.returnPath?.startsWith("/") ||
+      intentBody.returnPath.startsWith("//")
+    ) {
+      return null;
+    }
+
+    const callback = new URL(intentBody.returnPath, window.location.origin);
+    return callback.origin === window.location.origin
+      ? intentBody.returnPath
+      : null;
   }
 
   async function continueAfterAuthentication() {
@@ -611,6 +631,31 @@ export function BookingRequestPicker({
                     </Button>
                   </DialogFooter>
                 </form>
+              ) : null}
+
+              {phase === "verify-email" ? (
+                <div className="py-6 text-center">
+                  <span className="mx-auto grid size-16 place-items-center rounded-2xl border-2 border-vast-ink bg-lavender-whisper">
+                    <MailCheck size={28} aria-hidden="true" />
+                  </span>
+                  <DialogTitle className="mt-5 font-display text-3xl">
+                    {copy.verifyTitle}
+                  </DialogTitle>
+                  <DialogDescription className="mt-3">
+                    {copy.verifyBody.replace("{email}", studentEmail)}
+                  </DialogDescription>
+                  <Button
+                    className="mt-6 h-11 rounded-full"
+                    onClick={() => {
+                      setAuthMode("sign-in");
+                      setPhase("auth");
+                    }}
+                    type="button"
+                    variant="outline"
+                  >
+                    {copy.verifyAction}
+                  </Button>
+                </div>
               ) : null}
 
               {phase === "confirm" ? (

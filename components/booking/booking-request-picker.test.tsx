@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -80,7 +86,9 @@ describe("booking slot presentation", () => {
 describe("booking authentication", () => {
   it("shows authentication before an unauthenticated request can be confirmed", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 }),
+      new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+      }),
     );
     vi.stubGlobal("fetch", fetchMock);
 
@@ -123,6 +131,76 @@ describe("booking authentication", () => {
     expect(
       fetchMock.mock.calls.some(([url]) =>
         String(url).includes("/appointments"),
+      ),
+    ).toBe(false);
+  });
+
+  it("preserves the slot and asks new email users to verify their address", async () => {
+    const fetchMock = vi.fn(
+      async (input: RequestInfo | URL, _init?: RequestInit) => {
+        void _init;
+        const url = String(input);
+        if (url === "/api/auth/get-session") {
+          return Response.json({ error: "Unauthorized" }, { status: 401 });
+        }
+        if (url === "/api/booking-intent") {
+          return Response.json({
+            returnPath: "/en/book/ABCDEFGH?booking=1",
+          });
+        }
+        if (url === "/api/auth/sign-up/email") {
+          return Response.json({ user: { id: "student-id" } });
+        }
+        return Response.json({ error: "Unexpected request" }, { status: 500 });
+      },
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <BookingRequestPicker
+        bookingPageId="33ead7c8-d327-4e79-9624-f405a834f14f"
+        bookingTitle="Counseling session"
+        copy={copy}
+        locale="en"
+        slug="ABCDEFGH"
+        slots={[{ startsAt: "2030-01-15T09:00:00.000Z" }]}
+        timeZone="Europe/Istanbul"
+      />,
+    );
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Tuesday, January 15, 2030 at 12:00 PM/,
+      }),
+    );
+    fireEvent.change(screen.getByLabelText(copy.name), {
+      target: { value: "Ada Student" },
+    });
+    fireEvent.change(screen.getByLabelText(copy.email), {
+      target: { value: "ada@example.com" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: copy.continue }));
+    await screen.findByRole("heading", { name: copy.authTitle });
+    fireEvent.click(screen.getByRole("button", { name: copy.registerTab }));
+    fireEvent.change(screen.getByLabelText(copy.password), {
+      target: { value: "correct-horse-battery" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: copy.registerAction }));
+
+    expect(
+      await screen.findByRole("heading", { name: copy.verifyTitle }),
+    ).toBeTruthy();
+    const registration = fetchMock.mock.calls.find(
+      ([url]) => String(url) === "/api/auth/sign-up/email",
+    );
+    expect(JSON.parse(String(registration?.[1]?.body))).toMatchObject({
+      callbackURL: "/en/book/ABCDEFGH?booking=1",
+      email: "ada@example.com",
+    });
+    expect(
+      fetchMock.mock.calls.some(
+        ([url]) => String(url) === "/api/auth/sign-in/email",
       ),
     ).toBe(false);
   });

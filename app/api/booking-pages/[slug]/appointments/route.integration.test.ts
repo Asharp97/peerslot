@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => {
   return {
     create: vi.fn(),
     getSession: vi.fn(),
+    notifyProvider: vi.fn(),
     PageNotFoundError,
     UnavailableError,
   };
@@ -26,6 +27,10 @@ vi.mock("@/lib/public-appointment-request", () => ({
 vi.mock("@/lib/public-appointment-request-schema", async (importOriginal) =>
   importOriginal(),
 );
+vi.mock("@/lib/email-notifications", () => ({
+  emailLocaleFromRequest: () => "en",
+  notifyProviderOfBookingRequest: mocks.notifyProvider,
+}));
 
 import { createPublicAppointmentRequest } from "@/lib/public-appointment-request";
 
@@ -47,8 +52,18 @@ describe("public appointment request API integration", () => {
 
   it("creates a pending appointment request", async () => {
     vi.mocked(createPublicAppointmentRequest).mockResolvedValue({
-      id: "appointment-id",
-      status: "pending",
+      appointment: {
+        id: "appointment-id",
+        status: "pending",
+        startsAt: new Date(startsAt),
+        endsAt: new Date("2030-01-15T09:30:00.000Z"),
+        comment: "LGS preparation",
+      },
+      provider: {
+        email: "provider@example.com",
+        name: "Ceyda",
+        timeZone: "Europe/Istanbul",
+      },
     } as Awaited<ReturnType<typeof createPublicAppointmentRequest>>);
 
     const response = await POST(request(), {
@@ -70,6 +85,13 @@ describe("public appointment request API integration", () => {
         studentName: "Authenticated Ada",
         studentEmail: "auth@example.com",
       },
+    );
+    expect(mocks.notifyProvider).toHaveBeenCalledWith(
+      expect.objectContaining({
+        appointmentId: "appointment-id",
+        providerEmail: "provider@example.com",
+        studentEmail: "auth@example.com",
+      }),
     );
   });
 

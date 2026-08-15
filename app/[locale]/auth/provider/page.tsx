@@ -1,7 +1,6 @@
 import { hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { LockKeyhole } from "lucide-react";
 
 import { ProviderAuthFlow } from "@/components/provider-auth-flow";
 import { Link } from "@/i18n/navigation";

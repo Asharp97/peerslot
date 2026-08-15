@@ -9,6 +9,10 @@ import {
   reviewProviderAppointment,
 } from "@/lib/provider-appointments";
 
+const notificationMocks = vi.hoisted(() => ({
+  notifyStudent: vi.fn(),
+}));
+
 vi.mock("@/lib/current-user", () => ({ getCurrentUser: vi.fn() }));
 vi.mock("@/lib/provider-appointments", () => ({
   ProviderAppointmentConflictError: class extends Error {},
@@ -19,6 +23,10 @@ vi.mock("@/lib/provider-appointments", () => ({
   listPendingProviderAppointments: vi.fn(),
   reviewProviderAppointment: vi.fn(),
 }));
+vi.mock("@/lib/email-notifications", () => ({
+  emailLocaleFromRequest: () => "en",
+  notifyStudentOfBookingDecision: notificationMocks.notifyStudent,
+}));
 
 const providerId = "provider-id";
 const appointmentId = "550e8400-e29b-41d4-a716-446655440000";
@@ -27,7 +35,8 @@ describe("provider appointment requests API integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(getCurrentUser).mockResolvedValue({
-      user: { id: providerId },
+      user: { id: providerId, name: "Ceyda" },
+      provider: { displayName: "Ceyda", timeZone: "Europe/Istanbul" },
       capabilities: { canProvide: true },
     } as Awaited<ReturnType<typeof getCurrentUser>>);
   });
@@ -52,6 +61,10 @@ describe("provider appointment requests API integration", () => {
       vi.mocked(reviewProviderAppointment).mockResolvedValue({
         id: appointmentId,
         status: decision === "accept" ? "scheduled" : "declined",
+        startsAt: new Date("2030-01-15T09:00:00.000Z"),
+        endsAt: new Date("2030-01-15T09:30:00.000Z"),
+        studentEmail: "student@example.com",
+        studentName: "Ada",
       } as Awaited<ReturnType<typeof reviewProviderAppointment>>);
 
       const response = await PATCH(
@@ -67,6 +80,13 @@ describe("provider appointment requests API integration", () => {
         providerId,
         appointmentId,
         decision,
+      );
+      expect(notificationMocks.notifyStudent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          appointmentId,
+          decision,
+          studentEmail: "student@example.com",
+        }),
       );
     },
   );

@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 
 import { db } from "@/db";
+import { user } from "@/db/auth-schema";
 import { bookingPages, providerProfiles } from "@/db/schema";
 import { getAvailableTimesForBookingPage } from "@/lib/available-times";
 import {
@@ -36,6 +37,8 @@ export async function createPublicAppointmentRequest(
     .select({
       id: bookingPages.id,
       providerId: bookingPages.providerId,
+      providerEmail: user.email,
+      providerName: providerProfiles.displayName,
       timeZone: bookingPages.timeZone,
       appointmentDurationMinutes: bookingPages.appointmentDurationMinutes,
       bookingIntervalMinutes: bookingPages.bookingIntervalMinutes,
@@ -47,6 +50,7 @@ export async function createPublicAppointmentRequest(
       providerProfiles,
       eq(providerProfiles.userId, bookingPages.providerId),
     )
+    .innerJoin(user, eq(user.id, bookingPages.providerId))
     .where(and(eq(bookingPages.slug, slug), eq(bookingPages.isPublished, true)))
     .limit(1);
 
@@ -74,13 +78,24 @@ export async function createPublicAppointmentRequest(
   });
 
   try {
-    return await createPendingProviderAppointment(page.providerId, {
-      providerStudentId: student.id,
-      studentId: identity.studentId,
-      startsAt: input.startsAt,
-      endsAt,
-      comment: input.comment,
-    });
+    const appointment = await createPendingProviderAppointment(
+      page.providerId,
+      {
+        providerStudentId: student.id,
+        studentId: identity.studentId,
+        startsAt: input.startsAt,
+        endsAt,
+        comment: input.comment,
+      },
+    );
+    return {
+      appointment,
+      provider: {
+        email: page.providerEmail,
+        name: page.providerName,
+        timeZone: page.timeZone,
+      },
+    };
   } catch (error) {
     if (error instanceof ProviderAppointmentConflictError) {
       throw new PublicAppointmentRequestUnavailableError();
