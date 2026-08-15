@@ -11,6 +11,7 @@
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "email:previews": "tsx scripts/send-email-previews.ts",
     "auth:schema": "pnpm dlx auth@1.6.25 generate --config lib/auth.ts --output db/auth-schema.ts --yes",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",

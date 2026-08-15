@@ -1,0 +1,699 @@
+// @vitest-environment jsdom
+
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+import {
+  ProviderAppointments,
+  readableTextColor,
+  type ProviderAppointmentsCopy,
+} from "@/components/provider-workspace/provider-appointments";
+
+const calendar = vi.hoisted(() => ({
+  props: null as Record<string, unknown> | null,
+}));
+
+const workspace = vi.hoisted(() => ({
+  refresh: vi.fn(async () => undefined),
+}));
+
+vi.mock("@fullcalendar/react", () => ({
+  default: (props: Record<string, unknown>) => {
+    calendar.props = props;
+    return null;
+  },
+}));
+vi.mock("next-intl", () => ({ useLocale: () => "en" }));
+vi.mock("@/components/provider-workspace/provider-shell", () => ({
+  useProviderWorkspace: () => ({
+    accessToken: "access-token",
+    data: {
+      profile: { displayName: "Ada" },
+      bookingPage: {
+        timeZone: "Europe/Istanbul",
+        appointmentDurationMinutes: 45,
+        bookingIntervalMinutes: 45,
+        minimumNoticeHours: 0,
+        isPublished: true,
+      },
+    },
+    refresh: workspace.refresh,
+  }),
+}));
+
+describe("provider appointments calendar", () => {
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+    calendar.props = null;
+    workspace.refresh.mockClear();
+  });
+
+  it("loads the visible range through an event source without a datesSet state loop", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/provider/students")) {
+        return Response.json({ students: [] });
+      }
+      if (url.includes("/api/availability-windows")) {
+        return Response.json({ windows: [] });
+      }
+      return Response.json({
+        appointments: [
+          {
+            id: "occurrence-id",
+            appointmentId: "appointment-id",
+            seriesId: "appointment-id",
+            occurrenceStartsAt: "2030-01-15T09:00:00Z",
+            recurrence: "weekly",
+            isException: false,
+            providerStudentId: "student-id",
+            studentName: "Ada",
+            studentEmail: null,
+            startsAt: "2030-01-15T09:00:00Z",
+            endsAt: "2030-01-15T09:45:00Z",
+            status: "scheduled",
+            comment: null,
+            examName: "LGS",
+            schoolYear: null,
+            color: "#034f46",
+            createdByProvider: true,
+            rescheduleCount: 0,
+          },
+        ],
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ProviderAppointments copy={copy} />);
+
+    expect(
+      screen.getByRole("heading", { name: "Ada’s sessions" }),
+    ).toBeTruthy();
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/provider/students",
+        expect.any(Object),
+      );
+    });
+    expect(calendar.props?.datesSet).toBeUndefined();
+    expect(calendar.props?.events).toBeTypeOf("function");
+    expect(calendar.props?.snapDuration).toBe("00:15:00");
+
+    const calendarSurface = document.querySelector(".provider-calendar");
+    act(() => {
+      const startDrag = calendar.props?.eventDragStart as () => void;
+      startDrag();
+    });
+    expect(
+      calendarSurface?.classList.contains("provider-calendar-interacting"),
+    ).toBe(true);
+    act(() => {
+      const stopDrag = calendar.props?.eventDragStop as () => void;
+      stopDrag();
+    });
+    expect(
+      calendarSurface?.classList.contains("provider-calendar-interacting"),
+    ).toBe(false);
+
+    let events: unknown[] = [];
+    await act(async () => {
+      const loadEvents = calendar.props?.events as (range: {
+        start: Date;
+        end: Date;
+      }) => Promise<unknown[]>;
+      events = await loadEvents({
+        start: new Date("2030-01-14T00:00:00Z"),
+        end: new Date("2030-01-21T00:00:00Z"),
+      });
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/api/provider/appointments?startsAt="),
+      expect.any(Object),
+    );
+    expect(events[0]).toMatchObject({
+      editable: true,
+      classNames: ["provider-session-scheduled", "provider-session-draggable"],
+      backgroundColor: "#034f46",
+      borderColor: "#ffffff",
+      textColor: "#ffffff",
+      extendedProps: { recurrenceLabel: "everyWeek" },
+    });
+
+    const renderEvent = calendar.props?.eventContent as (info: {
+      event: {
+        title: string;
+        extendedProps: Record<string, unknown>;
+      };
+      timeText: string;
+    }) => React.ReactElement;
+    const event = events[0] as {
+      extendedProps: Record<string, unknown>;
+      title: string;
+    };
+    const { container } = render(
+      renderEvent({
+        event: {
+          title: event.title,
+          extendedProps: event.extendedProps,
+        },
+        timeText: "12:00",
+      }),
+    );
+    expect(
+      container.querySelector(".provider-session-drag-handle"),
+    ).toBeTruthy();
+  });
+
+  it("renders a weekly free-time window as bordered, labeled slots", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/provider/students")) {
+        return Response.json({ students: [] });
+      }
+      if (url.includes("/api/availability-windows")) {
+        return Response.json({
+          windows: [
+            {
+              id: "window-id",
+              startsAt: "2030-01-07T09:00:00Z",
+              endsAt: "2030-01-07T12:00:00Z",
+              isActive: true,
+              recurrence: "weekly",
+            },
+          ],
+        });
+      }
+      return Response.json({ appointments: [] });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<ProviderAppointments copy={copy} />);
+
+    let events: Array<Record<string, unknown>> = [];
+    await waitFor(() => expect(calendar.props?.events).toBeTypeOf("function"));
+    await act(async () => {
+      const loadEvents = calendar.props?.events as (range: {
+        start: Date;
+        end: Date;
+      }) => Promise<Array<Record<string, unknown>>>;
+      events = await loadEvents({
+        start: new Date("2030-01-14T00:00:00Z"),
+        end: new Date("2030-01-21T00:00:00Z"),
+      });
+    });
+
+    expect(events).toHaveLength(8);
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        title: "availableSlot",
+        backgroundColor: "#dff3e4",
+        borderColor: "#56a46f",
+        extendedProps: expect.objectContaining({
+          availabilityWindowId: "window-id",
+          availabilitySlot: true,
+          availabilityWindow: expect.objectContaining({ id: "window-id" }),
+        }),
+      }),
+    );
+
+    const renderEvent = calendar.props?.eventContent as (info: {
+      event: {
+        title: string;
+        extendedProps: Record<string, unknown>;
+      };
+      timeText: string;
+    }) => unknown;
+    expect(
+      renderEvent({
+        event: {
+          title: "availableSlot",
+          extendedProps: {
+            availabilityWindowId: "window-id",
+            availabilitySlot: true,
+          },
+        },
+        timeText: "09:00",
+      }),
+    ).not.toBeNull();
+  });
+
+  it("adds a weekly free-time window from the Add dialog", async () => {
+    HTMLElement.prototype.hasPointerCapture = () => false;
+    HTMLElement.prototype.setPointerCapture = () => undefined;
+    HTMLElement.prototype.releasePointerCapture = () => undefined;
+    HTMLElement.prototype.scrollIntoView = () => undefined;
+    const user = userEvent.setup();
+    const fetchMock = vi.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes("/api/provider/students")) {
+          return Response.json({ students: [] });
+        }
+        if (
+          url.includes("/api/availability-windows") &&
+          init?.method === "POST"
+        ) {
+          return Response.json(
+            { window: { id: "window-id" } },
+            { status: 201 },
+          );
+        }
+        if (url.includes("/api/availability-windows")) {
+          return Response.json({ windows: [] });
+        }
+        return Response.json({ appointments: [] });
+      },
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    render(<ProviderAppointments copy={copy} />);
+
+    await user.click(screen.getByRole("button", { name: "addToTimetable" }));
+    const [typeSelect] = screen.getAllByRole("combobox");
+    await user.click(typeSelect);
+    await user.click(screen.getByRole("option", { name: "freeTimeWindow" }));
+
+    const date = document.querySelector<HTMLInputElement>('input[type="date"]');
+    const times =
+      document.querySelectorAll<HTMLInputElement>('input[type="time"]');
+    fireEvent.change(date!, { target: { value: "2030-01-15" } });
+    fireEvent.change(times[0], { target: { value: "09:00" } });
+    fireEvent.change(times[1], { target: { value: "12:00" } });
+    await user.click(screen.getByRole("button", { name: "saveFreeTime" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/availability-windows",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({
+            startsAt: "2030-01-15T06:00:00.000Z",
+            endsAt: "2030-01-15T09:00:00.000Z",
+            recurrence: "weekly",
+          }),
+        }),
+      );
+    });
+  });
+
+  it("edits an available-time window by clicking one of its slots", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes("/api/provider/students")) {
+          return Response.json({ students: [] });
+        }
+        if (
+          url.includes("/api/availability-windows/window-id") &&
+          init?.method === "PATCH"
+        ) {
+          return Response.json({ window: { id: "window-id" } });
+        }
+        if (url.includes("/api/availability-windows")) {
+          return Response.json({ windows: [availabilityWindow] });
+        }
+        return Response.json({ appointments: [] });
+      },
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    render(<ProviderAppointments copy={copy} />);
+
+    let events: Array<Record<string, unknown>> = [];
+    await waitFor(() => expect(calendar.props?.events).toBeTypeOf("function"));
+    await act(async () => {
+      const loadEvents = calendar.props?.events as (range: {
+        start: Date;
+        end: Date;
+      }) => Promise<Array<Record<string, unknown>>>;
+      events = await loadEvents({
+        start: new Date("2030-01-14T00:00:00Z"),
+        end: new Date("2030-01-21T00:00:00Z"),
+      });
+      const clickEvent = calendar.props?.eventClick as (input: unknown) => void;
+      clickEvent({
+        event: { extendedProps: events[0].extendedProps },
+      });
+    });
+
+    expect(screen.getByRole("heading", { name: "editFreeTime" })).toBeTruthy();
+    const date = document.querySelector<HTMLInputElement>('input[type="date"]');
+    const times =
+      document.querySelectorAll<HTMLInputElement>('input[type="time"]');
+    fireEvent.change(date!, { target: { value: "2030-01-15" } });
+    fireEvent.change(times[0], { target: { value: "13:00" } });
+    fireEvent.change(times[1], { target: { value: "16:00" } });
+    await user.click(
+      screen.getByRole("button", { name: "saveFreeTimeChanges" }),
+    );
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/availability-windows/window-id",
+        expect.objectContaining({
+          method: "PATCH",
+          body: JSON.stringify({
+            startsAt: "2030-01-15T10:00:00.000Z",
+            endsAt: "2030-01-15T13:00:00.000Z",
+            recurrence: "weekly",
+          }),
+        }),
+      );
+    });
+  });
+
+  it("deletes an available-time window from its edit dialog", async () => {
+    const user = userEvent.setup();
+    const confirm = vi.fn(() => true);
+    const fetchMock = vi.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes("/api/provider/students")) {
+          return Response.json({ students: [] });
+        }
+        if (
+          url.includes("/api/availability-windows/window-id") &&
+          init?.method === "DELETE"
+        ) {
+          return Response.json({ deleted: true });
+        }
+        if (url.includes("/api/availability-windows")) {
+          return Response.json({ windows: [availabilityWindow] });
+        }
+        return Response.json({ appointments: [] });
+      },
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("confirm", confirm);
+    render(<ProviderAppointments copy={copy} />);
+
+    let events: Array<Record<string, unknown>> = [];
+    await waitFor(() => expect(calendar.props?.events).toBeTypeOf("function"));
+    await act(async () => {
+      const loadEvents = calendar.props?.events as (range: {
+        start: Date;
+        end: Date;
+      }) => Promise<Array<Record<string, unknown>>>;
+      events = await loadEvents({
+        start: new Date("2030-01-14T00:00:00Z"),
+        end: new Date("2030-01-21T00:00:00Z"),
+      });
+      const clickEvent = calendar.props?.eventClick as (input: unknown) => void;
+      clickEvent({
+        event: { extendedProps: events[0].extendedProps },
+      });
+    });
+
+    await user.click(screen.getByRole("button", { name: "deleteFreeTime" }));
+
+    expect(confirm).toHaveBeenCalledWith(copy.deleteFreeTimeConfirm);
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/availability-windows/window-id",
+        expect.objectContaining({ method: "DELETE" }),
+      );
+    });
+  });
+
+  it("explains that removing a student preserves appointment history", async () => {
+    const user = userEvent.setup();
+    const confirm = vi.fn(() => false);
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/provider/students")) {
+        return Response.json({
+          students: [
+            {
+              id: "student-id",
+              displayName: "Ada Student",
+              email: "ada@example.com",
+            },
+          ],
+        });
+      }
+      if (url.includes("/api/availability-windows")) {
+        return Response.json({ windows: [] });
+      }
+      return Response.json({ appointments: [] });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("confirm", confirm);
+    render(<ProviderAppointments copy={copy} />);
+
+    await user.click(screen.getByRole("button", { name: "manageStudents" }));
+    expect(await screen.findByText("Ada Student")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "deleteStudent" }));
+
+    expect(confirm).toHaveBeenCalledWith(
+      "Remove Ada Student from your active students? Existing and historical appointments will be preserved.",
+    );
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      "/api/provider/students/student-id",
+      expect.objectContaining({ method: "DELETE" }),
+    );
+  });
+
+  it("deletes only the selected recurring occurrence from its edit dialog", async () => {
+    const appointment = {
+      id: "occurrence-id",
+      appointmentId: "appointment-id",
+      seriesId: "appointment-id",
+      occurrenceStartsAt: "2030-01-15T09:00:00Z",
+      recurrence: "weekly" as const,
+      isException: false,
+      providerStudentId: "student-id",
+      studentName: "Ada",
+      studentEmail: null,
+      startsAt: "2030-01-15T09:00:00Z",
+      endsAt: "2030-01-15T09:45:00Z",
+      status: "scheduled" as const,
+      comment: null,
+      examName: "LGS",
+      schoolYear: null,
+      color: "#034f46",
+      createdByProvider: true,
+      rescheduleCount: 0,
+    };
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/provider/students")) {
+        return Response.json({ students: [] });
+      }
+      if (url.includes("/api/availability-windows")) {
+        return Response.json({ windows: [] });
+      }
+      if (url.includes("/api/provider/appointments/appointment-id")) {
+        return Response.json({ deleted: true, scope: "occurrence" });
+      }
+      return Response.json({ appointments: [] });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal(
+      "confirm",
+      vi.fn(() => true),
+    );
+    render(<ProviderAppointments copy={copy} />);
+
+    await act(async () => {
+      const clickEvent = calendar.props?.eventClick as (input: unknown) => void;
+      clickEvent({ event: { extendedProps: { appointment } } });
+    });
+    fireEvent.click(screen.getByRole("button", { name: "deleteThisSession" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/provider/appointments/appointment-id",
+        expect.objectContaining({
+          method: "DELETE",
+          body: JSON.stringify({
+            deleteScope: "occurrence",
+            occurrenceStartsAt: "2030-01-15T09:00:00Z",
+          }),
+        }),
+      );
+    });
+  });
+
+  it("moves a weekly occurrence in the provider time zone", async () => {
+    const fetchMock = calendarFetchMock();
+    vi.stubGlobal("fetch", fetchMock);
+    render(<ProviderAppointments copy={copy} />);
+    await waitFor(() =>
+      expect(calendar.props?.eventDrop).toBeTypeOf("function"),
+    );
+
+    const revert = vi.fn();
+    await act(async () => {
+      const eventDrop = calendar.props?.eventDrop as (
+        input: unknown,
+      ) => Promise<void>;
+      await eventDrop({
+        oldEvent: { extendedProps: { appointment: scheduledAppointment } },
+        event: {
+          start: new Date(2030, 0, 16, 14, 0),
+          end: new Date(2030, 0, 16, 14, 45),
+        },
+        revert,
+      });
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/provider/appointments/appointment-id",
+      expect.objectContaining({
+        method: "PATCH",
+        body: JSON.stringify({
+          startsAt: "2030-01-16T11:00:00.000Z",
+          endsAt: "2030-01-16T11:45:00.000Z",
+          editScope: "exception",
+          occurrenceStartsAt: "2030-01-15T09:00:00Z",
+        }),
+      }),
+    );
+    expect(revert).not.toHaveBeenCalled();
+  });
+
+  it("resizes a session and reverts a rejected overlap", async () => {
+    const fetchMock = calendarFetchMock({
+      appointmentMutation: new Response(
+        JSON.stringify({ error: "This time overlaps another session" }),
+        { status: 409 },
+      ),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<ProviderAppointments copy={copy} />);
+    await waitFor(() =>
+      expect(calendar.props?.eventResize).toBeTypeOf("function"),
+    );
+
+    const revert = vi.fn();
+    await act(async () => {
+      const eventResize = calendar.props?.eventResize as (
+        input: unknown,
+      ) => Promise<void>;
+      await eventResize({
+        oldEvent: { extendedProps: { appointment: scheduledAppointment } },
+        event: {
+          start: new Date(2030, 0, 15, 12, 0),
+          end: new Date(2030, 0, 15, 13, 0),
+        },
+        revert,
+      });
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/provider/appointments/appointment-id",
+      expect.objectContaining({
+        body: JSON.stringify({
+          startsAt: "2030-01-15T09:00:00.000Z",
+          endsAt: "2030-01-15T10:00:00.000Z",
+          editScope: "exception",
+          occurrenceStartsAt: "2030-01-15T09:00:00Z",
+        }),
+      }),
+    );
+    expect(revert).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("This time overlaps another session")).toBeTruthy();
+  });
+
+  it("keeps cancelled sessions and availability projections fixed", async () => {
+    const fetchMock = calendarFetchMock({
+      appointments: [{ ...scheduledAppointment, status: "cancelled" }],
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<ProviderAppointments copy={copy} />);
+
+    let events: Array<Record<string, unknown>> = [];
+    await waitFor(() => expect(calendar.props?.events).toBeTypeOf("function"));
+    await act(async () => {
+      const loadEvents = calendar.props?.events as (range: {
+        start: Date;
+        end: Date;
+      }) => Promise<Array<Record<string, unknown>>>;
+      events = await loadEvents({
+        start: new Date("2030-01-14T00:00:00Z"),
+        end: new Date("2030-01-21T00:00:00Z"),
+      });
+    });
+
+    expect(events[0]).toMatchObject({ editable: false });
+  });
+});
+
+describe("session color contrast", () => {
+  it("uses dark text on light colors and white text on dark colors", () => {
+    expect(readableTextColor("#f0d7ff")).toBe("#1a1a1a");
+    expect(readableTextColor("#034f46")).toBe("#ffffff");
+  });
+});
+
+const copy = new Proxy(
+  {
+    title: "{name}’s sessions",
+    deleteStudentConfirm:
+      "Remove {name} from your active students? Existing and historical appointments will be preserved.",
+  },
+  {
+    get: (target, property) =>
+      property in target
+        ? target[property as keyof typeof target]
+        : String(property),
+  },
+) as ProviderAppointmentsCopy;
+
+const availabilityWindow = {
+  id: "window-id",
+  startsAt: "2030-01-07T09:00:00Z",
+  endsAt: "2030-01-07T12:00:00Z",
+  isActive: true,
+  recurrence: "weekly",
+};
+
+const scheduledAppointment = {
+  id: "occurrence-id",
+  appointmentId: "appointment-id",
+  seriesId: "appointment-id",
+  occurrenceStartsAt: "2030-01-15T09:00:00Z",
+  recurrence: "weekly" as const,
+  isException: false,
+  providerStudentId: "student-id",
+  studentName: "Ada",
+  studentEmail: null,
+  startsAt: "2030-01-15T09:00:00Z",
+  endsAt: "2030-01-15T09:45:00Z",
+  status: "scheduled" as const,
+  comment: null,
+  examName: "LGS",
+  schoolYear: null,
+  color: "#034f46",
+  createdByProvider: true,
+  rescheduleCount: 0,
+};
+
+function calendarFetchMock({
+  appointments = [scheduledAppointment],
+  appointmentMutation = Response.json({ appointment: scheduledAppointment }),
+}: {
+  appointments?: Array<Record<string, unknown>>;
+  appointmentMutation?: Response;
+} = {}) {
+  return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    if (url.includes("/api/provider/students")) {
+      return Response.json({ students: [] });
+    }
+    if (url.includes("/api/availability-windows")) {
+      return Response.json({ windows: [] });
+    }
+    if (init?.method === "PATCH") return appointmentMutation.clone();
+    return Response.json({ appointments });
+  });
+}
