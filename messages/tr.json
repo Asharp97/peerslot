@@ -145,9 +145,225 @@
         { "label": "Nasıl çalışır?", "href": "/#how-it-works" },
         { "label": "Kurallar", "href": "/#guardrails" },
         { "label": "Gizlilik", "href": "/policy/privacy" },
-        { "label": "Koşullar", "href": "/policy/terms-agreements" }
+        { "label": "Koşullar", "href": "/policy/terms-agreements" },
+        { "label": "Çerezler", "href": "/policy/cookies" }
       ],
       "copyright": "© {year} PeerSlot"
+    }
+  },
+  "Legal": {
+    "privacy": {
+      "eyebrow": "Yasal",
+      "title": "Gizlilik Politikası",
+      "updatedAt": "Yürürlük tarihi: 18 Ağustos 2026",
+      "introduction": "Bu politika, sağlayıcılar ve öğrenciler planlama hizmetimizi kullanırken PeerSlot'un kişisel bilgileri nasıl topladığını, kullandığını, paylaştığını ve koruduğunu açıklar.",
+      "sections": [
+        {
+          "heading": "1. Biz kimiz",
+          "paragraphs": [
+            "PeerSlot; rezervasyon sayfaları, uygunluk yönetimi, randevu talepleri, tekrarlanan görüşmeler, öğrenci kayıtları ve planlama bildirimleri sunar. Sorular ve gizlilik talepleri için privacy@peerslot.com adresine yazabilirsiniz."
+          ]
+        },
+        {
+          "heading": "2. Topladığımız bilgiler",
+          "paragraphs": [
+            "Bize verdiğiniz bilgileri, PeerSlot'u kullanırken oluşan bilgileri ve hizmeti işletmek ve güvenliğini sağlamak için gereken sınırlı teknik bilgileri toplarız."
+          ],
+          "items": [
+            "Ad, e-posta adresi, giriş sağlayıcısı tarafından sunulduğunda profil görseli, e-posta doğrulama durumu ve kimlik doğrulama bilgileri veya belirteçleri dahil hesap ve kimlik bilgileri.",
+            "Görünen ad, mesleki unvan, saat dilimi, randevu süresi, dinlenme süresi, asgari bildirim süresi, herkese açık rezervasyon bağlantısı ve yayın durumu dahil sağlayıcı profili ve rezervasyon sayfası bilgileri.",
+            "Uygunluk aralıkları, randevu tarih ve saatleri, tekrarlama seçimleri, rezervasyon durumu, yeniden planlama geçmişi, görüşme rengi ve tekrarlanan görüşme istisnaları dahil planlama bilgileri.",
+            "Sağlayıcıların veya öğrencilerin girdiği ad, e-posta adresi, yorum, sınav adı veya okul yılı ve randevu geçmişi dahil öğrenci kayıtları.",
+            "Doğrulama e-postaları ile rezervasyon talebi, kabul veya ret bildirimleri gibi hizmet üzerinden oluşturulan iletişimler.",
+            "Oturum tanımlayıcıları, IP adresi, tarayıcı veya cihaz bilgisi, dil tercihi, istek günlükleri ve başarısız rezervasyon veya hız sınırı olayları gibi teknik ve güvenlik bilgileri."
+          ]
+        },
+        {
+          "heading": "3. Bilgileri nasıl ve neden kullanırız",
+          "items": [
+            "Hesap oluşturmak, kullanıcı kimliğini doğrulamak, e-posta adreslerini doğrulamak ve rezervasyon, uygunluk, tekrarlanan görüşme, öğrenci yönetimi ve yeniden planlama özelliklerini sunmak.",
+            "Sağlayıcılara yönettikleri öğrenci ve randevuları; ziyaretçilere ilgili herkese açık rezervasyon sayfasını ve uygun saatleri göstermek.",
+            "Hesap doğrulaması ve randevu talebi ya da kararıyla ilgili işlem bildirimlerini göndermek.",
+            "Çifte rezervasyonu önlemek, planlama kurallarını uygulamak, hataları incelemek, hesapları korumak, kötüye kullanımı sınırlamak ve hizmet güvenilirliğini sürdürmek.",
+            "Yasalara uymak, koşullarımızı uygulamak ve hukuki talepleri oluşturmak veya savunmak."
+          ],
+          "paragraphs": [
+            "Duruma ve geçerli hukuka bağlı olarak sözleşmenin ifası, sözleşme öncesi talep edilen adımlar, PeerSlot'u işletme ve güvenli tutmaya yönelik meşru menfaatlerimiz, gerektiğinde rıza ve yasal yükümlülüklere uyma hukuki dayanaklarına güveniriz."
+          ]
+        },
+        {
+          "heading": "4. Bilgileri ne zaman paylaşırız",
+          "paragraphs": [
+            "Kişisel bilgileri satmayız. Bilgileri yalnızca PeerSlot'u sunmak ve korumak için gerektiğinde şu taraflarla paylaşırız:"
+          ],
+          "items": [
+            "Randevuyla ilgili sağlayıcı veya öğrenci. Sağlayıcılar, öğrenci ve rezervasyonlarıyla bağlantılı kimlik, iletişim, planlama ve isteğe bağlı bağlam bilgilerini görebilir.",
+            "Bizim adımıza çalışan altyapı, veri tabanı, e-posta gönderimi, güvenlik ve kimlik doğrulama sağlayıcıları.",
+            "Bu giriş seçeneğini kullandığınızda, kendi gizlilik koşullarına tabi olan Google veya Microsoft.",
+            "Yasalar gerektirdiğinde, hakları ve güvenliği korumak için gerektiğinde veya birleşme, finansman, satın alma ya da varlık satışıyla bağlantılı olarak yetkililer, danışmanlar veya diğer taraflar."
+          ]
+        },
+        {
+          "heading": "5. Herkese açık rezervasyon sayfaları",
+          "paragraphs": [
+            "Yayınlanmış bir rezervasyon sayfasına bağlantıya sahip herkes erişebilir; sayfada sağlayıcının seçtiği ad, mesleki unvan, saat dilimi, randevu süresi ve boş saatler gösterilebilir. Öğrenci bilgileri veya dolu bir saatin kime ait olduğu herkese açık olarak gösterilmez. Sağlayıcılar, bağlantı istemeden paylaşılmışsa bağlantıyı yenilemelidir."
+          ]
+        },
+        {
+          "heading": "6. Saklama ve silme",
+          "paragraphs": [
+            "Bilgileri hesap aktif olduğu sürece ve hizmeti sunmak, uyuşmazlıkları çözmek, güvenliği sağlamak ve yasal yükümlülükleri karşılamak için makul ölçüde gerekli olduğu müddetçe saklarız. Sağlayıcının oluşturduğu bir öğrencinin silinmesi, o öğrenciye bağlı randevuları da siler. Bazı sınırlı kayıtlar yedeklerde veya yasal saklama zorunluluğu bulunduğunda kalabilir. Rezervasyon niyeti verileri yaklaşık on dakika sonra sona erer."
+          ]
+        },
+        {
+          "heading": "7. Güvenlik ve uluslararası işleme",
+          "paragraphs": [
+            "Kişisel bilgileri korumak için tasarlanmış makul teknik ve idari önlemler kullanırız; ancak hiçbir çevrimiçi hizmet mutlak güvenlik garanti edemez. Tedarikçilerimiz bilgileri yaşadığınız ülke dışındaki ülkelerde işleyebilir. Gerektiğinde uluslararası aktarımlar için uygun güvenceler kullanırız."
+          ]
+        },
+        {
+          "heading": "8. Tercihleriniz ve haklarınız",
+          "paragraphs": [
+            "Yaşadığınız yere bağlı olarak erişim, düzeltme, silme, işlemeyi kısıtlama veya işlemeye itiraz etme; taşınabilir bir kopya alma; rızayı geri çekme ya da veri koruma makamına şikâyette bulunma haklarınız olabilir. Bazı sağlayıcı ve öğrenci bilgilerini PeerSlot içinden güncelleyebilirsiniz. Diğer talepler için privacy@peerslot.com adresine yazın. Yanıt vermeden önce kimliğinizi doğrulamamız gerekebilir."
+          ]
+        },
+        {
+          "heading": "9. Çocuklar ve öğrenci bilgileri",
+          "paragraphs": [
+            "PeerSlot eğitim ortamlarında kullanılabilir. Sağlayıcılar, özellikle küçük yaştaki öğrencilerin bilgilerini girmek ve yönetmek için gereken hukuki dayanağa ve izinlere sahip olmaktan sorumludur. Çocuklar PeerSlot'u yalnızca yerel hukukun, ebeveyn veya vasinin ve ilgili eğitim kurumunun gerektirdiği katılım veya izinle kullanmalıdır. Bilgilerin gerekli izin olmadan toplandığını düşünüyorsanız lütfen bizimle iletişime geçin."
+          ]
+        },
+        {
+          "heading": "10. Bu politikadaki değişiklikler",
+          "paragraphs": [
+            "PeerSlot değiştikçe bu politikayı güncelleyebiliriz. Güncellenmiş sürümü burada yayınlar ve yürürlük tarihini değiştiririz. Bir değişiklik haklarınızı önemli ölçüde etkilerse, gerektiği durumlarda ek bildirim sunarız."
+          ]
+        }
+      ]
+    },
+    "terms": {
+      "eyebrow": "Yasal",
+      "title": "Hüküm ve Koşullar",
+      "updatedAt": "Yürürlük tarihi: 18 Ağustos 2026",
+      "introduction": "Bu koşullar PeerSlot'a erişimi ve PeerSlot kullanımını düzenler. Hesap oluşturarak veya hizmeti kullanarak bu koşulları kabul etmiş olursunuz.",
+      "sections": [
+        {
+          "heading": "1. Hizmet",
+          "paragraphs": [
+            "PeerSlot; sağlayıcıların uygunluk yayınlamasına, öğrencileri ve tek seferlik ya da tekrarlanan görüşmeleri yönetmesine, randevu talepleri almasına ve rezervasyonları kabul etmesine, reddetmesine, düzenlemesine veya iptal etmesine olanak veren bir planlama aracıdır. PeerSlot eğitim, danışmanlık, sağlık veya başka bir profesyonel hizmet sunmaz ve sağlayıcı ile öğrenci arasındaki temel ilişkinin tarafı değildir."
+          ]
+        },
+        {
+          "heading": "2. Uygunluk ve hesaplar",
+          "paragraphs": [
+            "Bu koşulları hukuken kabul edebilecek durumda olmalısınız. PeerSlot'u bir kurum adına kullanıyorsanız kurumu bağlama yetkiniz olduğunu doğrularsınız. Küçükler hizmeti yalnızca geçerli hukukun gerektirdiği izin ve gözetimle kullanabilir. Doğru bilgi vermeli, hesap bilgilerinizi güvende tutmalı ve yetkisiz erişim şüphesini bize bildirmelisiniz."
+          ]
+        },
+        {
+          "heading": "3. Sağlayıcının sorumlulukları",
+          "items": [
+            "Uygunluk, saat dilimi, süre, dinlenme süresi, bildirim süreleri, öğrenci kayıtları ve randevu bilgilerini doğru tutmak.",
+            "Öğrenci adları, e-posta adresleri, yorumlar, sınav adları, okul yılları veya diğer kişisel bilgileri eklemek için gerekli rızayı ya da başka bir hukuki dayanağı edinmek.",
+            "Bekleyen randevu taleplerini incelemek ve önemli program değişikliklerini etkilenen öğrencilere bildirmek.",
+            "Uygun mesleki muhakemeyi kullanmak. PeerSlot uygunluğu ve bildirimleri kendi takvim kontrollerinizin, acil durum süreçlerinizin veya kayıt tutma yükümlülüklerinizin yerini almaz.",
+            "Herkese açık rezervasyon bağlantılarını korumak ve bağlantının ele geçirildiğini ya da gereğinden geniş paylaşıldığını düşünüyorsanız yenilemek."
+          ]
+        },
+        {
+          "heading": "4. Rezervasyonlar ve program değişiklikleri",
+          "paragraphs": [
+            "Bir talep, sağlayıcı kabul edene kadar kesinleşmez. Uygunluk onaydan önce değişebilir ve sağlayıcılar randevuları veya tekrarlanan serileri reddedebilir, düzenleyebilir ya da iptal edebilir. Dinlenme süreleri herkese açık ayrı bir rezervasyon olarak görünmeden zamanı uygunsuz hâle getirebilir. Kullanıcılar gösterilen saat dilimini ve randevu durumunu kontrol etmekten sorumludur. PeerSlot kaçırılan görüşmelerden, sağlayıcı kararlarından veya kullanıcılar arasındaki uyuşmazlıklardan sorumlu değildir."
+          ]
+        },
+        {
+          "heading": "5. Kabul edilebilir kullanım",
+          "paragraphs": [
+            "PeerSlot'u kötüye kullanamaz veya başkasının kötüye kullanmasına yardım edemezsiniz."
+          ],
+          "items": [
+            "Yasaları çiğnemeyin, gizlilik veya fikri mülkiyet haklarını ihlal etmeyin, başkalarını taciz etmeyin, başkası gibi davranmayın ve kullanma yetkiniz olmayan bilgileri göndermeyin.",
+            "Güvenliği aşmaya çalışmayın, hizmete müdahale etmeyin, zararlı kod eklemeyin, makul olmayan ölçekte veri çekmeyin, hız sınırlarını aşmayın ve başka bir kullanıcının hesabına veya gizli verilerine erişmeyin.",
+            "PeerSlot'u acil durum hizmetleri, hukuka aykırı ayrımcılık veya hizmetin ilgili mesleki ya da düzenleyici şartları karşılamak üzere tasarlanmadığı kararlar için kullanmayın."
+          ]
+        },
+        {
+          "heading": "6. Kullanılabilirlik ve değişiklikler",
+          "paragraphs": [
+            "PeerSlot mevcut olduğu haliyle sunulur. Özelliklerde bakım yapabilir, değişiklik yapabilir, özellikleri askıya alabilir veya sonlandırabilir ve planlama ya da görüntüleme hatalarını düzeltebiliriz. Güvenilir bildirim sunmayı amaçlarız; ancak e-posta teslimi ve kesintisiz erişim garanti edilmez. Hukuken veya mesleki olarak tutmanız gereken kayıtların kopyasını saklamalısınız."
+          ]
+        },
+        {
+          "heading": "7. Fikri mülkiyet ve geri bildirim",
+          "paragraphs": [
+            "PeerSlot ve yazılımı, tasarımı, markası ve içeriği bize veya lisans verenlerimize aittir. Hizmeti bu koşullara uygun kullanmanız için sınırlı, geri alınabilir ve münhasır olmayan bir hak veririz. Gönderdiğiniz bilgiler üzerindeki haklarınızı korur; hizmeti işletmek ve iyileştirmek için gerektiği ölçüde bu bilgileri barındırmamıza, işlememize, göstermemize ve iletmemize izin verirsiniz. Geri bildirimleri kısıtlama veya ödeme olmaksızın kullanabiliriz."
+          ]
+        },
+        {
+          "heading": "8. Askıya alma ve sona erdirme",
+          "paragraphs": [
+            "PeerSlot'u kullanmayı istediğiniz zaman bırakabilirsiniz. Kullanıcıları veya hizmeti korumak, hukuka aykırı ya da kötüye kullanım niteliğindeki davranışları ele almak veya bu koşulları uygulamak için makul ölçüde gerektiğinde erişimi kısıtlayabilir ya da sonlandırabiliriz. Niteliği gereği sona ermeden sonra devam etmesi gereken hükümler yürürlükte kalır."
+          ]
+        },
+        {
+          "heading": "9. Sorumluluk reddi ve sınırlaması",
+          "paragraphs": [
+            "Hukukun izin verdiği ölçüde PeerSlot; kesintisiz çalışma, belirli bir amaca uygunluk veya hatasız planlama garantisi olmadan sunulur. Dolaylı, arızi, özel, sonuçsal veya cezai zararlardan, veri ya da fırsat kaybından veya sağlayıcılar ile öğrenciler arasındaki davranışlardan sorumlu değiliz. Bu koşullardaki hiçbir hüküm, hukuken sınırlandırılamayan sorumlulukları veya tüketici haklarını ortadan kaldırmaz."
+          ]
+        },
+        {
+          "heading": "10. Genel hükümler ve iletişim",
+          "paragraphs": [
+            "Bu koşulları güncelleyebilir ve yeni yürürlük tarihiyle yayınlayabiliriz. Hukukun izin verdiği durumlarda, yürürlüğe girdikten sonra kullanmaya devam etmeniz koşulları kabul ettiğiniz anlamına gelir. Bir hüküm uygulanamazsa diğer hükümler yürürlükte kalır. Bir hükmü uygulamamamız feragat sayılmaz. Uygulanacak hukuk ve mahkemeler emredici hukuk kurallarıyla belirlenecektir; PeerSlot'un işletmeci tüzel kişiliği ve yargı bölgesi resmen belirlendiğinde bu bölüm ticari kullanıma sunulmadan önce güncellenmelidir. Sorularınızı legal@peerslot.com adresine gönderebilirsiniz."
+          ]
+        }
+      ]
+    },
+    "cookies": {
+      "eyebrow": "Yasal",
+      "title": "Çerez Politikası",
+      "updatedAt": "Yürürlük tarihi: 18 Ağustos 2026",
+      "introduction": "Bu politika PeerSlot'un çerezleri ve benzer tarayıcı depolama teknolojilerini nasıl kullandığını açıklar. Bu aşamada yalnızca hizmeti işletmek, güvenliğini sağlamak ve tercihleri hatırlamak için gereken teknolojileri kullanıyoruz.",
+      "sections": [
+        {
+          "heading": "1. Çerez nedir?",
+          "paragraphs": [
+            "Çerezler tarayıcınızın sakladığı küçük metin dosyalarıdır. Benzer teknolojiler; bir web sitesinin oturumu hatırlaması, talep edilen işlemi tamamlaması veya kötüye kullanıma karşı koruma sağlaması için tanımlayıcıları ya da tercihleri saklayabilir."
+          ]
+        },
+        {
+          "heading": "2. PeerSlot'un kullandığı çerezler",
+          "items": [
+            "better-auth.session_token (canlı ortamda __Secure-better-auth.session_token adını alır), oturumunuzu açık tutan ve hesap erişimini koruyan birinci taraf ve HTTP-only kimlik doğrulama çerezidir. Yedi güne kadar saklanabilir.",
+            "better-auth.state veya better-auth.oauth_state, Google ya da Microsoft ile giriş seçildiğinde kullanılan geçici, birinci taraf ve HTTP-only güvenlik çerezidir. Normalde beş ila on dakika içinde sona erer.",
+            "peerslot-booking-intent; giriş yaparken veya talebi tamamlarken rezervasyon sayfasını ve seçilen zamanı geçici olarak hatırlayan, birinci taraf ve HTTP-only çerezdir. Yaklaşık on dakika sonra veya rezervasyon akışı tamamlandığında sona erer.",
+            "NEXT_LOCALE, İngilizce veya Türkçe seçiminizi hatırlayan birinci taraf tercih çerezidir. Bir yıla kadar saklanabilir."
+          ]
+        },
+        {
+          "heading": "3. İsteğe bağlı çerezler",
+          "paragraphs": [
+            "PeerSlot şu anda reklam çerezleri veya isteğe bağlı analiz çerezleri kullanmamaktadır. Zorunlu olmayan çerezler eklersek bu politikayı güncelleyecek ve gerektiğinde bunları kullanmadan önce rızanızı isteyeceğiz."
+          ]
+        },
+        {
+          "heading": "4. Üçüncü tarafla giriş",
+          "paragraphs": [
+            "Google veya Microsoft ile giriş yapmayı seçerseniz ilgili sağlayıcı, kimliğinizi doğrulamak ve dolandırıcılığı önlemek için kendi sitelerinde kendi çerezlerini kullanabilir. Bu çerezler sağlayıcı tarafından kontrol edilir ve sağlayıcının çerez ve gizlilik politikalarına tabidir."
+          ]
+        },
+        {
+          "heading": "5. Kontrolleriniz",
+          "paragraphs": [
+            "Tarayıcı ayarlarınızdan çerezleri engelleyebilir veya silebilirsiniz. Zorunlu çerezlerin engellenmesi; giriş, dil tercihleri veya rezervasyon akışlarının doğru çalışmasını engelleyebilir. PeerSlot şu anda yalnızca zorunlu çerezler kullandığı için hizmette ayrı bir reklam çerezi devre dışı bırakma seçeneği bulunmamaktadır."
+          ]
+        },
+        {
+          "heading": "6. Değişiklikler ve iletişim",
+          "paragraphs": [
+            "Teknolojimiz veya yasal yükümlülüklerimiz değiştiğinde bu politikayı güncelleyebiliriz. Güncellemeleri burada yayınlar ve yürürlük tarihini değiştiririz. Çerez veya gizlilik sorularınızı privacy@peerslot.com adresine gönderebilirsiniz."
+          ]
+        }
+      ]
     }
   },
   "ProviderAuth": {

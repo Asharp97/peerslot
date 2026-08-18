@@ -3,15 +3,29 @@ import type { ComponentPropsWithoutRef } from "react";
 import { cn } from "@/lib/utils";
 
 type LegalDocumentProps = ComponentPropsWithoutRef<"article"> & {
-  text: string;
+  title?: string;
+  eyebrow?: string;
+  updatedAt?: string;
+  introduction?: string;
+  sections?: Array<{
+    heading: string;
+    paragraphs?: string[];
+    items?: string[];
+  }>;
+  text?: string;
 };
 
 export function LegalDocument({
   text,
+  title,
+  eyebrow,
+  updatedAt,
+  introduction,
+  sections,
   className,
   ...props
 }: LegalDocumentProps) {
-  const paragraphs = text
+  const paragraphs = (text ?? "")
     .trim()
     .split(/\n\s*\n/)
     .filter(Boolean);
@@ -24,13 +38,64 @@ export function LegalDocument({
       )}
       {...props}
     >
-      <div className="space-y-5 text-[15px] leading-7 text-[#4f4f49] sm:text-base sm:leading-8">
-        {paragraphs.map((paragraph, index) => (
-          <p className="whitespace-pre-wrap" key={index}>
-            {paragraph}
-          </p>
-        ))}
-      </div>
+      {(title || eyebrow || updatedAt || introduction) && (
+        <header className="mb-10 border-b-2 border-vast-ink/10 pb-8">
+          {eyebrow && (
+            <p className="mb-3 text-xs font-bold tracking-[0.16em] text-vast-ink uppercase">
+              {eyebrow}
+            </p>
+          )}
+          {title && (
+            <h1 className="font-serif text-4xl leading-none tracking-[-0.04em] sm:text-5xl">
+              {title}
+            </h1>
+          )}
+          {updatedAt && (
+            <p className="mt-4 text-sm font-medium text-[#6b6b62]">
+              {updatedAt}
+            </p>
+          )}
+          {introduction && (
+            <p className="mt-6 text-base leading-7 text-[#4f4f49] sm:text-lg sm:leading-8">
+              {introduction}
+            </p>
+          )}
+        </header>
+      )}
+
+      {sections?.length ? (
+        <div className="space-y-9 text-[15px] leading-7 text-[#4f4f49] sm:text-base sm:leading-8">
+          {sections.map((section) => (
+            <section key={section.heading}>
+              <h2 className="mb-3 text-xl font-bold tracking-[-0.02em] text-vast-ink sm:text-2xl">
+                {section.heading}
+              </h2>
+              <div className="space-y-3">
+                {section.paragraphs?.map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
+                {section.items?.length ? (
+                  <ul className="list-disc space-y-2 pl-5 marker:text-vast-ink">
+                    {section.items.map((item) => (
+                      <li className="pl-1" key={item}>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-5 text-[15px] leading-7 text-[#4f4f49] sm:text-base sm:leading-8">
+          {paragraphs.map((paragraph, index) => (
+            <p className="whitespace-pre-wrap" key={index}>
+              {paragraph}
+            </p>
+          ))}
+        </div>
+      )}
     </article>
   );
 }

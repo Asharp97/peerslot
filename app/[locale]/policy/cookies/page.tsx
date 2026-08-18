@@ -10,12 +10,12 @@ type LegalSection = {
 };
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("Legal.terms");
+  const t = await getTranslations("Legal.cookies");
   return { title: t("title"), description: t("introduction") };
 }
 
-export default async function TermsAgreementsPage() {
-  const t = await getTranslations("Legal.terms");
+export default async function CookiePolicyPage() {
+  const t = await getTranslations("Legal.cookies");
 
   return (
     <div className="w-full">

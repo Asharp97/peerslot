@@ -145,9 +145,225 @@
         { "label": "How it works", "href": "/#how-it-works" },
         { "label": "Guardrails", "href": "/#guardrails" },
         { "label": "Privacy", "href": "/policy/privacy" },
-        { "label": "Terms", "href": "/policy/terms-agreements" }
+        { "label": "Terms", "href": "/policy/terms-agreements" },
+        { "label": "Cookies", "href": "/policy/cookies" }
       ],
       "copyright": "© {year} PeerSlot"
+    }
+  },
+  "Legal": {
+    "privacy": {
+      "eyebrow": "Legal",
+      "title": "Privacy Policy",
+      "updatedAt": "Effective date: 18 August 2026",
+      "introduction": "This policy explains how PeerSlot collects, uses, shares, and protects personal information when providers and students use our scheduling service.",
+      "sections": [
+        {
+          "heading": "1. Who we are",
+          "paragraphs": [
+            "PeerSlot provides booking pages, availability management, appointment requests, recurring sessions, student records, and scheduling notifications. For questions or privacy requests, contact privacy@peerslot.com."
+          ]
+        },
+        {
+          "heading": "2. Information we collect",
+          "paragraphs": [
+            "We collect information you provide, information created while you use PeerSlot, and limited technical information needed to operate and secure the service."
+          ],
+          "items": [
+            "Account and identity information, including name, email address, profile image when provided by a sign-in provider, email-verification status, and authentication credentials or tokens.",
+            "Provider profile and booking-page information, including display name, professional title, time zone, appointment duration, rest time, minimum notice, public booking link, and publication status.",
+            "Scheduling information, including availability windows, appointment dates and times, recurrence choices, booking status, reschedule history, session color, and exceptions to recurring sessions.",
+            "Student records entered by providers or students, including name, email address, comments, exam name or school year, and appointment history.",
+            "Communications generated through the service, such as verification emails and booking-request, acceptance, or decline notifications.",
+            "Technical and security information, such as session identifiers, IP address, browser or device user agent, language preference, request logs, and failed-booking or rate-limit events."
+          ]
+        },
+        {
+          "heading": "3. How and why we use information",
+          "items": [
+            "To create accounts, authenticate users, verify email addresses, and provide booking, availability, recurring-session, student-management, and rescheduling features.",
+            "To show providers the students and appointments they manage and to show visitors the relevant public booking page and available times.",
+            "To send transactional messages about account verification and appointment requests or decisions.",
+            "To prevent duplicate bookings, enforce scheduling rules, investigate errors, protect accounts, limit abuse, and maintain service reliability.",
+            "To comply with law, enforce our terms, and establish or defend legal claims."
+          ],
+          "paragraphs": [
+            "Depending on the context and applicable law, we rely on performance of our contract, steps requested before entering a contract, our legitimate interests in operating and securing PeerSlot, consent where required, and compliance with legal obligations."
+          ]
+        },
+        {
+          "heading": "4. When we share information",
+          "paragraphs": [
+            "We do not sell personal information. We share it only as needed to provide and protect PeerSlot, including with:"
+          ],
+          "items": [
+            "The provider or student involved in an appointment. Providers can see the identity, contact details, scheduling details, and optional context associated with their students and bookings.",
+            "Infrastructure, database, email-delivery, security, and authentication vendors acting on our behalf.",
+            "Google or Microsoft when you choose their sign-in option, subject to their own privacy terms.",
+            "Authorities, advisers, or other parties when required by law, necessary to protect rights and safety, or connected with a merger, financing, acquisition, or sale of assets."
+          ]
+        },
+        {
+          "heading": "5. Public booking pages",
+          "paragraphs": [
+            "A published booking page is accessible to anyone with its link and may display the provider's chosen name, professional title, time zone, appointment duration, and open times. It does not publicly display student details or identify who occupies unavailable time. Providers should regenerate a link if it has been shared unintentionally."
+          ]
+        },
+        {
+          "heading": "6. Retention and deletion",
+          "paragraphs": [
+            "We retain information while an account is active and for as long as reasonably necessary to provide the service, resolve disputes, maintain security, and meet legal obligations. Deleting a provider-created student also deletes appointments connected to that student. Some limited records may remain in backups or where retention is legally required. Booking-intent data expires after approximately ten minutes."
+          ]
+        },
+        {
+          "heading": "7. Security and international processing",
+          "paragraphs": [
+            "We use reasonable technical and organizational measures designed to protect personal information, but no online service can guarantee absolute security. Our vendors may process information in countries other than yours. Where required, we use appropriate safeguards for international transfers."
+          ]
+        },
+        {
+          "heading": "8. Your choices and rights",
+          "paragraphs": [
+            "Depending on where you live, you may have rights to access, correct, delete, restrict, or object to processing; receive a portable copy; withdraw consent; or complain to a data-protection authority. You can update certain provider and student information inside PeerSlot. Email privacy@peerslot.com for other requests. We may need to verify your identity before responding."
+          ]
+        },
+        {
+          "heading": "9. Children and student information",
+          "paragraphs": [
+            "PeerSlot may be used in educational settings. Providers are responsible for ensuring they have a lawful basis and any permission required to enter and manage student information, especially for minors. A child should use PeerSlot only with the involvement or authorization required by local law, a parent or guardian, and the relevant educational organization. Please contact us if you believe information was collected without required authorization."
+          ]
+        },
+        {
+          "heading": "10. Changes to this policy",
+          "paragraphs": [
+            "We may update this policy as PeerSlot changes. We will post the revised version here and update the effective date. If a change materially affects your rights, we will provide additional notice where required."
+          ]
+        }
+      ]
+    },
+    "terms": {
+      "eyebrow": "Legal",
+      "title": "Terms and Agreements",
+      "updatedAt": "Effective date: 18 August 2026",
+      "introduction": "These terms govern access to and use of PeerSlot. By creating an account or using the service, you agree to them.",
+      "sections": [
+        {
+          "heading": "1. The service",
+          "paragraphs": [
+            "PeerSlot is a scheduling tool that lets providers publish availability, manage students and recurring or one-time sessions, receive appointment requests, and accept, decline, edit, or cancel bookings. PeerSlot does not itself provide teaching, counselling, healthcare, or other professional services and is not a party to the underlying relationship between a provider and a student."
+          ]
+        },
+        {
+          "heading": "2. Eligibility and accounts",
+          "paragraphs": [
+            "You must be legally able to agree to these terms. If you use PeerSlot for an organization, you confirm that you have authority to bind it. Minors may use the service only with the authorization and supervision required by applicable law. You must provide accurate information, keep account credentials secure, and notify us of suspected unauthorized access."
+          ]
+        },
+        {
+          "heading": "3. Provider responsibilities",
+          "items": [
+            "Keep availability, time zone, duration, rest time, notice periods, student records, and appointment information accurate.",
+            "Obtain any consent or other lawful basis needed to add student names, email addresses, comments, exam names, school years, or other personal information.",
+            "Review pending appointment requests and communicate material schedule changes to affected students.",
+            "Use appropriate professional judgment. PeerSlot availability and notifications do not replace your own calendar checks, emergency procedures, or record-keeping duties.",
+            "Protect public booking links and regenerate a link if you believe it is compromised or shared too broadly."
+          ]
+        },
+        {
+          "heading": "4. Bookings and schedule changes",
+          "paragraphs": [
+            "A request is not confirmed until the provider accepts it. Availability can change before confirmation, and providers may decline, edit, or cancel appointments and recurring series. Rest periods may make time unavailable without appearing as separate public bookings. Users are responsible for checking the displayed time zone and appointment status. PeerSlot is not responsible for missed sessions, provider decisions, or disputes between users."
+          ]
+        },
+        {
+          "heading": "5. Acceptable use",
+          "paragraphs": [
+            "You may not misuse PeerSlot or help anyone else do so."
+          ],
+          "items": [
+            "Do not break the law, violate privacy or intellectual-property rights, harass others, impersonate anyone, or submit information you are not authorized to use.",
+            "Do not probe or bypass security, interfere with the service, introduce malicious code, scrape at unreasonable volume, evade rate limits, or access another user's account or non-public data.",
+            "Do not use PeerSlot for emergency services, unlawful discrimination, or decisions where the service is not designed to meet applicable professional or regulatory requirements."
+          ]
+        },
+        {
+          "heading": "6. Availability and changes",
+          "paragraphs": [
+            "PeerSlot is provided on an as-available basis. We may maintain, modify, suspend, or discontinue features and may correct scheduling or display errors. We aim to provide reliable notices, but email delivery and uninterrupted access are not guaranteed. You should retain any records you are legally or professionally required to keep."
+          ]
+        },
+        {
+          "heading": "7. Intellectual property and feedback",
+          "paragraphs": [
+            "PeerSlot and its software, design, branding, and content are owned by us or our licensors. We grant you a limited, revocable, non-exclusive right to use the service in accordance with these terms. You retain rights in information you submit and grant us permission to host, process, display, and transmit it only as needed to operate and improve the service. We may use feedback without restriction or payment."
+          ]
+        },
+        {
+          "heading": "8. Suspension and termination",
+          "paragraphs": [
+            "You may stop using PeerSlot at any time. We may restrict or terminate access when reasonably necessary to protect users or the service, address unlawful or abusive conduct, or enforce these terms. Provisions that by their nature should survive termination will remain in effect."
+          ]
+        },
+        {
+          "heading": "9. Disclaimers and liability",
+          "paragraphs": [
+            "To the extent permitted by law, PeerSlot is provided without warranties of uninterrupted operation, fitness for a particular purpose, or error-free scheduling. We are not liable for indirect, incidental, special, consequential, or punitive damages, loss of data or opportunity, or conduct between providers and students. Nothing in these terms excludes liability or consumer rights that cannot lawfully be excluded."
+          ]
+        },
+        {
+          "heading": "10. General terms and contact",
+          "paragraphs": [
+            "We may update these terms and will post the revised terms with a new effective date. Continued use after they take effect means you accept them, where permitted by law. If any provision is unenforceable, the rest remain effective. Our failure to enforce a provision is not a waiver. Applicable law and courts will be determined by mandatory law and, once PeerSlot's operating entity and jurisdiction are formally established, this section should be updated before commercial launch. Questions may be sent to legal@peerslot.com."
+          ]
+        }
+      ]
+    },
+    "cookies": {
+      "eyebrow": "Legal",
+      "title": "Cookie Policy",
+      "updatedAt": "Effective date: 18 August 2026",
+      "introduction": "This policy explains how PeerSlot uses cookies and similar browser storage. At this stage, we use only technology needed to operate, secure, and remember preferences for the service.",
+      "sections": [
+        {
+          "heading": "1. What cookies are",
+          "paragraphs": [
+            "Cookies are small text files stored by your browser. Similar technologies can store identifiers or preferences so a website can remember a session, complete a requested action, or protect against abuse."
+          ]
+        },
+        {
+          "heading": "2. Cookies PeerSlot uses",
+          "items": [
+            "better-auth.session_token (called __Secure-better-auth.session_token in production) is a first-party, HTTP-only authentication cookie that keeps you signed in and protects account access. It may remain for up to seven days.",
+            "better-auth.state or better-auth.oauth_state is a temporary, first-party, HTTP-only security cookie used when you choose Google or Microsoft sign-in. It normally expires within five to ten minutes.",
+            "peerslot-booking-intent is a first-party, HTTP-only cookie that temporarily remembers the booking page and selected time while you sign in or complete a request. It expires after approximately ten minutes or when the booking flow completes.",
+            "NEXT_LOCALE is a first-party preference cookie that remembers whether you selected English or Turkish. It may remain for up to one year."
+          ]
+        },
+        {
+          "heading": "3. Optional cookies",
+          "paragraphs": [
+            "PeerSlot does not currently use advertising cookies or optional analytics cookies. If we introduce non-essential cookies, we will update this policy and request consent where required before using them."
+          ]
+        },
+        {
+          "heading": "4. Third-party sign-in",
+          "paragraphs": [
+            "If you choose Google or Microsoft sign-in, that provider may use its own cookies on its websites to authenticate you and prevent fraud. Those cookies are controlled by the provider and covered by its cookie and privacy policies."
+          ]
+        },
+        {
+          "heading": "5. Your controls",
+          "paragraphs": [
+            "You can block or delete cookies in your browser settings. Blocking necessary cookies may prevent sign-in, language preferences, or booking flows from working correctly. Because PeerSlot currently uses only necessary cookies, there is no separate advertising-cookie opt-out on the service."
+          ]
+        },
+        {
+          "heading": "6. Changes and contact",
+          "paragraphs": [
+            "We may update this policy when our technology or legal obligations change. We will post updates here and revise the effective date. Questions about cookies or privacy may be sent to privacy@peerslot.com."
+          ]
+        }
+      ]
     }
   },
   "ProviderAuth": {
