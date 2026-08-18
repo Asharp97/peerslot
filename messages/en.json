@@ -9,10 +9,10 @@
     "mainNavigationLabel": "Main navigation",
     "brandHomeLabel": "PeerSlot home",
     "navigation": [
-      { "label": "Product", "href": "#product" },
-      { "label": "How it works", "href": "#how-it-works" },
-      { "label": "Guardrails", "href": "#guardrails" },
-      { "label": "For teachers", "href": "#for-teachers" }
+      { "label": "Product", "href": "/#product" },
+      { "label": "How it works", "href": "/#how-it-works" },
+      { "label": "Guardrails", "href": "/#guardrails" },
+      { "label": "For teachers", "href": "/#for-teachers" }
     ],
     "languageSwitcher": {
       "label": "Choose language",
@@ -141,9 +141,11 @@
     "footer": {
       "tagline": "Meetings that move without the mess.",
       "links": [
-        { "label": "Product", "href": "#product" },
-        { "label": "How it works", "href": "#how-it-works" },
-        { "label": "Guardrails", "href": "#guardrails" }
+        { "label": "Product", "href": "/#product" },
+        { "label": "How it works", "href": "/#how-it-works" },
+        { "label": "Guardrails", "href": "/#guardrails" },
+        { "label": "Privacy", "href": "/policy/privacy" },
+        { "label": "Terms", "href": "/policy/terms-agreements" }
       ],
       "copyright": "© {year} PeerSlot"
     }

@@ -9,10 +9,10 @@
     "mainNavigationLabel": "Ana menü",
     "brandHomeLabel": "PeerSlot ana sayfası",
     "navigation": [
-      { "label": "Ürün", "href": "#product" },
-      { "label": "Nasıl çalışır?", "href": "#how-it-works" },
-      { "label": "Kurallar", "href": "#guardrails" },
-      { "label": "Öğretmenler için", "href": "#for-teachers" }
+      { "label": "Ürün", "href": "/#product" },
+      { "label": "Nasıl çalışır?", "href": "/#how-it-works" },
+      { "label": "Kurallar", "href": "/#guardrails" },
+      { "label": "Öğretmenler için", "href": "/#for-teachers" }
     ],
     "languageSwitcher": {
       "label": "Dil seçin",
@@ -141,9 +141,11 @@
     "footer": {
       "tagline": "Karmaşa olmadan değişen görüşmeler.",
       "links": [
-        { "label": "Ürün", "href": "#product" },
-        { "label": "Nasıl çalışır?", "href": "#how-it-works" },
-        { "label": "Kurallar", "href": "#guardrails" }
+        { "label": "Ürün", "href": "/#product" },
+        { "label": "Nasıl çalışır?", "href": "/#how-it-works" },
+        { "label": "Kurallar", "href": "/#guardrails" },
+        { "label": "Gizlilik", "href": "/policy/privacy" },
+        { "label": "Koşullar", "href": "/policy/terms-agreements" }
       ],
       "copyright": "© {year} PeerSlot"
     }
