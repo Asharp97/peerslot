@@ -1,5 +1,5 @@
 meta {
-  name: Get Microsoft sign-in URL
+  name: Get Facebook sign-in URL
   type: http
   seq: 9
 }
@@ -17,17 +17,17 @@ headers {
 
 body:json {
   {
-    "provider": "microsoft",
+    "provider": "facebook",
     "callbackURL": "{{baseUrl}}/en/auth/provider",
     "disableRedirect": true
   }
 }
 
 tests {
-  test("Microsoft OAuth is configured or explicitly unavailable", function () {
+  test("Facebook OAuth is configured or explicitly unavailable", function () {
     expect(res.getStatus()).to.be.oneOf([200, 400, 404]);
     if (res.getStatus() === 200) {
-      expect(res.getBody().url).to.include("login.microsoftonline.com");
+      expect(res.getBody().url).to.include("facebook.com");
     }
   });
 }

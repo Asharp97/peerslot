@@ -24,15 +24,11 @@ const google =
       }
     : undefined;
 
-const microsoft =
-  process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET
+const facebook =
+  process.env.FACEBOOK_CLIENT_ID && process.env.FACEBOOK_CLIENT_SECRET
     ? {
-        clientId: process.env.MICROSOFT_CLIENT_ID,
-        clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
-        tenantId: process.env.MICROSOFT_TENANT_ID ?? "common",
-        prompt: "select_account" as const,
-        // Microsoft can return a large base64 profile image. Do not persist it.
-        mapProfileToUser: () => ({ image: "" }),
+        clientId: process.env.FACEBOOK_CLIENT_ID,
+        clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
       }
     : undefined;
 
@@ -99,7 +95,7 @@ export const auth = betterAuth({
   ],
   socialProviders: {
     ...(google ? { google } : {}),
-    ...(microsoft ? { microsoft } : {}),
+    ...(facebook ? { facebook } : {}),
   },
   trustedOrigins: [baseURL],
 });

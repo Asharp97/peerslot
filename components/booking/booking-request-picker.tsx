@@ -43,7 +43,7 @@ export type BookingRequestCopy = {
   authTitle: string;
   authBody: string;
   googleAction: string;
-  microsoftAction: string;
+  facebookAction: string;
   orEmail: string;
   signInTab: string;
   registerTab: string;
@@ -71,7 +71,7 @@ type AuthenticatedUser = { name: string; email: string };
 type BookingPhase =
   "checking" | "details" | "auth" | "verify-email" | "confirm";
 type AuthMode = "sign-in" | "register";
-type SocialProvider = "google" | "microsoft";
+type SocialProvider = "facebook" | "google";
 
 export function BookingRequestPicker({
   bookingPageId,
@@ -531,9 +531,9 @@ export function BookingRequestPicker({
                     />
                     <SocialButton
                       disabled={saving}
-                      label={copy.microsoftAction}
+                      label={copy.facebookAction}
                       onClick={handleSocialAuth}
-                      provider="microsoft"
+                      provider="facebook"
                     />
                   </div>
 
@@ -814,7 +814,7 @@ function SocialButton({
       onClick={() => onClick(provider)}
       type="button"
     >
-      {provider === "google" ? <GoogleMark /> : <MicrosoftMark />}
+      {provider === "google" ? <GoogleMark /> : <FacebookMark />}
       {label}
     </button>
   );
@@ -843,13 +843,14 @@ function GoogleMark() {
   );
 }
 
-function MicrosoftMark() {
+function FacebookMark() {
   return (
-    <svg aria-hidden="true" className="size-4" viewBox="0 0 20 20">
-      <path fill="#f25022" d="M1 1h8v8H1z" />
-      <path fill="#7fba00" d="M11 1h8v8h-8z" />
-      <path fill="#00a4ef" d="M1 11h8v8H1z" />
-      <path fill="#ffb900" d="M11 11h8v8h-8z" />
+    <svg aria-hidden="true" className="size-4" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="11" fill="#1877F2" />
+      <path
+        fill="#fff"
+        d="M13.6 21v-8h2.7l.4-3h-3.1V8.1c0-.9.3-1.5 1.6-1.5h1.7V3.9c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.4-4 4.1V10H7.8v3h2.7v8h3.1Z"
+      />
     </svg>
   );
 }

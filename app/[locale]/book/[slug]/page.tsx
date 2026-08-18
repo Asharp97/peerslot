@@ -123,7 +123,7 @@ export default async function BookingPage({ params }: BookingPageProps) {
                     authTitle: t("authTitle"),
                     authBody: t("authBody"),
                     googleAction: t("googleAction"),
-                    microsoftAction: t("microsoftAction"),
+                    facebookAction: t("facebookAction"),
                     orEmail: t("orEmail"),
                     signInTab: t("signInTab"),
                     registerTab: t("registerTab"),
