@@ -85,7 +85,8 @@ The repository currently uses:
 | Package manager | [pnpm](https://pnpm.io/)                                                         |
 
 Better Auth provides email/password sessions, short-lived JWT access tokens,
-and optional Google and Facebook OAuth. PeerSlot application APIs accept
+and optional Google OAuth. The Facebook OAuth implementation is preserved but
+disabled until PeerSlot can complete Meta Business Verification. PeerSlot application APIs accept
 15-minute JWTs; the revocable Better Auth session is used to issue and refresh
 them. Public verification keys are exposed through JWKS. Authentication
 establishes who the user is. Provider onboarding creates a profile and one
@@ -255,8 +256,8 @@ pnpm dev
 Open [http://localhost:3000](http://localhost:3000).
 
 Provider registration and sign-in are available at
-`http://localhost:3000/en/auth/provider`. Email/password, Google, and Facebook
-authentication all continue into the same setup form. It defaults rest time to
+`http://localhost:3000/en/auth/provider`. Email/password and Google
+authentication continue into the same setup form. It defaults rest time to
 10 minutes, creates the provider's booking page, and redirects to the dashboard.
 
 ### Localization

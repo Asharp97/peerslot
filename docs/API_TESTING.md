@@ -70,7 +70,7 @@ the public date-range endpoint for ordered results plus English and Turkish
 labels. It also checks invalid-range rejection and removes its fixture.
 
 In the browser, the same flow lives at `/en/auth/provider` and
-`/tr/auth/provider`. Email/password, Google, and Facebook authentication all
+`/tr/auth/provider`. Email/password and Google authentication both
 continue into the same provider setup form and dashboard.
 
 ## Endpoints
@@ -85,7 +85,7 @@ continue into the same provider setup form and dashboard.
 | `GET`    | `/api/auth/jwks`                        | No                    | Publish public JWT verification keys   |
 | `POST`   | `/api/auth/refresh`                     | Session Bearer/cookie | Mint a replacement 15-minute JWT       |
 | `POST`   | `/api/auth/sign-out`                    | Session Bearer/cookie | Revoke the current session             |
-| `POST`   | `/api/auth/sign-in/social`              | No                    | Start Google or Facebook OAuth         |
+| `POST`   | `/api/auth/sign-in/social`              | No                    | Start Google OAuth                     |
 | `GET`    | `/api/me`                               | JWT                   | Read user and PeerSlot capabilities    |
 | `GET`    | `/api/provider`                         | JWT                   | Read provider onboarding status        |
 | `POST`   | `/api/provider`                         | JWT                   | Create/update profile and booking page |
@@ -144,7 +144,10 @@ Add the relevant provider credentials to `.env.local`, then restart the
 development server. Configure these local redirect URLs in the providers:
 
 - Google: `http://localhost:3000/api/auth/callback/google`
-- Facebook: `http://localhost:3000/api/auth/callback/facebook`
+
+Facebook OAuth remains disabled until PeerSlot can complete Meta Business
+Verification through its future parent company. Its callback will be
+`http://localhost:3000/api/auth/callback/facebook` when re-enabled.
 
 The Bruno social-login requests return an authorization URL when
 `disableRedirect` is enabled. Open that URL in a browser to complete the OAuth

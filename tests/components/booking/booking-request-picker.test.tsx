@@ -126,32 +126,8 @@ describe("booking authentication", () => {
       screen.getByRole("button", { name: copy.googleAction }),
     ).toBeTruthy();
     expect(
-      screen.getByRole("button", { name: copy.facebookAction }),
-    ).toBeTruthy();
-
-    fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
-      if (String(input) === "/api/booking-intent") {
-        return Response.json({
-          returnPath: "/en/book/ABCDEFGH?booking=resume",
-        });
-      }
-      return Response.json({ error: "Unavailable" }, { status: 400 });
-    });
-    fireEvent.click(screen.getByRole("button", { name: copy.facebookAction }));
-    await waitFor(() =>
-      expect(
-        fetchMock.mock.calls.some(([url]) =>
-          String(url).includes("/api/auth/sign-in/social"),
-        ),
-      ).toBe(true),
-    );
-
-    const facebookCall = fetchMock.mock.calls.find(([url]) =>
-      String(url).includes("/api/auth/sign-in/social"),
-    );
-    expect(JSON.parse(String(facebookCall?.[1]?.body))).toMatchObject({
-      provider: "facebook",
-    });
+      screen.queryByRole("button", { name: copy.facebookAction }),
+    ).toBeNull();
     expect(
       fetchMock.mock.calls.some(([url]) =>
         String(url).includes("/appointments"),

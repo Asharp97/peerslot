@@ -1,3 +1,7 @@
+# Disabled until PeerSlot's future parent company completes Meta Business
+# Verification. Rename this file to end in `.bru` when Facebook OAuth is
+# re-enabled.
+
 meta {
   name: Get Facebook sign-in URL
   type: http

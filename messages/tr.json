@@ -199,7 +199,7 @@
           "items": [
             "Randevuyla ilgili sağlayıcı veya öğrenci. Sağlayıcılar, öğrenci ve rezervasyonlarıyla bağlantılı kimlik, iletişim, planlama ve isteğe bağlı bağlam bilgilerini görebilir.",
             "Bizim adımıza çalışan altyapı, veri tabanı, e-posta gönderimi, güvenlik ve kimlik doğrulama sağlayıcıları.",
-            "Bu giriş seçeneğini kullandığınızda, kendi gizlilik koşullarına tabi olan Google veya Facebook.",
+            "Google ile giriş seçeneğini kullandığınızda, kendi gizlilik koşullarına tabi olan Google.",
             "Yasalar gerektirdiğinde, hakları ve güvenliği korumak için gerektiğinde veya birleşme, finansman, satın alma ya da varlık satışıyla bağlantılı olarak yetkililer, danışmanlar veya diğer taraflar."
           ]
         },
@@ -334,7 +334,7 @@
           "heading": "2. PeerSlot'un kullandığı çerezler",
           "items": [
             "better-auth.session_token (canlı ortamda __Secure-better-auth.session_token adını alır), oturumunuzu açık tutan ve hesap erişimini koruyan birinci taraf ve HTTP-only kimlik doğrulama çerezidir. Yedi güne kadar saklanabilir.",
-            "better-auth.state veya better-auth.oauth_state, Google ya da Facebook ile giriş seçildiğinde kullanılan geçici, birinci taraf ve HTTP-only güvenlik çerezidir. Normalde beş ila on dakika içinde sona erer.",
+            "better-auth.state veya better-auth.oauth_state, Google ile giriş seçildiğinde kullanılan geçici, birinci taraf ve HTTP-only güvenlik çerezidir. Normalde beş ila on dakika içinde sona erer.",
             "peerslot-booking-intent; giriş yaparken veya talebi tamamlarken rezervasyon sayfasını ve seçilen zamanı geçici olarak hatırlayan, birinci taraf ve HTTP-only çerezdir. Yaklaşık on dakika sonra veya rezervasyon akışı tamamlandığında sona erer.",
             "NEXT_LOCALE, İngilizce veya Türkçe seçiminizi hatırlayan birinci taraf tercih çerezidir. Bir yıla kadar saklanabilir."
           ]
@@ -348,7 +348,7 @@
         {
           "heading": "4. Üçüncü tarafla giriş",
           "paragraphs": [
-            "Google veya Facebook ile giriş yapmayı seçerseniz ilgili sağlayıcı, kimliğinizi doğrulamak ve dolandırıcılığı önlemek için kendi sitelerinde kendi çerezlerini kullanabilir. Bu çerezler sağlayıcı tarafından kontrol edilir ve sağlayıcının çerez ve gizlilik politikalarına tabidir."
+            "Google ile giriş yapmayı seçerseniz Google, kimliğinizi doğrulamak ve dolandırıcılığı önlemek için kendi sitelerinde kendi çerezlerini kullanabilir. Bu çerezler Google tarafından kontrol edilir ve Google'ın çerez ve gizlilik politikalarına tabidir."
           ]
         },
         {
@@ -379,7 +379,7 @@
       "signInTitle": "Tekrar hoş geldiniz.",
       "registerTitle": "Sağlayıcı hesabınızı oluşturun.",
       "signInBody": "Rezervasyon sayfanızı ve uygunluk saatlerinizi yönetmek için giriş yapın.",
-      "registerBody": "E-posta, Google veya Facebook ile başlayın. Kurulum yaklaşık bir dakika sürer.",
+      "registerBody": "E-posta veya Google ile başlayın. Kurulum yaklaşık bir dakika sürer.",
       "verifyTitle": "Gelen kutunuzu kontrol edin.",
       "verifyBody": "{email} adresine bir doğrulama bağlantısı gönderdik. Adresinizi doğrulamak ve sağlayıcı hesabınızın kurulumuna devam etmek için bağlantıyı açın.",
       "verifyAction": "Girişe dön",

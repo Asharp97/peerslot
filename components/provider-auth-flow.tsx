@@ -356,19 +356,22 @@ export function ProviderAuthFlow({
           <span className="h-px flex-1 bg-lumen-stone" />
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3">
           <SocialButton
             label={copy.googleAction}
             provider="google"
             disabled={submitting}
             onClick={handleSocialAuth}
           />
+          {/* Facebook OAuth is hidden until PeerSlot can complete Meta
+              Business Verification through its future parent company.
           <SocialButton
             label={copy.facebookAction}
             provider="facebook"
             disabled={submitting}
             onClick={handleSocialAuth}
           />
+          */}
         </div>
       </form>
     );

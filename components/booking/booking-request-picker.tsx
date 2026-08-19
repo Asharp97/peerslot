@@ -529,12 +529,15 @@ export function BookingRequestPicker({
                       onClick={handleSocialAuth}
                       provider="google"
                     />
+                    {/* Facebook OAuth is hidden until PeerSlot can complete
+                        Meta Business Verification through its future parent company.
                     <SocialButton
                       disabled={saving}
                       label={copy.facebookAction}
                       onClick={handleSocialAuth}
                       provider="facebook"
                     />
+                    */}
                   </div>
 
                   <div className="my-5 flex items-center gap-3 text-[11px] font-bold tracking-[0.08em] text-black/45 uppercase">
